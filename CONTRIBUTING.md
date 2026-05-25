@@ -7,8 +7,6 @@ Thank you for your interest in contributing to Mini-OpenCV! This document provid
 ## Table of Contents
 
 - [Getting Started](#getting-started)
-- [Spec-Driven Development Workflow](#spec-driven-development-workflow)
-- [Writing Specifications](#writing-specifications)
 - [Development Workflow](#development-workflow)
 - [Code Style and Guidelines](#code-style-and-guidelines)
 - [Commit Message Format](#commit-message-format)
@@ -47,72 +45,6 @@ make -j$(nproc)
 
 # Run tests
 ctest --output-on-failure
-```
-
----
-
-## Spec-Driven Development Workflow
-
-This project follows **Spec-Driven Development (SDD)**. All code implementations must use the `/specs` directory as the Single Source of Truth.
-
-### Directory Structure
-
-| Directory | Purpose |
-|-----------|---------|
-| `/specs/product/` | Product requirements documents (PRD) |
-| `/specs/rfc/` | Technical designs and architecture proposals |
-| `/specs/api/` | API contracts and function signatures |
-| `/specs/db/` | Data models and memory layouts |
-| `/specs/testing/` | Test specifications and correctness properties |
-
-### SDD Workflow Steps
-
-When developing a new feature, modifying functionality, or fixing a bug:
-
-#### Step 1: Review Specs
-- Before writing any code, read relevant specs in `/specs`
-- If your request conflicts with existing specs, **stop and discuss** before coding
-
-#### Step 2: Update Specs First
-- For new features or interface changes, **propose spec updates first**
-- Wait for spec approval before implementing
-
-#### Step 3: Implement
-- Follow spec definitions exactly (names, types, behaviors)
-- Do not add features not defined in specs (No Gold-Plating)
-
-#### Step 4: Test Against Specs
-- Write tests based on acceptance criteria in specs
-- Ensure all boundary conditions are covered
-
-### When to Write Specs
-
-| Change Type | Spec Update Required |
-|-------------|---------------------|
-| New feature | Create/Update product spec + RFC |
-| API change | Update API spec |
-| Data structure change | Update db spec |
-| Bug fix | Check spec for expected behavior |
-| Refactoring | No spec change needed |
-
-### Spec Format
-
-All spec documents follow this structure:
-
-```markdown
-# Spec Title
-
-## Overview
-Brief description
-
-## Requirements/Design/Definition
-Main content with code examples, diagrams
-
-## Acceptance Criteria
-Clear, testable conditions
-
-## Related Documents
-Links to related specs
 ```
 
 ---
@@ -393,9 +325,7 @@ Use the [documentation template](https://github.com/LessUp/mini-opencv/blob/main
 ## Additional Resources
 
 - [Project README](README.md)
-- [AGENTS.md](AGENTS.md) - Guide for coding agents (includes Spec-Driven Development workflow)
-- [Specifications](specs/README.md) - Product requirements, RFCs, and technical designs
-- [Documentation](docs/README.md) - User guides, tutorials, and API reference
+- [Documentation](https://lessup.github.io/mini-opencv/)
 - [ChangeLog](CHANGELOG.md)
 
 ---

@@ -7,11 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+---
 
-- Complete documentation rewrite with bilingual support
-- Professional docs structure with guides and API reference
-- Enhanced changelog with detailed release notes
+## [3.0.0] - 2026-05-26
+
+### Removed
+
+- `openspec/` directory and all Spec-Driven Development (SDD) artifacts
+- `AGENTS.md` — heavy AI instruction file with OpenSpec/SDD workflow
+- `CLAUDE.md` — duplicate AI-specific configuration file
+- `CONTEXT.md` — AI domain model document (not user-facing)
+
+### Changed
+
+- `.github/copilot-instructions.md` rewritten: removed OpenSpec/SDD/BDD/RapidCheck
+  references, corrected docs technology (Jekyll → VitePress), consolidated to
+  accurate technical project facts only
+- `CONTRIBUTING.md`: removed Spec-Driven Development Workflow section and
+  obsolete resource links
+- Project version bumped to 3.0.0
 
 ---
 
@@ -140,7 +154,8 @@ Focused on deterministic correctness with minimal changes. Enhanced reliability 
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| [Unreleased] | — | Documentation rewrite, bilingual support |
+| [Unreleased] | — | — |
+| [3.0.0] | 2026-05-26 | Remove AI frameworks, simplify repo structure |
 | [2.1.0] | 2026-04-27 | Project cleanup, standardization |
 | [2.0.0] | 2026-03-24 | Correctness fixes, CI hardening |
 | [1.3.0] | 2026-03-10 | Pages optimization, professional docs |
@@ -148,7 +163,8 @@ Focused on deterministic correctness with minimal changes. Enhanced reliability 
 | [1.1.0] | 2026-03-09 | Initial CI setup |
 | [1.0.0] | 2025-02-13 | Initial release |
 
-[Unreleased]: https://github.com/LessUp/mini-opencv/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/LessUp/mini-opencv/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/LessUp/mini-opencv/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/LessUp/mini-opencv/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/LessUp/mini-opencv/compare/v1.3.0...v2.0.0
 [1.3.0]: https://github.com/LessUp/mini-opencv/compare/v1.2.0...v1.3.0
