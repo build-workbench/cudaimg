@@ -111,13 +111,6 @@ export default withMermaid(defineConfig({
                 { text: 'Papers & Projects', link: '/en/references/' },
               ],
             },
-            {
-              text: 'Development',
-              collapsed: true,
-              items: [
-                { text: 'Changelog', link: '/en/changelog' },
-              ],
-            },
           ],
         },
       },
@@ -201,13 +194,6 @@ export default withMermaid(defineConfig({
               collapsed: true,
               items: [
                 { text: '论文与项目', link: '/zh/references/' },
-              ],
-            },
-            {
-              text: '开发指南',
-              collapsed: true,
-              items: [
-                { text: '更新日志', link: '/zh/changelog' },
               ],
             },
           ],

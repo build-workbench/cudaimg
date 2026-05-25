@@ -36,12 +36,6 @@ CMakeUserPresets.json
 Testing/
 *.log
 
-# Jekyll
-_site/
-.jekyll-cache/
-.jekyll-metadata
-.sass-cache/
-
 # VitePress
 docs/node_modules/
 docs/.vitepress/dist/
@@ -51,14 +45,6 @@ docs/package-lock.json
 # Cache
 .cache/
 
-# OpenSpec
-openspec/.cache/
-
 # OS
 .DS_Store
 Thumbs.db
-
-# BMad Method V6
-_bmad/
-_bmad-output/
-.omc/

@@ -143,7 +143,7 @@
   title = {Mini-OpenCV: High-Performance CUDA Image Processing Library},
   author = {LessUp},
   year = {2024},
-  version = {2.1.0},
+  version = {3.0.0},
   url = {https://github.com/LessUp/mini-opencv},
   note = {CUDA-accelerated operators achieving 30-50× speedup over CPU implementations}
 }

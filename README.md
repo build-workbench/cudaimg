@@ -6,7 +6,7 @@
 ![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
-![Version](https://img.shields.io/badge/Version-2.1.0-blue.svg)
+![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
@@ -23,11 +23,11 @@ A high-performance CUDA-based image processing library providing GPU-accelerated
 
 | Resource | Description |
 |----------|-------------|
-| [Installation](docs/setup/installation.md) | Complete setup guide |
-| [Quick Start](docs/setup/quickstart.md) | Get started in 5 minutes |
-| [API Reference](docs/api/README.md) | Complete API documentation |
-| [Examples](docs/tutorials/examples/) | Code examples and tutorials |
-| [Specifications](openspec/specs/architecture.md) | Requirements, RFCs, and technical designs |
+| [Installation](https://lessup.github.io/mini-opencv/en/setup/installation) | Complete setup guide |
+| [Quick Start](https://lessup.github.io/mini-opencv/en/setup/quickstart) | Get started in 5 minutes |
+| [Architecture](https://lessup.github.io/mini-opencv/en/architecture/overview) | Three-layer design overview |
+| [API Reference](https://lessup.github.io/mini-opencv/en/api/) | Complete API documentation |
+| [Examples](https://lessup.github.io/mini-opencv/en/tutorials/examples) | Code examples and tutorials |
 
 **Full Documentation:** https://lessup.github.io/mini-opencv/
 
@@ -51,7 +51,7 @@ A high-performance CUDA-based image processing library providing GPU-accelerated
 
 ## 🏗️ Architecture
 
-> **See [Architecture Specification](openspec/specs/architecture.md) for complete design details.**
+> **See the [Architecture Overview](https://lessup.github.io/mini-opencv/en/architecture/overview) for complete design details.**
 
 Three-layer design: **High-level APIs** → **CUDA Kernels** → **Infrastructure**
 
@@ -129,21 +129,12 @@ HostImage result = processor.downloadImage(edges);
 
 Complete documentation available at [GitHub Pages](https://lessup.github.io/mini-opencv/):
 
-- [Installation Guide](docs/setup/installation.md)
-- [Quick Start](docs/setup/quickstart.md)
-- [Architecture Overview](docs/architecture/architecture.md)
-- [Performance Optimization](docs/tutorials/performance.md)
-- [API Reference](docs/api/README.md)
-- [FAQ](docs/tutorials/faq.md)
-
-### Specifications
-
-Technical requirements and design documents:
-
-- [Product Requirements](openspec/specs/gpu-image-processing/requirements.md)
-- [Architecture Design](openspec/specs/gpu-image-processing/design.md)
-- [API Reference](openspec/specs/gpu-image-processing/api.md)
-- [Architecture Overview](openspec/specs/architecture.md)
+- [Installation Guide](https://lessup.github.io/mini-opencv/en/setup/installation)
+- [Quick Start](https://lessup.github.io/mini-opencv/en/setup/quickstart)
+- [Architecture Overview](https://lessup.github.io/mini-opencv/en/architecture/overview)
+- [Benchmarks](https://lessup.github.io/mini-opencv/en/benchmarks/)
+- [API Reference](https://lessup.github.io/mini-opencv/en/api/)
+- [FAQ](https://lessup.github.io/mini-opencv/en/tutorials/faq)
 
 ---
 

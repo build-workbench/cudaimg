@@ -1,23 +1,23 @@
 #!/bin/bash
 # Create GitHub Release Script
 
-VERSION="v2.1.0"
-TITLE="v2.1.0 - Documentation Overhaul & Bilingual Support"
+VERSION="v3.0.0"
+TITLE="v3.0.0 - AI Framework Removal & Repository Simplification"
 
 BODY=$(cat << 'EOF'
 ## What's New
 
-This release brings comprehensive documentation improvements with full bilingual (English/Chinese) support.
+This release removes AI workflow frameworks and simplifies the repository back to a minimal, maintainable structure.
 
-### Documentation
-- Professional bilingual documentation (EN/ZH)
-- Restructured docs with guides and API reference
-- Enhanced changelog with detailed release history
+### Cleanup
+- Removed OpenSpec specs, Claude skills, and AI-only control files
+- Reduced repository complexity and dead documentation paths
+- Consolidated changelog ownership to the root `CHANGELOG.md`
 
 ### Files Changed
-- All docs now available in English and Chinese
-- Improved README.md and README.zh-CN.md
-- Professional changelog structure
+- Simplified contributing and Copilot guidance
+- Removed GitHub Pages changelog pages and sync script
+- Updated README.md and README.zh-CN.md to point to live VitePress docs
 
 ### Quick Start
 ```bash

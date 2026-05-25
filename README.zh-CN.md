@@ -6,7 +6,7 @@
 ![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
-![Version](https://img.shields.io/badge/Version-2.1.0-blue.svg)
+![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)
 
 [English](README.md) | 简体中文
@@ -23,11 +23,11 @@
 
 | 资源 | 描述 |
 |------|------|
-| [安装指南](docs/setup/installation.zh-CN.md) | 完整的安装配置指南 |
-| [快速入门](docs/setup/quickstart.zh-CN.md) | 5 分钟快速上手 |
-| [API 参考](docs/api.zh-CN/README.md) | 完整 API 文档 |
-| [示例代码](docs/tutorials/examples/) | 代码示例和教程 |
-| [规范文档](specs/README.md) | 需求、RFC 和技术设计 |
+| [安装指南](https://lessup.github.io/mini-opencv/zh/setup/installation) | 完整的安装配置指南 |
+| [快速入门](https://lessup.github.io/mini-opencv/zh/setup/quickstart) | 5 分钟快速上手 |
+| [架构概览](https://lessup.github.io/mini-opencv/zh/architecture/overview) | 三层架构与模块边界 |
+| [API 参考](https://lessup.github.io/mini-opencv/zh/api/) | 完整 API 文档 |
+| [示例代码](https://lessup.github.io/mini-opencv/zh/tutorials/examples) | 代码示例和教程 |
 
 **完整文档：** https://lessup.github.io/mini-opencv/
 
@@ -137,20 +137,12 @@ HostImage result = processor.downloadImage(edges);
 
 完整文档请访问 [GitHub Pages](https://lessup.github.io/mini-opencv/)：
 
-- [安装指南](docs/setup/installation.zh-CN.md)
-- [快速入门](docs/setup/quickstart.zh-CN.md)
-- [架构概览](docs/architecture/architecture.zh-CN.md)
-- [性能优化](docs/tutorials/performance.zh-CN.md)
-- [API 参考](docs/api.zh-CN/README.md)
-- [常见问题](docs/tutorials/faq.zh-CN.md)
-
-### 规范文档
-
-技术需求和设计文档：
-
-- [产品需求](specs/product/gpu-image-processing-requirements.md)
-- [架构设计](specs/rfc/0001-gpu-image-processing-design.md)
-- [实现任务](specs/rfc/0001-gpu-image-processing-tasks.md)
+- [安装指南](https://lessup.github.io/mini-opencv/zh/setup/installation)
+- [快速入门](https://lessup.github.io/mini-opencv/zh/setup/quickstart)
+- [架构概览](https://lessup.github.io/mini-opencv/zh/architecture/overview)
+- [性能基准](https://lessup.github.io/mini-opencv/zh/benchmarks/)
+- [API 参考](https://lessup.github.io/mini-opencv/zh/api/)
+- [常见问题](https://lessup.github.io/mini-opencv/zh/tutorials/faq)
 
 ---
 

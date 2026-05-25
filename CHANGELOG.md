@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- `.claude/` OpenSpec command and skill definitions
+- GitHub Pages changelog pages under `docs/en/` and `docs/zh/`
+- `docs/scripts/sync-changelog.mjs` and docs build-time changelog sync
+
+### Changed
+
+- `README.md` and `README.zh-CN.md` now point to live VitePress docs and no
+  longer reference deleted spec trees
+- `docs/.vitepress/config.ts` no longer exposes changelog pages in the sidebar
+- `docs/package.json` builds docs directly without changelog sync
+- `.github/workflows/docs-pages.yml` no longer rebuilds docs on root
+  `CHANGELOG.md` edits alone
+
 ---
 
 ## [3.0.0] - 2026-05-26

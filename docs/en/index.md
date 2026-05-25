@@ -7,7 +7,7 @@ layout: home
     <div class="home-logo">MO</div>
     <div>
       <div class="home-title">Mini-OpenCV</div>
-      <div class="home-subtitle">v2.1.0 · CUDA 14 · C++17</div>
+      <div class="home-subtitle">v3.0.0 · CUDA 14 · C++17</div>
     </div>
   </div>
   <div class="home-nav">
