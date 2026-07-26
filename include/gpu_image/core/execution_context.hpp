@@ -115,10 +115,6 @@ public:
   /// This method takes ownership of the image's buffer.
   void recycleToPool(GpuImage&& image);
 
-  /// @deprecated Use recycleToPool() instead. Kept for backward compatibility.
-  /// @deprecated 请使用 recycleToPool() 替代。保留用于向后兼容。
-  void release(GpuImage&& image) { recycleToPool(std::move(image)); }
-
   /// Enable or disable memory pooling globally
   /// 全局启用或禁用内存池
   /// @note Thread-safe: uses atomic operations
@@ -198,10 +194,6 @@ public:
   /// ctx.recycleToPool(std::move(intermediate));  // Return to pool
   /// @endcode
   void recycleToPool(GpuImage&& image);
-
-  /// @deprecated Use recycleToPool() instead. Kept for backward compatibility.
-  /// @deprecated 请使用 recycleToPool() 替代。保留用于向后兼容。
-  void release(GpuImage&& image) { recycleToPool(std::move(image)); }
 
 private:
   ExecutionPolicy policy_;

@@ -7,10 +7,6 @@
 #include "gpu_image/operators/image_resizer.hpp"
 #include "gpu_image/operators/pixel_operator.hpp"
 #include <array>
-#include <functional>
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace gpu_image {
 
@@ -153,25 +149,6 @@ public:
   /// 按比例因子调整
   GpuImage resizeByScale(const GpuImage& input, float scaleX, float scaleY);
 
-  // ===== Pipeline Operations =====
-
-  /// Apply a pipeline of operations
-  /// 应用操作管道
-  /// @param input Input image
-  /// @param operations Vector of operations to apply in sequence
-  /// @return Final result image
-  ///
-  /// Example:
-  /// @code
-  /// auto result = processor.pipeline(input, {
-  ///   [&](const GpuImage& in) { return processor.toGrayscale(in); },
-  ///   [&](const GpuImage& in) { return processor.gaussianBlur(in); },
-  ///   [&](const GpuImage& in) { return processor.sobelEdgeDetection(in); }
-  /// });
-  /// @endcode
-  GpuImage pipeline(const GpuImage& input,
-                    std::vector<std::function<GpuImage(const GpuImage&)>> operations);
-
   // ===== Synchronization =====
 
   /// Synchronize (for async/batch modes)
@@ -192,79 +169,6 @@ private:
 
   /// Auto-sync if in sync mode
   void autoSync();
-};
-
-// ===== Builder Pattern for Pipeline Construction =====
-
-/// PipelineBuilder: Fluent interface for building processing pipelines
-/// 管道构建器：用于构建处理管道的流式接口
-///
-/// Example:
-/// @code
-/// auto result = PipelineBuilder(processor)
-///     .start(input)
-///     .grayscale()
-///     .blur(5, 1.5f)
-///     .sobel()
-///     .execute();
-/// @endcode
-///
-/// Note: If start() was not called before execute(), returns invalid GpuImage.
-/// 注意：如果在 execute() 前未调用 start()，将返回无效的 GpuImage。
-class PipelineBuilder {
-public:
-  explicit PipelineBuilder(ImageProcessor& processor);
-
-  /// Start pipeline with input image
-  /// 开始管道，指定输入图像
-  PipelineBuilder& start(const GpuImage& input);
-
-  /// Add grayscale conversion
-  /// 添加灰度转换
-  PipelineBuilder& grayscale();
-
-  /// Add Gaussian blur
-  /// 添加高斯模糊
-  PipelineBuilder& blur(int kernelSize = 5, float sigma = 1.0f);
-
-  /// Add Sobel edge detection
-  /// 添加 Sobel 边缘检测
-  PipelineBuilder& sobel();
-
-  /// Add invert operation
-  /// 添加反转操作
-  PipelineBuilder& invert();
-
-  /// Add brightness adjustment
-  /// 添加亮度调整
-  PipelineBuilder& brightness(int offset);
-
-  /// Add resize operation
-  /// 添加调整大小操作
-  PipelineBuilder& resize(int width, int height);
-
-  /// Add histogram equalization
-  /// 添加直方图均衡化
-  PipelineBuilder& equalize();
-
-  /// Execute pipeline and return result
-  /// 执行管道并返回结果
-  /// @return Result image (invalid if start() was not called)
-  GpuImage execute();
-
-  /// Execute pipeline and download to host
-  /// 执行管道并下载到主机
-  /// @return Result as HostImage (empty if start() was not called)
-  HostImage executeAndDownload();
-
-  /// Check if pipeline has an input set
-  /// 检查管道是否已设置输入
-  bool hasInput() const { return hasInput_; }
-
-private:
-  ImageProcessor& processor_;
-  GpuImage current_;
-  bool hasInput_ = false;
 };
 
 } // namespace gpu_image

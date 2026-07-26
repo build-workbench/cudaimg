@@ -211,28 +211,6 @@ GpuImage ImageProcessor::resizeByScale(const GpuImage& input, float scaleX,
   return output;
 }
 
-// ===== Pipeline Operations =====
-
-GpuImage ImageProcessor::pipeline(
-    const GpuImage& input,
-    std::vector<std::function<GpuImage(const GpuImage&)>> operations) {
-  GpuImage current = input;
-
-  for (auto& op : operations) {
-    GpuImage next = op(current);
-
-    // Recycle intermediate result to pool
-    if (current.isValid() && &current != &input) {
-      context_.recycleToPool(std::move(current));
-    }
-
-    current = std::move(next);
-  }
-
-  autoSync();
-  return current;
-}
-
 // ===== Synchronization =====
 
 void ImageProcessor::synchronize() { context_.synchronize(); }
@@ -257,87 +235,6 @@ void ImageProcessor::autoSync() {
   if (mode_ == Mode::Sync) {
     context_.synchronize();
   }
-}
-
-// ===== PipelineBuilder Implementation =====
-
-PipelineBuilder::PipelineBuilder(ImageProcessor& processor)
-    : processor_(processor) {}
-
-PipelineBuilder& PipelineBuilder::start(const GpuImage& input) {
-  current_ = input; // Shallow copy (shared buffer reference)
-  hasInput_ = true;
-  return *this;
-}
-
-PipelineBuilder& PipelineBuilder::grayscale() {
-  if (!hasInput_) {
-    return *this;  // No-op if no input
-  }
-  current_ = processor_.toGrayscale(current_);
-  return *this;
-}
-
-PipelineBuilder& PipelineBuilder::blur(int kernelSize, float sigma) {
-  if (!hasInput_) {
-    return *this;  // No-op if no input
-  }
-  current_ = processor_.gaussianBlur(current_, kernelSize, sigma);
-  return *this;
-}
-
-PipelineBuilder& PipelineBuilder::sobel() {
-  if (!hasInput_) {
-    return *this;  // No-op if no input
-  }
-  current_ = processor_.sobelEdgeDetection(current_);
-  return *this;
-}
-
-PipelineBuilder& PipelineBuilder::invert() {
-  if (!hasInput_) {
-    return *this;  // No-op if no input
-  }
-  current_ = processor_.invert(current_);
-  return *this;
-}
-
-PipelineBuilder& PipelineBuilder::brightness(int offset) {
-  if (!hasInput_) {
-    return *this;  // No-op if no input
-  }
-  current_ = processor_.adjustBrightness(current_, offset);
-  return *this;
-}
-
-PipelineBuilder& PipelineBuilder::resize(int width, int height) {
-  if (!hasInput_) {
-    return *this;  // No-op if no input
-  }
-  current_ = processor_.resize(current_, width, height);
-  return *this;
-}
-
-PipelineBuilder& PipelineBuilder::equalize() {
-  if (!hasInput_) {
-    return *this;  // No-op if no input
-  }
-  current_ = processor_.histogramEqualize(current_);
-  return *this;
-}
-
-GpuImage PipelineBuilder::execute() {
-  hasInput_ = false;
-  return std::move(current_);
-  // Note: If start() was never called, returns invalid GpuImage
-}
-
-HostImage PipelineBuilder::executeAndDownload() {
-  GpuImage result = execute();
-  if (!result.isValid()) {
-    return HostImage{};  // Return empty HostImage
-  }
-  return processor_.download(result);
 }
 
 } // namespace gpu_image

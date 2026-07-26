@@ -277,135 +277,100 @@ TEST_F(OperatorPipelineTest, PipelineClone) {
   EXPECT_EQ(cloned->traits().name, original.traits().name);
 }
 
-// Test OperatorRegistry
-TEST_F(OperatorPipelineTest, OperatorRegistry) {
-  auto& registry = OperatorRegistry::instance();
-
-  // List all registered operators
-  auto names = registry.listNames();
-  EXPECT_FALSE(names.empty());
-
-  // Create by name
-  auto invertOp = registry.create("invert");
-  EXPECT_NE(invertOp, nullptr);
-  EXPECT_EQ(invertOp->traits().name, "invert");
-
-  auto grayscaleOp = registry.create("grayscale");
-  EXPECT_NE(grayscaleOp, nullptr);
-  EXPECT_EQ(grayscaleOp->traits().name, "grayscale");
-
-  // Unknown operator
-  auto unknown = registry.create("unknown_operator");
-  EXPECT_EQ(unknown, nullptr);
-}
-
-// Test factory functions
-TEST_F(OperatorPipelineTest, FactoryFunctions) {
-  auto invert = makeInvert();
-  EXPECT_EQ(invert->traits().name, "invert");
-
-  auto blur = makeGaussianBlur(7, 2.0f);
-  EXPECT_EQ(blur->traits().name, "gaussian_blur");
-
-  auto resize = makeResize(100, 100);
-  EXPECT_EQ(resize->traits().name, "resize");
-}
-
-// Test PipelineBuilder
-TEST_F(OperatorPipelineTest, PipelineBuilder) {
-  ImageProcessor processor;
+// Test OperatorPipeline as edge detection chain (replaces PipelineBuilder test)
+TEST_F(OperatorPipelineTest, PipelineEdgeDetection) {
   HostImage input = createTestImage(64, 64, 3);
   GpuImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage result = PipelineBuilder(processor)
-      .start(gpuInput)
-      .grayscale()
-      .blur(5, 1.0f)
-      .sobel()
-      .execute();
+  OperatorPipeline pipeline;
+  pipeline.then<GrayscaleOperator>()
+          .then<GaussianBlurOperator>(5, 1.0f)
+          .then<SobelOperator>();
+
+  ExecutionContext ctx(ExecutionPolicy::sync());
+  GpuImage result = pipeline.apply(gpuInput, ctx);
 
   EXPECT_TRUE(result.isValid());
-  EXPECT_EQ(result.channels, 1); // Sobel output
+  EXPECT_EQ(result.channels, 1);
 }
 
-// Test PipelineBuilder with download
-TEST_F(OperatorPipelineTest, PipelineBuilderWithDownload) {
-  ImageProcessor processor;
+// Test OperatorPipeline invert with download (replaces PipelineBuilderWithDownload)
+TEST_F(OperatorPipelineTest, PipelineInvertWithDownload) {
   HostImage input = createTestImage(32, 32, 3);
+  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  HostImage result = PipelineBuilder(processor)
-      .start(processor.loadFromHost(input))
-      .invert()
-      .executeAndDownload();
+  OperatorPipeline pipeline;
+  pipeline.then<InvertOperator>();
 
-  EXPECT_TRUE(result.isValid());
+  ExecutionContext ctx(ExecutionPolicy::sync());
+  GpuImage result = pipeline.apply(gpuInput, ctx);
+  HostImage downloaded = ImageUtils::downloadFromGpu(result);
+
+  EXPECT_TRUE(downloaded.isValid());
   for (size_t i = 0; i < input.data.size(); ++i) {
-    EXPECT_EQ(result.data[i], static_cast<unsigned char>(255 - input.data[i]));
+    EXPECT_EQ(downloaded.data[i], static_cast<unsigned char>(255 - input.data[i]));
   }
 }
 
-// Test Operator traits
+// Test Operator traits via constructors
 TEST_F(OperatorPipelineTest, OperatorTraits) {
-  auto invert = makeInvert();
-  auto invertTraits = invert->traits();
+  InvertOperator invert;
+  auto invertTraits = invert.traits();
   EXPECT_TRUE(invertTraits.inPlaceCapable);
   EXPECT_FALSE(invertTraits.changesDimensions);
   EXPECT_FALSE(invertTraits.changesChannels);
 
-  auto grayscale = makeGrayscale();
-  auto grayscaleTraits = grayscale->traits();
+  GrayscaleOperator grayscale;
+  auto grayscaleTraits = grayscale.traits();
   EXPECT_FALSE(grayscaleTraits.inPlaceCapable);
   EXPECT_TRUE(grayscaleTraits.changesChannels);
 
-  auto resize = makeResize(100, 100);
-  auto resizeTraits = resize->traits();
+  ResizeOperator resize(100, 100);
+  auto resizeTraits = resize.traits();
   EXPECT_TRUE(resizeTraits.changesDimensions);
 }
 
 // Test BrightnessOperator with parameters
 TEST_F(OperatorPipelineTest, BrightnessOperatorParams) {
-  auto brightness = makeBrightness(50);
-  EXPECT_EQ(brightness->offset(), 50);
+  BrightnessOperator brightness(50);
+  EXPECT_EQ(brightness.offset(), 50);
 
-  brightness->setOffset(-30);
-  EXPECT_EQ(brightness->offset(), -30);
+  brightness.setOffset(-30);
+  EXPECT_EQ(brightness.offset(), -30);
 }
 
 // Test GaussianBlurOperator parameters
 TEST_F(OperatorPipelineTest, GaussianBlurOperatorParams) {
-  auto blur = makeGaussianBlur(7, 2.5f);
-  EXPECT_EQ(blur->kernelSize(), 7);
-  EXPECT_FLOAT_EQ(blur->sigma(), 2.5f);
+  GaussianBlurOperator blur(7, 2.5f);
+  EXPECT_EQ(blur.kernelSize(), 7);
+  EXPECT_FLOAT_EQ(blur.sigma(), 2.5f);
 
-  blur->setKernelSize(9);
-  blur->setSigma(3.0f);
-  EXPECT_EQ(blur->kernelSize(), 9);
-  EXPECT_FLOAT_EQ(blur->sigma(), 3.0f);
+  blur.setKernelSize(9);
+  blur.setSigma(3.0f);
+  EXPECT_EQ(blur.kernelSize(), 9);
+  EXPECT_FLOAT_EQ(blur.sigma(), 3.0f);
 }
 
 // Test ResizeOperator named constructors
 TEST_F(OperatorPipelineTest, ResizeOperatorNamedConstructors) {
-  // Test byDimensions
-  auto resizeByDim = makeResize(100, 200);
-  EXPECT_FALSE(resizeByDim->isScaleMode());
-  EXPECT_EQ(resizeByDim->width(), 100);
-  EXPECT_EQ(resizeByDim->height(), 200);
+  auto resizeByDim = ResizeOperator::byDimensions(100, 200);
+  EXPECT_FALSE(resizeByDim.isScaleMode());
+  EXPECT_EQ(resizeByDim.width(), 100);
+  EXPECT_EQ(resizeByDim.height(), 200);
 
-  // Test byScale
-  auto resizeByScale = makeResizeByScale(0.5f, 0.5f);
-  EXPECT_TRUE(resizeByScale->isScaleMode());
-  EXPECT_FLOAT_EQ(resizeByScale->scaleX(), 0.5f);
-  EXPECT_FLOAT_EQ(resizeByScale->scaleY(), 0.5f);
+  auto resizeByScale = ResizeOperator::byScale(0.5f, 0.5f);
+  EXPECT_TRUE(resizeByScale.isScaleMode());
+  EXPECT_FLOAT_EQ(resizeByScale.scaleX(), 0.5f);
+  EXPECT_FLOAT_EQ(resizeByScale.scaleY(), 0.5f);
 
-  // Test mode switching
-  resizeByDim->setScale(2.0f, 2.0f);
-  EXPECT_TRUE(resizeByDim->isScaleMode());
-  EXPECT_FLOAT_EQ(resizeByDim->scaleX(), 2.0f);
+  resizeByDim.setScale(2.0f, 2.0f);
+  EXPECT_TRUE(resizeByDim.isScaleMode());
+  EXPECT_FLOAT_EQ(resizeByDim.scaleX(), 2.0f);
 
-  resizeByScale->setDimensions(300, 400);
-  EXPECT_FALSE(resizeByScale->isScaleMode());
-  EXPECT_EQ(resizeByScale->width(), 300);
-  EXPECT_EQ(resizeByScale->height(), 400);
+  resizeByScale.setDimensions(300, 400);
+  EXPECT_FALSE(resizeByScale.isScaleMode());
+  EXPECT_EQ(resizeByScale.width(), 300);
+  EXPECT_EQ(resizeByScale.height(), 400);
 }
 
 // Test OperatorPipeline with invalid input
@@ -415,46 +380,10 @@ TEST_F(OperatorPipelineTest, PipelineWithInvalidInput) {
 
   ExecutionContext ctx(ExecutionPolicy::sync());
 
-  // Pass invalid input
   GpuImage invalidInput;
   GpuImage output = pipeline.apply(invalidInput, ctx);
 
-  // Should return invalid output
   EXPECT_FALSE(output.isValid());
-}
-
-// Test PipelineBuilder without start()
-TEST_F(OperatorPipelineTest, PipelineBuilderWithoutStart) {
-  ImageProcessor processor;
-
-  // Execute without calling start()
-  GpuImage result = PipelineBuilder(processor)
-      .grayscale()
-      .blur()
-      .execute();
-
-  // Should return invalid image
-  EXPECT_FALSE(result.isValid());
-
-  // hasInput() should return false
-  PipelineBuilder builder(processor);
-  EXPECT_FALSE(builder.hasInput());
-}
-
-// Test PipelineBuilder hasInput()
-TEST_F(OperatorPipelineTest, PipelineBuilderHasInput) {
-  ImageProcessor processor;
-  HostImage input = createTestImage(32, 32, 3);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-
-  PipelineBuilder builder(processor);
-  EXPECT_FALSE(builder.hasInput());
-
-  builder.start(gpuInput);
-  EXPECT_TRUE(builder.hasInput());
-
-  builder.execute();
-  EXPECT_FALSE(builder.hasInput());  // Reset after execute
 }
 
 // Test recycleToPool method
@@ -464,20 +393,6 @@ TEST_F(ExecutionContextTest, RecycleToPoolMethod) {
   GpuImage image = ctx.allocateOutput(64, 64, 3);
   EXPECT_TRUE(image.isValid());
 
-  // Recycle to pool (no-op if pooling disabled)
   ctx.recycleToPool(std::move(image));
-
-  // Image should be moved-from
-  EXPECT_FALSE(image.isValid());
-}
-
-// Test release() backward compatibility
-TEST_F(ExecutionContextTest, ReleaseBackwardCompatibility) {
-  ExecutionContext ctx(ExecutionPolicy::sync());
-
-  GpuImage image = ctx.allocateOutput(64, 64, 3);
-
-  // Old method name should still work
-  ctx.release(std::move(image));
   EXPECT_FALSE(image.isValid());
 }
