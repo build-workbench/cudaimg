@@ -17,15 +17,15 @@
 
 // Operators
 #include "gpu_image/operators/color_space.hpp"
+#include "gpu_image/operators/concrete_operators.hpp"
 #include "gpu_image/operators/convolution_engine.hpp"
 #include "gpu_image/operators/filters.hpp"
 #include "gpu_image/operators/geometric.hpp"
 #include "gpu_image/operators/histogram_calculator.hpp"
-#include "gpu_image/operators/concrete_operators.hpp"
 #include "gpu_image/operators/image_operator.hpp"
 #include "gpu_image/operators/image_resizer.hpp"
-#include "gpu_image/operators/operator_pipeline.hpp"
 #include "gpu_image/operators/morphology.hpp"
+#include "gpu_image/operators/operator_pipeline.hpp"
 #include "gpu_image/operators/pixel_operator.hpp"
 #include "gpu_image/operators/threshold.hpp"
 

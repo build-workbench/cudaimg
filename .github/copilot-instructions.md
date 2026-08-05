@@ -39,7 +39,7 @@ Three-layer architecture:
 ├─────────────────────────────────────────────────────────────┤
 │                  Infrastructure Layer                        │
 │  DeviceBuffer  ·  GpuImage/HostImage  ·  CudaError          │
-│  ImageIO       ·  StreamManager                              │
+│  ImageIO       ·  MemoryManager  ·  ExecutionContext        │
 └─────────────────────────────────────────────────────────────┘
 ```
 

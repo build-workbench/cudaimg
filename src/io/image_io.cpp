@@ -35,6 +35,9 @@ struct StbiDeleter {
 using StbiPtr = std::unique_ptr<unsigned char, StbiDeleter>;
 
 // 将 stbi 解码结果组装为 HostImage。
+// stbi_load/stbi_load_from_memory 是 stb 的 8-bit 接口：16-bit PNG/PSD/PNM
+// 会被内部降级为 8-bit（stbi__convert_16_to_8），HDR 会转为 LDR
+// （stbi__hdr_to_ldr），因此返回值始终是每通道 1 字节的 unsigned char。
 // stbi 以 desired_channels=0 加载时会返回文件原始通道数（1/2/3/4），
 // 而 HostImage 仅支持 1/3/4 通道。这里把 2 通道（灰度+Alpha）归一化为 RGBA，
 // 其余合法通道数原样保留，非法通道数抛异常——避免返回一个 isValid()==false
@@ -45,9 +48,8 @@ HostImage buildHostImage(StbiPtr pixels, int width, int height, int channels) {
     image.width = width;
     image.height = height;
     image.channels = channels;
-    image.data.assign(pixels.get(),
-                      pixels.get() +
-                          static_cast<size_t>(width) * height * channels);
+    image.data.assign(pixels.get(), pixels.get() + static_cast<size_t>(width) *
+                                                       height * channels);
     return image;
   }
 
@@ -82,10 +84,9 @@ std::string extractExtension(const std::string& filepath) {
     return {};
   }
   std::string ext = filepath.substr(dotPos + 1);
-  std::transform(ext.begin(), ext.end(), ext.begin(),
-                 [](unsigned char c) {
-                   return static_cast<char>(std::tolower(c));
-                 });
+  std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
+    return static_cast<char>(std::tolower(c));
+  });
   return ext;
 }
 
@@ -136,9 +137,9 @@ bool ImageIO::saveToFile(const HostImage& image, const std::string& filepath) {
     result = stbi_write_png(filepath.c_str(), image.width, image.height,
                             image.channels, image.data.data(), stride);
   } else if (ext == "jpg" || ext == "jpeg") {
-    result = stbi_write_jpg(filepath.c_str(), image.width, image.height,
-                            image.channels, image.data.data(),
-                            kDefaultJpegQuality);
+    result =
+        stbi_write_jpg(filepath.c_str(), image.width, image.height,
+                       image.channels, image.data.data(), kDefaultJpegQuality);
   } else if (ext == "bmp") {
     result = stbi_write_bmp(filepath.c_str(), image.width, image.height,
                             image.channels, image.data.data());
@@ -156,8 +157,8 @@ HostImage ImageIO::loadFromMemory(const unsigned char* data, size_t size) {
   if (data == nullptr || size == 0) {
     throw std::invalid_argument("Invalid memory buffer");
   }
-  // stbi_load_from_memory 的长度参数是 int；超过 INT_MAX 会截断为负值/实现定义值，
-  // 导致按错误长度解码。提前拒绝。
+  // stbi_load_from_memory 的长度参数是 int；超过 INT_MAX
+  // 会截断为负值/实现定义值， 导致按错误长度解码。提前拒绝。
   if (size > static_cast<size_t>(INT_MAX)) {
     throw std::invalid_argument("Image buffer exceeds maximum supported size");
   }
@@ -182,10 +183,9 @@ std::vector<unsigned char> ImageIO::encodeToMemory(const HostImage& image,
   }
 
   std::string fmt = format;
-  std::transform(fmt.begin(), fmt.end(), fmt.begin(),
-                 [](unsigned char c) {
-                   return static_cast<char>(std::tolower(c));
-                 });
+  std::transform(fmt.begin(), fmt.end(), fmt.begin(), [](unsigned char c) {
+    return static_cast<char>(std::tolower(c));
+  });
 
   std::vector<unsigned char> result;
   // 预分配以降低回调中重分配/抛异常的概率（未压缩格式输出约等于原始大小）。
@@ -204,11 +204,13 @@ std::vector<unsigned char> ImageIO::encodeToMemory(const HostImage& image,
                                 image.height, image.channels, image.data.data(),
                                 kDefaultJpegQuality);
   } else if (fmt == "bmp") {
-    ok = stbi_write_bmp_to_func(stbiWriteCallback, &ctx, image.width,
-                                image.height, image.channels, image.data.data());
+    ok =
+        stbi_write_bmp_to_func(stbiWriteCallback, &ctx, image.width,
+                               image.height, image.channels, image.data.data());
   } else if (fmt == "tga") {
-    ok = stbi_write_tga_to_func(stbiWriteCallback, &ctx, image.width,
-                                image.height, image.channels, image.data.data());
+    ok =
+        stbi_write_tga_to_func(stbiWriteCallback, &ctx, image.width,
+                               image.height, image.channels, image.data.data());
   } else {
     throw std::invalid_argument("Unsupported format: " + format);
   }

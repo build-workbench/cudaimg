@@ -16,24 +16,24 @@ __global__ void invertKernelVec4(const uchar4* input, uchar4* output, int n) {
   }
 }
 
-__global__ void brightnessKernelVec4(const uchar4* input, uchar4* output,
-                                     int n, int offset) {
+__global__ void brightnessKernelVec4(const uchar4* input, uchar4* output, int n,
+                                     int offset) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < n) {
     uchar4 v = input[i];
-    output[i] = make_uchar4(
-        static_cast<unsigned char>(min(max(v.x + offset, 0), 255)),
-        static_cast<unsigned char>(min(max(v.y + offset, 0), 255)),
-        static_cast<unsigned char>(min(max(v.z + offset, 0), 255)),
-        static_cast<unsigned char>(min(max(v.w + offset, 0), 255)));
+    output[i] =
+        make_uchar4(static_cast<unsigned char>(min(max(v.x + offset, 0), 255)),
+                    static_cast<unsigned char>(min(max(v.y + offset, 0), 255)),
+                    static_cast<unsigned char>(min(max(v.z + offset, 0), 255)),
+                    static_cast<unsigned char>(min(max(v.w + offset, 0), 255)));
   }
 }
 
 // Scalar fallback kernels: per-pixel, handles any channel count
 
 __global__ void invertKernelScalar(const unsigned char* input,
-                                   unsigned char* output, int width,
-                                   int height, int channels) {
+                                   unsigned char* output, int width, int height,
+                                   int channels) {
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
 

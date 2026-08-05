@@ -152,7 +152,8 @@ public:
   bool isComplete() const;
 
 private:
-  /// Verify at least one CUDA device exists; throws std::runtime_error otherwise
+  /// Verify at least one CUDA device exists; throws std::runtime_error
+  /// otherwise
   static void ensureCudaAvailable();
 
   /// Build a context for a mode, verifying CUDA availability first

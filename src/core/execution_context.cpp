@@ -132,9 +132,9 @@ ExecutionContext::ExecutionContext(ExecutionPolicy policy)
 
 ExecutionContext::ExecutionContext(ExecutionPolicy::Mode mode)
     : policy_(mode == ExecutionPolicy::Mode::Sync ? ExecutionPolicy::sync()
-               : mode == ExecutionPolicy::Mode::Async
-                   ? ExecutionPolicy::async()
-                   : ExecutionPolicy::batch()) {}
+              : mode == ExecutionPolicy::Mode::Async
+                  ? ExecutionPolicy::async()
+                  : ExecutionPolicy::batch()) {}
 
 GpuImage ExecutionContext::allocateOutput(const GpuImage& input) {
   return ImageAllocator::instance().allocate(input.width, input.height,

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "gpu_image/core/device_buffer.hpp"
-#include <cuda_runtime.h>
 #include <cstddef>
+#include <cuda_runtime.h>
 #include <vector>
 
 namespace gpu_image {

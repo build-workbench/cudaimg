@@ -1,7 +1,7 @@
 #include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/core/gpu_image.hpp"
-#include "gpu_image/core/execution_context.hpp"
 #include "gpu_image/core/cuda_error.hpp"
+#include "gpu_image/core/execution_context.hpp"
+#include "gpu_image/core/gpu_image.hpp"
 #include <stdexcept>
 
 namespace gpu_image {
@@ -74,8 +74,8 @@ GpuImage ImageUtils::clone(const GpuImage& gpuImage) {
   return copy;
 }
 
-void ImageUtils::uploadToGpuAsync(const HostImage& hostImage, GpuImage& gpuImage,
-                                  cudaStream_t stream) {
+void ImageUtils::uploadToGpuAsync(const HostImage& hostImage,
+                                  GpuImage& gpuImage, cudaStream_t stream) {
   if (!hostImage.isValid()) {
     throw std::invalid_argument("Invalid host image");
   }

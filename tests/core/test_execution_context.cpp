@@ -199,8 +199,7 @@ TEST_F(OperatorPipelineTest, PipelineConstruction) {
 TEST_F(OperatorPipelineTest, PipelineWithOperators) {
   OperatorPipeline pipeline;
 
-  pipeline.then<InvertOperator>()
-          .then<GrayscaleOperator>();
+  pipeline.then<InvertOperator>().then<GrayscaleOperator>();
 
   EXPECT_FALSE(pipeline.empty());
   EXPECT_EQ(pipeline.size(), 2u);
@@ -251,8 +250,8 @@ TEST_F(OperatorPipelineTest, PipelineChaining) {
   // Grayscale -> Blur -> Sobel (edge detection pipeline)
   OperatorPipeline pipeline;
   pipeline.then<GrayscaleOperator>()
-          .then<GaussianBlurOperator>(5, 1.0f)
-          .then<SobelOperator>();
+      .then<GaussianBlurOperator>(5, 1.0f)
+      .then<SobelOperator>();
 
   ExecutionContext ctx(ExecutionPolicy::sync());
   GpuImage output = pipeline.apply(gpuInput, ctx);
@@ -269,8 +268,7 @@ TEST_F(OperatorPipelineTest, PipelineChaining) {
 // Test OperatorPipeline clone
 TEST_F(OperatorPipelineTest, PipelineClone) {
   OperatorPipeline original;
-  original.then<InvertOperator>()
-          .then<GrayscaleOperator>();
+  original.then<InvertOperator>().then<GrayscaleOperator>();
 
   auto cloned = original.clone();
 
@@ -284,8 +282,8 @@ TEST_F(OperatorPipelineTest, PipelineEdgeDetection) {
 
   OperatorPipeline pipeline;
   pipeline.then<GrayscaleOperator>()
-          .then<GaussianBlurOperator>(5, 1.0f)
-          .then<SobelOperator>();
+      .then<GaussianBlurOperator>(5, 1.0f)
+      .then<SobelOperator>();
 
   ExecutionContext ctx(ExecutionPolicy::sync());
   GpuImage result = pipeline.apply(gpuInput, ctx);
@@ -294,7 +292,8 @@ TEST_F(OperatorPipelineTest, PipelineEdgeDetection) {
   EXPECT_EQ(result.channels, 1);
 }
 
-// Test OperatorPipeline invert with download (replaces PipelineBuilderWithDownload)
+// Test OperatorPipeline invert with download (replaces
+// PipelineBuilderWithDownload)
 TEST_F(OperatorPipelineTest, PipelineInvertWithDownload) {
   HostImage input = createTestImage(32, 32, 3);
   GpuImage gpuInput = ImageUtils::uploadToGpu(input);
@@ -308,7 +307,8 @@ TEST_F(OperatorPipelineTest, PipelineInvertWithDownload) {
 
   EXPECT_TRUE(downloaded.isValid());
   for (size_t i = 0; i < input.data.size(); ++i) {
-    EXPECT_EQ(downloaded.data[i], static_cast<unsigned char>(255 - input.data[i]));
+    EXPECT_EQ(downloaded.data[i],
+              static_cast<unsigned char>(255 - input.data[i]));
   }
 }
 

@@ -20,7 +20,7 @@ public:
   virtual ~ImageOperator() = default;
 
   [[nodiscard]] virtual GpuImage apply(const GpuImage& input,
-                                        ExecutionContext& ctx) = 0;
+                                       ExecutionContext& ctx) = 0;
 
   virtual void applyInPlace(GpuImage& image, ExecutionContext& ctx) {
     (void)image;
@@ -33,8 +33,7 @@ public:
   [[nodiscard]] bool canApplyInPlace() const { return traits().inPlaceCapable; }
 };
 
-template <typename Derived>
-class UnaryOperator : public ImageOperator {
+template <typename Derived> class UnaryOperator : public ImageOperator {
 public:
   GpuImage apply(const GpuImage& input, ExecutionContext& ctx) override {
     GpuImage output;

@@ -23,14 +23,16 @@ public:
   /// Predefined execution strategies
   /// 预定义的执行策略
   enum class Mode {
-    Sync,    ///< Synchronous execution (cudaDeviceSynchronize)
-    Async,   ///< Asynchronous execution (caller manages stream)
-    Batch    ///< Batch execution (internal stream pool)
+    Sync,  ///< Synchronous execution (cudaDeviceSynchronize)
+    Async, ///< Asynchronous execution (caller manages stream)
+    Batch  ///< Batch execution (internal stream pool)
   };
 
   /// Create a synchronous policy (default)
   /// 创建同步策略（默认）
-  [[nodiscard]] static ExecutionPolicy sync() { return ExecutionPolicy(Mode::Sync); }
+  [[nodiscard]] static ExecutionPolicy sync() {
+    return ExecutionPolicy(Mode::Sync);
+  }
 
   /// Create an asynchronous policy with optional stream
   /// 创建异步策略（可选 stream）
@@ -93,18 +95,19 @@ public:
   /// 分配指定尺寸的 GpuImage
   /// @param usePool If true, use memory pool when available
   [[nodiscard]] GpuImage allocate(int width, int height, int channels,
-                                   bool usePool = true);
+                                  bool usePool = true);
 
   /// Ensure output image matches input dimensions
   /// 确保输出图像与输入尺寸匹配
   /// @return true if reallocation occurred
-  [[nodiscard]] bool ensureSize(const GpuImage& input, GpuImage& output, bool usePool = true);
+  [[nodiscard]] bool ensureSize(const GpuImage& input, GpuImage& output,
+                                bool usePool = true);
 
   /// Ensure output image has specified dimensions
   /// 确保输出图像具有指定尺寸
   /// @return true if reallocation occurred
-  [[nodiscard]] bool ensureSize(GpuImage& output, int width, int height, int channels,
-                                bool usePool = true);
+  [[nodiscard]] bool ensureSize(GpuImage& output, int width, int height,
+                                int channels, bool usePool = true);
 
   /// Recycle a buffer back to the memory pool for reuse
   /// 将缓冲区回收至内存池以便复用
@@ -118,12 +121,16 @@ public:
   /// Enable or disable memory pooling globally
   /// 全局启用或禁用内存池
   /// @note Thread-safe: uses atomic operations
-  void setPoolingEnabled(bool enabled) { poolingEnabled_.store(enabled, std::memory_order_relaxed); }
+  void setPoolingEnabled(bool enabled) {
+    poolingEnabled_.store(enabled, std::memory_order_relaxed);
+  }
 
   /// Check if pooling is enabled
   /// 检查内存池是否启用
   /// @note Thread-safe: uses atomic operations
-  [[nodiscard]] bool isPoolingEnabled() const { return poolingEnabled_.load(std::memory_order_relaxed); }
+  [[nodiscard]] bool isPoolingEnabled() const {
+    return poolingEnabled_.load(std::memory_order_relaxed);
+  }
 
 private:
   ImageAllocator() = default;
@@ -176,7 +183,8 @@ public:
 
   /// Ensure output has specified dimensions
   /// 确保输出具有指定尺寸
-  [[nodiscard]] bool ensureOutputSize(GpuImage& output, int width, int height, int channels);
+  [[nodiscard]] bool ensureOutputSize(GpuImage& output, int width, int height,
+                                      int channels);
 
   /// Synchronize (for async/batch modes)
   /// 同步（用于异步/批处理模式）
@@ -203,7 +211,8 @@ private:
 
 /// Create an async execution context
 /// 创建异步执行上下文
-[[nodiscard]] inline ExecutionContext asyncContext(cudaStream_t stream = nullptr) {
+[[nodiscard]] inline ExecutionContext
+asyncContext(cudaStream_t stream = nullptr) {
   return ExecutionContext(ExecutionPolicy::async(stream));
 }
 

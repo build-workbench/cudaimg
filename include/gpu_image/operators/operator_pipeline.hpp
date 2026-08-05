@@ -48,7 +48,8 @@ public:
     for (const auto& op : operators_) {
       auto t = op->traits();
       result.name += (result.name == "pipeline" ? ": " : " -> ") + t.name;
-      result.changesDimensions = result.changesDimensions || t.changesDimensions;
+      result.changesDimensions =
+          result.changesDimensions || t.changesDimensions;
       result.changesChannels = result.changesChannels || t.changesChannels;
     }
     return result;
