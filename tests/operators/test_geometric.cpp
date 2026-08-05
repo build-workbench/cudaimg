@@ -1,4 +1,5 @@
 #include "gpu_image/core/gpu_image.hpp"
+#include "gpu_image/core/image_utils.hpp"
 #include "gpu_image/operators/geometric.hpp"
 #include <gtest/gtest.h>
 #include <vector>
@@ -41,9 +42,16 @@ TEST_F(GeometricTest, Rotate90_Once) {
   Geometric::rotate90(testImage, output, 1);
   cudaDeviceSynchronize();
 
-  EXPECT_EQ(output.width, 8);
-  EXPECT_EQ(output.height, 8);
-  EXPECT_TRUE(output.isValid());
+  ASSERT_EQ(output.width, 8);
+  ASSERT_EQ(output.height, 8);
+  ASSERT_TRUE(output.isValid());
+
+  // 顺时针 90°：dst(x, y) = src(7 - x, y) 的转置映射
+  auto result = downloadPixels(output);
+  EXPECT_EQ(result[0 * 8 + 0], 224); // src(0, 7) = 56 * 4
+  EXPECT_EQ(result[0 * 8 + 7], 0);   // src(0, 0)
+  EXPECT_EQ(result[7 * 8 + 0], 252); // src(7, 7) = 63 * 4
+  EXPECT_EQ(result[7 * 8 + 7], 28);  // src(7, 0) = 7 * 4
 }
 
 TEST_F(GeometricTest, Rotate90_Twice) {
@@ -51,8 +59,58 @@ TEST_F(GeometricTest, Rotate90_Twice) {
   Geometric::rotate90(testImage, output, 2);
   cudaDeviceSynchronize();
 
-  EXPECT_EQ(output.width, 8);
-  EXPECT_EQ(output.height, 8);
+  ASSERT_EQ(output.width, 8);
+  ASSERT_EQ(output.height, 8);
+
+  // 180°：dst(x, y) = src(7 - x, 7 - y)
+  auto result = downloadPixels(output);
+  EXPECT_EQ(result[0], 252); // src(7, 7)
+  EXPECT_EQ(result[63], 0);  // src(0, 0)
+  EXPECT_EQ(result[7], 224); // src(0, 7)
+  EXPECT_EQ(result[56], 28); // src(7, 0)
+}
+
+TEST_F(GeometricTest, Rotate90_Thrice) {
+  GpuImage output;
+  Geometric::rotate90(testImage, output, 3);
+  cudaDeviceSynchronize();
+
+  ASSERT_EQ(output.width, 8);
+  ASSERT_EQ(output.height, 8);
+
+  // 顺时针 270°：dst(x, y) = src(y, 7 - x) 的逆向映射
+  auto result = downloadPixels(output);
+  EXPECT_EQ(result[0], 28);   // src(7, 0)
+  EXPECT_EQ(result[7], 252);  // src(7, 7)
+  EXPECT_EQ(result[56], 0);   // src(0, 0)
+  EXPECT_EQ(result[63], 224); // src(0, 7)
+}
+
+TEST_F(GeometricTest, Rotate90_FourTimesIsIdentity) {
+  GpuImage output;
+  Geometric::rotate90(testImage, output, 4);
+  cudaDeviceSynchronize();
+
+  auto result = downloadPixels(output);
+  auto original = downloadPixels(testImage);
+  EXPECT_EQ(result, original);
+}
+
+// 通用 rotate(90°) 修复中心偏移后应与 rotate90 在角点/中心一致
+TEST_F(GeometricTest, Rotate90_GenericMatchesRotate90) {
+  GpuImage genericOut;
+  Geometric::rotate(testImage, genericOut, 90.0f);
+  cudaDeviceSynchronize();
+
+  ASSERT_EQ(genericOut.width, 8);
+  ASSERT_EQ(genericOut.height, 8);
+
+  auto result = downloadPixels(genericOut);
+  EXPECT_EQ(result[0 * 8 + 0], 224);
+  EXPECT_EQ(result[0 * 8 + 7], 0);
+  EXPECT_EQ(result[7 * 8 + 0], 252);
+  EXPECT_EQ(result[7 * 8 + 7], 28);
+  EXPECT_EQ(result[4 * 8 + 4], 112); // src(4, 3) = 28 * 4
 }
 
 TEST_F(GeometricTest, FlipHorizontal) {
@@ -71,8 +129,13 @@ TEST_F(GeometricTest, FlipHorizontal) {
   cudaMemcpy(original.data(), testImage.buffer.data(), 64,
              cudaMemcpyDeviceToHost);
 
-  // 第一行第一个像素应该等于原图第一行最后一个像素
-  EXPECT_EQ(result[0], original[7]);
+  // 全像素校验：dst(x, y) = src(7 - x, y)
+  for (int y = 0; y < 8; ++y) {
+    for (int x = 0; x < 8; ++x) {
+      EXPECT_EQ(result[y * 8 + x], original[y * 8 + (7 - x)])
+          << "mismatch at (" << x << ", " << y << ")";
+    }
+  }
 }
 
 TEST_F(GeometricTest, FlipVertical) {
@@ -80,8 +143,31 @@ TEST_F(GeometricTest, FlipVertical) {
   Geometric::flip(testImage, output, FlipDirection::Vertical);
   cudaDeviceSynchronize();
 
-  EXPECT_EQ(output.width, testImage.width);
-  EXPECT_EQ(output.height, testImage.height);
+  ASSERT_EQ(output.width, testImage.width);
+  ASSERT_EQ(output.height, testImage.height);
+
+  auto result = downloadPixels(output);
+  auto original = downloadPixels(testImage);
+  for (int y = 0; y < 8; ++y) {
+    for (int x = 0; x < 8; ++x) {
+      EXPECT_EQ(result[y * 8 + x], original[(7 - y) * 8 + x])
+          << "mismatch at (" << x << ", " << y << ")";
+    }
+  }
+}
+
+TEST_F(GeometricTest, FlipBoth) {
+  GpuImage output;
+  Geometric::flip(testImage, output, FlipDirection::Both);
+  cudaDeviceSynchronize();
+
+  auto result = downloadPixels(output);
+  auto original = downloadPixels(testImage);
+  for (int y = 0; y < 8; ++y) {
+    for (int x = 0; x < 8; ++x) {
+      EXPECT_EQ(result[y * 8 + x], original[(7 - y) * 8 + (7 - x)]);
+    }
+  }
 }
 
 TEST_F(GeometricTest, Crop) {
@@ -89,8 +175,17 @@ TEST_F(GeometricTest, Crop) {
   Geometric::crop(testImage, output, 2, 2, 4, 4);
   cudaDeviceSynchronize();
 
-  EXPECT_EQ(output.width, 4);
-  EXPECT_EQ(output.height, 4);
+  ASSERT_EQ(output.width, 4);
+  ASSERT_EQ(output.height, 4);
+
+  // crop 区域 (2,2)-(5,5)：out(x, y) = in(x + 2, y + 2)
+  auto result = downloadPixels(output);
+  auto original = downloadPixels(testImage);
+  for (int y = 0; y < 4; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      EXPECT_EQ(result[y * 4 + x], original[(y + 2) * 8 + (x + 2)]);
+    }
+  }
 }
 
 TEST_F(GeometricTest, Pad) {
@@ -104,7 +199,18 @@ TEST_F(GeometricTest, Pad) {
   // 验证填充值
   std::vector<unsigned char> result(144);
   cudaMemcpy(result.data(), output.buffer.data(), 144, cudaMemcpyDeviceToHost);
-  EXPECT_EQ(result[0], 128); // 左上角应该是填充值
+  EXPECT_EQ(result[0], 128);            // 左上角应该是填充值
+  EXPECT_EQ(result[11 * 12 + 11], 128); // 右下角应该是填充值
+
+  // 内部 8x8 区域应为原图：out(x + 2, y + 2) = in(x, y)
+  std::vector<unsigned char> original(64);
+  cudaMemcpy(original.data(), testImage.buffer.data(), 64,
+             cudaMemcpyDeviceToHost);
+  for (int y = 0; y < 8; ++y) {
+    for (int x = 0; x < 8; ++x) {
+      EXPECT_EQ(result[(y + 2) * 12 + (x + 2)], original[y * 8 + x]);
+    }
+  }
 }
 
 TEST_F(GeometricTest, Rotate) {
