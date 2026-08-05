@@ -24,8 +24,9 @@ struct MemoryStats {
 // ⚠ 并发流限制：池在回收缓冲时不记录/等待所属 CUDA stream 完成。若多个线程
 // 各自持有不同 stream 并并发 allocate/deallocate，某条 stream 上仍在读的缓冲
 // 可能被另一条 stream 当作输出复用，导致数据竞争。当前的安全用法是：单 stream，
-// 或在回收前由调用方自行同步所属 stream。默认配置下池处于关闭状态（见
-// ImageAllocator::poolingEnabled_），不受此限制影响。
+// 或在回收前由调用方自行同步所属 stream。默认配置下池处于关闭状态
+// （poolEnabled_ 与 ImageAllocator::poolingEnabled_ 均默认 false），
+// 不受此限制影响。
 class MemoryManager {
 public:
   static MemoryManager& instance();
@@ -71,7 +72,7 @@ private:
 
   // 配置项：可被其它线程读写，使用原子变量避免数据竞争
   std::atomic<size_t> maxPoolSize_{512 * 1024 * 1024}; // 512 MB
-  std::atomic<bool> poolEnabled_{true};
+  std::atomic<bool> poolEnabled_{false};
 };
 
 } // namespace gpu_image

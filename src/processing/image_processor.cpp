@@ -13,9 +13,9 @@ namespace {
 
 // 由处理模式构建对应的执行策略
 ExecutionPolicy makePolicy(ExecutionPolicy::Mode mode) {
-  return mode == ExecutionPolicy::Mode::Sync ? ExecutionPolicy::sync()
-       : mode == ExecutionPolicy::Mode::Async ? ExecutionPolicy::async()
-                                              : ExecutionPolicy::batch();
+  return mode == ExecutionPolicy::Mode::Sync    ? ExecutionPolicy::sync()
+         : mode == ExecutionPolicy::Mode::Async ? ExecutionPolicy::async()
+                                                : ExecutionPolicy::batch();
 }
 
 } // namespace
@@ -185,7 +185,8 @@ GpuImage ImageProcessor::histogramEqualize(const GpuImage& input) {
 GpuImage ImageProcessor::resize(const GpuImage& input, int newWidth,
                                 int newHeight) {
   GpuImage output;
-  ImageResizer::resize(input, output, newWidth, newHeight, context_.stream());
+  ImageResizer::resize(input, output, newWidth, newHeight,
+                       InterpolationMode::Bilinear, context_.stream());
   autoSync();
   return output;
 }
@@ -194,7 +195,7 @@ GpuImage ImageProcessor::resizeByScale(const GpuImage& input, float scaleX,
                                        float scaleY) {
   GpuImage output;
   ImageResizer::resizeByScale(input, output, scaleX, scaleY,
-                              context_.stream());
+                              InterpolationMode::Bilinear, context_.stream());
   autoSync();
   return output;
 }

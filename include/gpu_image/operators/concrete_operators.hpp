@@ -94,8 +94,8 @@ public:
 
 class ResizeOperator : public UnaryOperator<ResizeOperator> {
 public:
-  ResizeOperator() : width_(0), height_(0), scaleX_(0), scaleY_(0),
-                     useScale_(false) {}
+  ResizeOperator()
+      : width_(0), height_(0), scaleX_(0), scaleY_(0), useScale_(false) {}
 
   explicit ResizeOperator(int width, int height)
       : width_(width), height_(height), scaleX_(0), scaleY_(0),
@@ -112,9 +112,10 @@ public:
   void execute(const GpuImage& input, GpuImage& output, ExecutionContext& ctx) {
     if (useScale_) {
       ImageResizer::resizeByScale(input, output, scaleX_, scaleY_,
-                                  ctx.stream());
+                                  InterpolationMode::Bilinear, ctx.stream());
     } else {
-      ImageResizer::resize(input, output, width_, height_, ctx.stream());
+      ImageResizer::resize(input, output, width_, height_,
+                           InterpolationMode::Bilinear, ctx.stream());
     }
   }
 
@@ -153,8 +154,7 @@ private:
 class HistogramEqualizeOperator
     : public UnaryOperator<HistogramEqualizeOperator> {
 public:
-  void execute(const GpuImage& input, GpuImage& output,
-               ExecutionContext& ctx) {
+  void execute(const GpuImage& input, GpuImage& output, ExecutionContext& ctx) {
     HistogramCalculator::equalize(input, output, ctx.stream());
   }
 

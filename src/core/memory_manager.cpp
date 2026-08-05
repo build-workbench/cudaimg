@@ -61,7 +61,8 @@ void MemoryManager::deallocate(DeviceBuffer&& buffer) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     // 池未满时回收，否则直接释放
-    if (poolSize_ + alignedSize <= maxPoolSize_.load(std::memory_order_relaxed)) {
+    if (poolSize_ + alignedSize <=
+        maxPoolSize_.load(std::memory_order_relaxed)) {
       auto detached = buffer.detach();
       void* ptr = detached.first;
       memoryPool_[alignedSize].push_back(ptr);
@@ -84,7 +85,7 @@ void MemoryManager::clearPool() {
       cudaError_t err = cudaFree(ptr);
       // 清理时忽略错误但继续执行，避免内存泄漏
       // 错误可能发生在 CUDA 上下文已销毁的情况
-      (void)err;  // 显式忽略返回值
+      (void)err; // 显式忽略返回值
     }
   }
   memoryPool_.clear();

@@ -1,4 +1,5 @@
 #include "gpu_image/core/cuda_error.hpp"
+#include "gpu_image/core/image_utils.hpp"
 #include "gpu_image/processing/pipeline_processor.hpp"
 #include <stdexcept>
 
@@ -106,17 +107,21 @@ PipelineProcessor::processBatch(const std::vector<GpuImage>& inputs) {
     return {};
   }
 
+  // 先校验全部输入：一旦入队开始，中途抛异常会让仍在飞的异步工作
+  // 与已分配缓冲的析构产生竞态
+  for (size_t i = 0; i < inputs.size(); ++i) {
+    if (!inputs[i].isValid()) {
+      throw std::invalid_argument("Invalid input image at index " +
+                                  std::to_string(i));
+    }
+  }
+
   std::vector<GpuImage> outputs;
   outputs.reserve(inputs.size());
 
   // 使用多个 stream 并行处理
   for (size_t i = 0; i < inputs.size(); ++i) {
     cudaStream_t stream = streams_[i % numStreams_];
-
-    if (!inputs[i].isValid()) {
-      throw std::invalid_argument("Invalid input image at index " +
-                                  std::to_string(i));
-    }
 
     // 创建输出图像
     GpuImage output = ImageUtils::createGpuImage(
@@ -150,6 +155,14 @@ PipelineProcessor::processBatchHost(const std::vector<HostImage>& inputs) {
   std::vector<HostImage> outputs;
   outputs.reserve(inputs.size());
 
+  // 先校验全部输入（理由同 processBatch）
+  for (size_t i = 0; i < inputs.size(); ++i) {
+    if (!inputs[i].isValid()) {
+      throw std::invalid_argument("Invalid input image at index " +
+                                  std::to_string(i));
+    }
+  }
+
   // 为每个输入创建 GPU 图像
   std::vector<GpuImage> gpuImages;
   gpuImages.reserve(inputs.size());
@@ -157,11 +170,6 @@ PipelineProcessor::processBatchHost(const std::vector<HostImage>& inputs) {
   // 流水线处理：上传 -> 处理 -> 下载
   for (size_t i = 0; i < inputs.size(); ++i) {
     cudaStream_t stream = streams_[i % numStreams_];
-
-    if (!inputs[i].isValid()) {
-      throw std::invalid_argument("Invalid input image at index " +
-                                  std::to_string(i));
-    }
 
     // 创建 GPU 图像并上传
     GpuImage gpuImage = ImageUtils::createGpuImage(

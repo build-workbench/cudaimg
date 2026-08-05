@@ -1,5 +1,9 @@
 #pragma once
 
+// validateInput/validateSameSize 需要完整的 GpuImage 定义（调用其成员
+// 函数），不能只依赖 image_utils.hpp 的前向声明，否则 nvcc/EDG 前端
+// 会报 incomplete type。
+#include "gpu_image/core/gpu_image.hpp"
 #include "gpu_image/core/image_utils.hpp"
 #include <stdexcept>
 
