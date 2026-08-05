@@ -5,7 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+> **Note on version history:** the library originated from a single initial
+> commit on 2025-12-31. The incremental version boundaries and dates below
+> (prior to 3.0.0) are an approximate reconstruction of that early work, not
+> individually tagged releases — only `v2.0.1` and `v2.0.2` exist as git tags.
+> Version headers are therefore plain text rather than links to release tags.
+
+## Unreleased
 
 ### Removed
 
@@ -24,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.0] - 2026-05-26
+## 3.0.0 - 2026-05-26
 
 ### Removed
 
@@ -44,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.1.0] - 2026-04-27
+## 2.1.0 - 2026-04-27
 
 ### Changed
 
@@ -61,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.0.0] - 2026-03-24
+## 2.0.0 - 2026-03-24
 
 ### Fixed
 
@@ -89,7 +95,7 @@ Focused on deterministic correctness with minimal changes. Enhanced reliability 
 
 ---
 
-## [1.3.0] - 2026-03-10
+## 1.3.0 - 2026-03-10
 
 ### Added
 
@@ -111,7 +117,7 @@ Focused on deterministic correctness with minimal changes. Enhanced reliability 
 
 ---
 
-## [1.2.0] - 2026-03-10
+## 1.2.0 - 2026-03-10
 
 ### Changed
 
@@ -122,7 +128,7 @@ Focused on deterministic correctness with minimal changes. Enhanced reliability 
 
 ---
 
-## [1.1.0] - 2026-03-09
+## 1.1.0 - 2026-03-09
 
 ### Added
 
@@ -133,12 +139,12 @@ Focused on deterministic correctness with minimal changes. Enhanced reliability 
 
 ---
 
-## [1.0.0] - 2025-02-13
+## 1.0.0 - 2025-12-31
 
 ### Added
 
 - Core GPU image processing library with CUDA acceleration
-- Memory management: `DeviceBuffer`, `MemoryManager`, `StreamManager`
+- Memory management: `DeviceBuffer`, `MemoryManager`
 - Processing API: `ImageProcessor`, `PipelineProcessor`
 
 ### Operators
@@ -147,10 +153,10 @@ Focused on deterministic correctness with minimal changes. Enhanced reliability 
 - **Convolution**: Gaussian blur, Sobel edge, custom kernels
 - **Histogram**: calculation, equalization
 - **Scaling**: bilinear, nearest-neighbor interpolation
-- **Morphology**: erosion, dilation, open/close/gradient/top-hat/black-hat
+- **Morphology**: erosion, dilation, open/close/gradient
 - **Threshold**: global, adaptive, Otsu auto
 - **Color Space**: RGB/HSV/YUV conversion
-- **Geometric**: rotate, flip, affine, perspective, crop, pad
+- **Geometric**: rotate, flip, affine, perspective
 - **Filters**: median, bilateral, box, sharpen, Laplacian
 - **Arithmetic**: add, subtract, multiply, blend, weighted sum, abs diff
 - **Pipeline**: multi-step chaining, batch async processing
@@ -169,20 +175,11 @@ Focused on deterministic correctness with minimal changes. Enhanced reliability 
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| [Unreleased] | — | — |
-| [3.0.0] | 2026-05-26 | Remove AI frameworks, simplify repo structure |
-| [2.1.0] | 2026-04-27 | Project cleanup, standardization |
-| [2.0.0] | 2026-03-24 | Correctness fixes, CI hardening |
-| [1.3.0] | 2026-03-10 | Pages optimization, professional docs |
-| [1.2.0] | 2026-03-10 | Workflow standardization |
-| [1.1.0] | 2026-03-09 | Initial CI setup |
-| [1.0.0] | 2025-02-13 | Initial release |
-
-[Unreleased]: https://github.com/LessUp/mini-opencv/compare/v3.0.0...HEAD
-[3.0.0]: https://github.com/LessUp/mini-opencv/compare/v2.1.0...v3.0.0
-[2.1.0]: https://github.com/LessUp/mini-opencv/compare/v2.0.0...v2.1.0
-[2.0.0]: https://github.com/LessUp/mini-opencv/compare/v1.3.0...v2.0.0
-[1.3.0]: https://github.com/LessUp/mini-opencv/compare/v1.2.0...v1.3.0
-[1.2.0]: https://github.com/LessUp/mini-opencv/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/LessUp/mini-opencv/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/LessUp/mini-opencv/releases/tag/v1.0.0
+| Unreleased | — | Docs cleanup, remove AI-framework artifacts |
+| 3.0.0 | 2026-05-26 | Remove AI frameworks, simplify repo structure |
+| 2.1.0 | 2026-04-27 | Project cleanup, standardization |
+| 2.0.0 | 2026-03-24 | Correctness fixes, CI hardening |
+| 1.3.0 | 2026-03-10 | Pages optimization, professional docs |
+| 1.2.0 | 2026-03-10 | Workflow standardization |
+| 1.1.0 | 2026-03-09 | Initial CI setup |
+| 1.0.0 | 2025-12-31 | Initial release |

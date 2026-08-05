@@ -22,10 +22,13 @@ public:
   static std::vector<unsigned char> encodeToMemory(const HostImage& image,
                                                    const std::string& format);
 
-  // 获取支持的格式
+  // 获取支持解码（读取）的格式
   static std::vector<std::string> getSupportedFormats();
 
-  // 检查文件格式是否支持
+  // 获取支持编码（写入）的格式
+  static std::vector<std::string> getWritableFormats();
+
+  // 检查文件格式是否支持解码（读取）
   static bool isFormatSupported(const std::string& filepath);
 };
 

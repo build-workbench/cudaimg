@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gpu_image/core/gpu_image.hpp"
-#include "gpu_image/utils/stream_manager.hpp"
 #include <cuda_runtime.h>
 #include <functional>
 #include <vector>

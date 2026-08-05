@@ -10,29 +10,23 @@
 
 namespace gpu_image {
 
-/// ImageProcessor: High-level image processing facade with real depth
-/// 图像处理器：具有真正深度的高级图像处理门面
+/// ImageProcessor: High-level image processing facade
+/// 图像处理器：高级图像处理门面
 ///
 /// This module provides a unified interface for image processing operations,
 /// with integrated memory management and execution policy support.
 ///
 /// Key features:
-/// - Automatic memory pooling (configurable)
-/// - Unified sync/async execution model
-/// - Output buffer reuse for reduced allocation overhead
-/// - Pipeline-style operation chaining
+/// - Automatic memory pooling (configurable, see ImageAllocator)
+/// - Unified sync/async/batch execution model (via ExecutionPolicy)
 ///
 /// Depth: Callers interact with simple method calls; all complexity of
 /// stream management, buffer allocation, and synchronization is hidden.
 class ImageProcessor {
 public:
-  /// Processing mode configuration
-  /// 处理模式配置
-  enum class Mode {
-    Sync,   ///< Synchronous: auto-sync after each operation
-    Async,  ///< Asynchronous: caller controls sync
-    Batch   ///< Batch: queue operations, sync all at once
-  };
+  /// Processing mode: alias of ExecutionPolicy::Mode (single source of truth)
+  /// 处理模式：ExecutionPolicy::Mode 的别名（避免重复枚举与手工映射）
+  using Mode = ExecutionPolicy::Mode;
 
   /// Create a processor with default sync mode
   /// 创建默认同步模式的处理器
@@ -45,8 +39,6 @@ public:
   /// Create a processor with custom execution policy
   /// 创建自定义执行策略的处理器
   explicit ImageProcessor(ExecutionPolicy policy);
-
-  ~ImageProcessor();
 
   // ===== Configuration =====
 
@@ -62,7 +54,7 @@ public:
   void setMode(Mode mode);
 
   /// Get current execution mode
-  Mode mode() const { return mode_; }
+  Mode mode() const { return context_.policy().mode(); }
 
   /// Get the underlying execution context
   ExecutionContext& context() { return context_; }
@@ -160,12 +152,16 @@ public:
   bool isComplete() const;
 
 private:
-  Mode mode_;
-  ExecutionContext context_;
-  GpuImage tempBuffer_;  ///< Reusable buffer for intermediate results
+  /// Verify at least one CUDA device exists; throws std::runtime_error otherwise
+  static void ensureCudaAvailable();
 
-  /// Get or create output buffer matching input
-  GpuImage& prepareOutput(const GpuImage& input, GpuImage& output);
+  /// Build a context for a mode, verifying CUDA availability first
+  static ExecutionContext buildContext(Mode mode);
+
+  /// Build a context from a policy, verifying CUDA availability first
+  static ExecutionContext buildContext(ExecutionPolicy policy);
+
+  ExecutionContext context_;
 
   /// Auto-sync if in sync mode
   void autoSync();

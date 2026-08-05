@@ -13,7 +13,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/LessUp/mini-opencv.git
+git clone https://github.com/AICL-Lab/mini-opencv.git
 cd mini-opencv
 
 # 配置
@@ -36,22 +36,22 @@ int main() {
     // 创建 ImageProcessor
     ImageProcessor processor;
 
-    // 从主机加载图像
-    HostImage hostImage = ImageIO::load("input.jpg");
-    
+    // 从文件加载图像
+    HostImage hostImage = ImageIO::loadFromFile("input.jpg");
+
     // 上传到 GPU
     GpuImage gpu = processor.loadFromHost(hostImage);
 
     // 应用操作（全部 GPU 加速）
     GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
     GpuImage edges = processor.sobelEdgeDetection(gpu);
-    GpuImage gray = processor.grayscale(gpu);
+    GpuImage gray = processor.toGrayscale(gpu);
 
     // 下载结果到主机
-    HostImage result = processor.downloadImage(blurred);
-    
-    // 保存结果
-    ImageIO::save("output.jpg", result);
+    HostImage result = processor.download(blurred);
+
+    // 保存结果（成功返回 true）
+    ImageIO::saveToFile(result, "output.jpg");
 
     return 0;
 }
@@ -63,12 +63,14 @@ int main() {
 |------|------|
 | 高斯模糊 | `gaussianBlur(image, kernelSize, sigma)` |
 | Sobel 边缘检测 | `sobelEdgeDetection(image)` |
-| 灰度转换 | `grayscale(image)` |
+| 自定义卷积 | `convolve(image, kernel, kernelSize)` |
+| 灰度转换 | `toGrayscale(image)` |
 | 反转颜色 | `invert(image)` |
+| 亮度调整 | `adjustBrightness(image, offset)` |
 | 缩放 | `resize(image, width, height)` |
-| 旋转 | `rotate(image, angle)` |
-| 阈值处理 | `threshold(image, value)` |
-| 直方图均衡化 | `histogramEqualization(image)` |
+| 按比例缩放 | `resizeByScale(image, scaleX, scaleY)` |
+| 直方图 | `histogram(image)` / `histogramRGB(image)` |
+| 直方图均衡化 | `histogramEqualize(image)` |
 
 ## 下一步
 

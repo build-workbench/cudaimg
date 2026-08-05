@@ -1,53 +1,28 @@
 # Convolution Performance
 
-Detailed benchmarks for convolution operations.
+What the benchmark measures for convolution operators, and the implementation constraints behind the numbers you will see.
 
-## Gaussian Blur
+## What the Benchmark Covers
 
-### Varying Kernel Size (4K Image)
+`gpu_image_benchmark` times the following convolution-based operations at each image size (256×256 through 4096×4096):
 
-| Kernel | CPU (ms) | GPU (ms) | Speedup |
-|--------|----------|----------|---------|
-| 3×3 | 12.5 | 0.4 | **31.3×** |
-| 5×5 | 45.2 | 1.2 | **37.7×** |
-| 7×7 | 78.4 | 1.8 | **43.6×** |
-| 9×9 | 110.2 | 2.4 | **45.9×** |
-| 15×15 | 120.5 | 3.8 | **31.7×** |
+- Gaussian blur 3×3 (sigma 1.0)
+- Gaussian blur 5×5 (sigma 1.5)
+- Sobel edge detection
 
-### Varying Image Size (5×5 Kernel)
+All reported values are absolute GPU latencies in milliseconds, averaged over 100 iterations after a 10-call warm-up. The benchmark contains no CPU or OpenCV reference implementation, so no speedup ratios are published here — run it on your own hardware to get numbers for your environment.
 
-| Image | CPU (ms) | GPU (ms) | Speedup |
-|-------|----------|----------|---------|
-| HD | 3.2 | 0.2 | **16.0×** |
-| FHD | 10.5 | 0.5 | **21.0×** |
-| 4K | 45.2 | 1.2 | **37.7×** |
-| 8K | 180.4 | 4.5 | **40.1×** |
+## Kernel Size Constraints
 
-## Sobel Edge Detection
+Convolution kernels accept odd kernel sizes **up to 7×7 only**. `ConvolutionEngine::convolve`, `gaussianBlur`, and `separableConvolve` throw `std::invalid_argument` for larger or even sizes (`src/operators/convolution_engine.cu`). Consequently the benchmark tests 3×3 and 5×5 Gaussian kernels; larger sizes are not possible without changing the kernel code.
 
-| Image | CPU (ms) | GPU (ms) | Speedup |
-|-------|----------|----------|---------|
-| HD | 8.1 | 0.3 | **27.0×** |
-| FHD | 18.2 | 0.5 | **36.4×** |
-| 4K | 38.1 | 0.9 | **42.3×** |
-| 8K | 150.2 | 3.2 | **46.9×** |
-
-## Custom Kernels
-
-For 7×7 custom convolution kernel:
-
-| Image | CPU (ms) | GPU (ms) | Speedup |
-|-------|----------|----------|---------|
-| HD | 15.2 | 0.5 | **30.4×** |
-| FHD | 32.4 | 1.0 | **32.4×** |
-| 4K | 65.3 | 2.1 | **31.1×** |
-| 8K | 260.1 | 8.2 | **31.7×** |
+Related filters in `src/operators/filters.cu` have their own limits: median filter up to 7×7, box filter and sharpen up to 31×31.
 
 ## Optimization Notes
 
-- Shared memory tiling used for all kernels
-- Optimal performance with kernel sizes ≤ 15
-- Larger kernels use separable convolution when possible
+- All convolution paths use shared memory tiling with a halo region
+- `separableConvolve` provides a two-pass (row + column) path for separable kernels
+- Kernel sizes are capped at 7×7; larger kernels are not currently supported
 
 ## Back to Benchmarks
 

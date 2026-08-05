@@ -29,15 +29,20 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build -j$(nproc)
-      - name: Test
+      # CPU-only 测试（ImageIO）无需 GPU，必须通过——为 CI 提供真实数值信号，
+      # 打破“GPU 测试全部跳过 ⇒ 永远绿”的假象。
+      - name: Test (CPU-only ImageIO, must pass)
+        run: ctest --test-dir build --output-on-failure -R 'ImageIO'
+      # 完整测试套件：无 GPU 设备上 GPU 测试会跳过，仅作编译与回归门禁。
+      - name: Test (full suite, GPU tests skip without a device)
         run: ctest --test-dir build --output-on-failure
   format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install clang-format
-        run: sudo apt-get update && sudo apt-get install -y clang-format-14
+        run: sudo apt-get update && sudo apt-get install -y clang-format
       - name: Check formatting
         run: |
           find . -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' -o -name '*.cu' -o -name '*.cuh' \) \
-            -not -path './build/*' -not -path './third_party/*' -print0 | xargs -0 -r clang-format-14 --dry-run --Werror
+            -not -path './build/*' -not -path './third_party/*' -print0 | xargs -0 -r clang-format --dry-run --Werror

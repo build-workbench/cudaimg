@@ -222,19 +222,22 @@ unsigned char Threshold::otsuThreshold(const GpuImage& input,
   // 计算直方图
   auto histogram = HistogramCalculator::calculate(input, stream);
 
-  int totalPixels = input.width * input.height;
+  // 使用 double 累加：int 运算会在大图（约 >8MP、直方图偏斜）下溢出，
+  // 导致 Otsu 阈值静默算错（i * histogram[i] 可超过 2^31-1）。
+  const double totalPixels =
+      static_cast<double>(input.width) * static_cast<double>(input.height);
 
   // Otsu 算法
-  float sum = 0;
+  double sum = 0;
   for (int i = 0; i < 256; ++i) {
-    sum += i * histogram[i];
+    sum += static_cast<double>(i) * histogram[i];
   }
 
-  float sumB = 0;
-  int wB = 0;
-  int wF = 0;
+  double sumB = 0;
+  double wB = 0;
+  double wF = 0;
 
-  float maxVariance = 0;
+  double maxVariance = 0;
   unsigned char threshold = 0;
 
   for (int t = 0; t < 256; ++t) {
@@ -246,12 +249,12 @@ unsigned char Threshold::otsuThreshold(const GpuImage& input,
     if (wF == 0)
       break;
 
-    sumB += t * histogram[t];
+    sumB += static_cast<double>(t) * histogram[t];
 
-    float mB = sumB / wB;
-    float mF = (sum - sumB) / wF;
+    double mB = sumB / wB;
+    double mF = (sum - sumB) / wF;
 
-    float variance = static_cast<float>(wB) * wF * (mB - mF) * (mB - mF);
+    double variance = wB * wF * (mB - mF) * (mB - mF);
 
     if (variance > maxVariance) {
       maxVariance = variance;

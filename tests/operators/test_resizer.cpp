@@ -6,6 +6,7 @@
  */
 
 #include "gpu_image/gpu_image_processing.hpp"
+#include <algorithm>
 #include <cmath>
 #include <gtest/gtest.h>
 
@@ -264,11 +265,10 @@ TEST_F(ResizerTest, LargeImageResize) {
   EXPECT_EQ(result.width, 1024);
   EXPECT_EQ(result.height, 1024);
 
-  // 验证所有值在有效范围内
-  for (unsigned char v : result.data) {
-    EXPECT_GE(v, 0);
-    EXPECT_LE(v, 255);
-  }
+  // 验证内核确实产生了内容（输出并非全零）。
+  // 原先对 unsigned char 的 EXPECT_GE(v,0)/EXPECT_LE(v,255) 是恒真空断言。
+  EXPECT_TRUE(std::any_of(result.data.begin(), result.data.end(),
+                          [](unsigned char v) { return v != 0; }));
 }
 
 // 测试非整数缩放比例

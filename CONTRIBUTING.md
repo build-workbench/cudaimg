@@ -36,7 +36,7 @@ git clone https://github.com/YOUR_USERNAME/mini-opencv.git
 cd mini-opencv
 
 # Add upstream remote
-git remote add upstream https://github.com/LessUp/mini-opencv.git
+git remote add upstream https://github.com/AICL-Lab/mini-opencv.git
 
 # Build the project
 mkdir build && cd build
@@ -104,7 +104,7 @@ git commit -m "feat: add new convolution operator"
 git push origin feature/your-feature-name
 ```
 
-Then create a pull request on GitHub using the [PR template](https://github.com/LessUp/mini-opencv/blob/main/.github/PULL_REQUEST_TEMPLATE.md).
+Then create a pull request on GitHub using the [PR template](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/PULL_REQUEST_TEMPLATE.md).
 
 ---
 
@@ -275,7 +275,7 @@ Before submitting a PR, ensure:
 
 ### Bug Reports
 
-Use the [bug report template](https://github.com/LessUp/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/bug_report.md) and include:
+Use the [bug report template](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/bug_report.md) and include:
 
 - Clear description of the bug
 - Steps to reproduce
@@ -285,7 +285,7 @@ Use the [bug report template](https://github.com/LessUp/mini-opencv/blob/main/.g
 
 ### Feature Requests
 
-Use the [feature request template](https://github.com/LessUp/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/feature_request.md) and include:
+Use the [feature request template](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/feature_request.md) and include:
 
 - Description of the feature
 - Use case and why it's needed
@@ -295,7 +295,7 @@ Use the [feature request template](https://github.com/LessUp/mini-opencv/blob/ma
 
 ### Documentation Issues
 
-Use the [documentation template](https://github.com/LessUp/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/documentation.md) and include:
+Use the [documentation template](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/documentation.md) and include:
 
 - Location of the issue
 - Current content (if applicable)
@@ -315,9 +315,9 @@ Use the [documentation template](https://github.com/LessUp/mini-opencv/blob/main
 
 ### Getting Help
 
-- Check the [documentation](https://lessup.github.io/mini-opencv/)
-- Search [existing issues](https://github.com/LessUp/mini-opencv/issues)
-- Join discussions in [GitHub Discussions](https://github.com/LessUp/mini-opencv/discussions)
+- Check the [documentation](https://aicl-lab.github.io/mini-opencv/)
+- Search [existing issues](https://github.com/AICL-Lab/mini-opencv/issues)
+- Join discussions in [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions)
 - Ask a new question or issue
 
 ---
@@ -325,7 +325,7 @@ Use the [documentation template](https://github.com/LessUp/mini-opencv/blob/main
 ## Additional Resources
 
 - [Project README](README.md)
-- [Documentation](https://lessup.github.io/mini-opencv/)
+- [Documentation](https://aicl-lab.github.io/mini-opencv/)
 - [ChangeLog](CHANGELOG.md)
 
 ---

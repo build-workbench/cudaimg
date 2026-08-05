@@ -21,12 +21,22 @@ Complete API documentation for Mini-OpenCV.
 
 ## Image I/O
 
+All `ImageIO` functions are static.
+
 | Function | Description |
 |----------|-------------|
-| `ImageIO::load(path)` | Load image from file |
-| `ImageIO::save(path, image)` | Save image to file |
+| `ImageIO::loadFromFile(filepath)` | Load image from file, returns `HostImage` |
+| `ImageIO::saveToFile(image, filepath)` | Save image to file (image first, path second), returns `bool` |
+| `ImageIO::loadFromMemory(data, size)` | Decode image from memory buffer |
+| `ImageIO::encodeToMemory(image, format)` | Encode image to memory buffer |
+| `ImageIO::getSupportedFormats()` | List readable formats |
+| `ImageIO::getWritableFormats()` | List writable formats |
+| `ImageIO::isFormatSupported(filepath)` | Check if a file format can be read |
 
-Supported formats: JPEG, PNG, BMP, TGA
+Supported formats:
+
+- Read: JPEG, PNG, BMP, TGA, PSD, GIF, HDR, PNM
+- Write: JPEG, PNG, BMP, TGA
 
 ## Quick Reference
 
@@ -38,7 +48,7 @@ using namespace gpu_image;
 ImageProcessor processor;
 
 // Load and upload
-HostImage host = ImageIO::load("image.jpg");
+HostImage host = ImageIO::loadFromFile("image.jpg");
 GpuImage gpu = processor.loadFromHost(host);
 
 // Operations
@@ -47,6 +57,6 @@ GpuImage edges = processor.sobelEdgeDetection(gpu);
 GpuImage resized = processor.resize(gpu, 1920, 1080);
 
 // Download and save
-HostImage result = processor.downloadImage(gpu);
-ImageIO::save("output.jpg", result);
+HostImage result = processor.download(gpu);
+ImageIO::saveToFile(result, "output.jpg");
 ```

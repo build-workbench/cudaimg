@@ -98,40 +98,40 @@ int main() {
     // 1. 反色操作
     std::cout << "\n--- Invert Operation ---" << std::endl;
     GpuImage inverted = processor.invert(gpuImage);
-    HostImage invertedHost = processor.downloadImage(inverted);
+    HostImage invertedHost = processor.download(inverted);
     printImageStats(invertedHost, "Inverted");
 
     // 验证反色：再次反色应该恢复原图
     GpuImage doubleInverted = processor.invert(inverted);
-    HostImage doubleInvertedHost = processor.downloadImage(doubleInverted);
+    HostImage doubleInvertedHost = processor.download(doubleInverted);
     printImageStats(doubleInvertedHost, "Double Inverted");
 
     // 2. 灰度化
     std::cout << "\n--- Grayscale Conversion ---" << std::endl;
     GpuImage grayscale = processor.toGrayscale(gpuImage);
-    HostImage grayscaleHost = processor.downloadImage(grayscale);
+    HostImage grayscaleHost = processor.download(grayscale);
     printImageStats(grayscaleHost, "Grayscale");
 
     // 3. 亮度调整
     std::cout << "\n--- Brightness Adjustment ---" << std::endl;
     GpuImage brighter = processor.adjustBrightness(gpuImage, 50);
-    HostImage brighterHost = processor.downloadImage(brighter);
+    HostImage brighterHost = processor.download(brighter);
     printImageStats(brighterHost, "Brighter (+50)");
 
     GpuImage darker = processor.adjustBrightness(gpuImage, -50);
-    HostImage darkerHost = processor.downloadImage(darker);
+    HostImage darkerHost = processor.download(darker);
     printImageStats(darkerHost, "Darker (-50)");
 
     // 4. 高斯模糊
     std::cout << "\n--- Gaussian Blur ---" << std::endl;
     GpuImage blurred = processor.gaussianBlur(gpuImage, 5, 1.5f);
-    HostImage blurredHost = processor.downloadImage(blurred);
+    HostImage blurredHost = processor.download(blurred);
     printImageStats(blurredHost, "Blurred (5x5, sigma=1.5)");
 
     // 5. Sobel 边缘检测
     std::cout << "\n--- Sobel Edge Detection ---" << std::endl;
     GpuImage edges = processor.sobelEdgeDetection(gpuImage);
-    HostImage edgesHost = processor.downloadImage(edges);
+    HostImage edgesHost = processor.download(edges);
     printImageStats(edgesHost, "Edges");
 
     // 6. 直方图计算
@@ -152,17 +152,17 @@ int main() {
     // 7. 直方图均衡化
     std::cout << "\n--- Histogram Equalization ---" << std::endl;
     GpuImage equalized = processor.histogramEqualize(grayscale);
-    HostImage equalizedHost = processor.downloadImage(equalized);
+    HostImage equalizedHost = processor.download(equalized);
     printImageStats(equalizedHost, "Equalized");
 
     // 8. 图像缩放
     std::cout << "\n--- Image Resize ---" << std::endl;
     GpuImage resizedUp = processor.resize(gpuImage, 512, 512);
-    HostImage resizedUpHost = processor.downloadImage(resizedUp);
+    HostImage resizedUpHost = processor.download(resizedUp);
     printImageStats(resizedUpHost, "Resized (512x512)");
 
     GpuImage resizedDown = processor.resize(gpuImage, 128, 128);
-    HostImage resizedDownHost = processor.downloadImage(resizedDown);
+    HostImage resizedDownHost = processor.download(resizedDown);
     printImageStats(resizedDownHost, "Resized (128x128)");
 
     std::cout << "\n=== Demo Complete ===" << std::endl;

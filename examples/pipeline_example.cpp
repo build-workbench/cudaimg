@@ -101,7 +101,7 @@ int main() {
       GpuImage final_result = processor.invert(blurred);
 
       // 下载
-      sequentialResults.push_back(processor.downloadImage(final_result));
+      sequentialResults.push_back(processor.download(final_result));
     }
 
     double sequentialTime = timer.elapsedMs();

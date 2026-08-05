@@ -9,48 +9,41 @@ namespace gpu_image {
 
 // ===== ImageProcessor Implementation =====
 
-ImageProcessor::ImageProcessor()
-    : mode_(Mode::Sync), context_(ExecutionPolicy::sync()) {
-  // Verify CUDA availability
-  int deviceCount;
+namespace {
+
+// 由处理模式构建对应的执行策略
+ExecutionPolicy makePolicy(ExecutionPolicy::Mode mode) {
+  return mode == ExecutionPolicy::Mode::Sync ? ExecutionPolicy::sync()
+       : mode == ExecutionPolicy::Mode::Async ? ExecutionPolicy::async()
+                                              : ExecutionPolicy::batch();
+}
+
+} // namespace
+
+void ImageProcessor::ensureCudaAvailable() {
+  int deviceCount = 0;
   cudaError_t err = cudaGetDeviceCount(&deviceCount);
   if (err != cudaSuccess || deviceCount == 0) {
     throw std::runtime_error("No CUDA devices available");
   }
 }
 
-ImageProcessor::ImageProcessor(Mode mode)
-    : mode_(mode),
-      context_(mode == Mode::Sync ? ExecutionPolicy::sync()
-               : mode == Mode::Async ? ExecutionPolicy::async()
-                                     : ExecutionPolicy::batch()) {
-  int deviceCount;
-  cudaError_t err = cudaGetDeviceCount(&deviceCount);
-  if (err != cudaSuccess || deviceCount == 0) {
-    throw std::runtime_error("No CUDA devices available");
-  }
+ExecutionContext ImageProcessor::buildContext(Mode mode) {
+  ensureCudaAvailable(); // 先校验设备，保证所有模式抛出一致的异常类型
+  return ExecutionContext(makePolicy(mode));
 }
+
+ExecutionContext ImageProcessor::buildContext(ExecutionPolicy policy) {
+  ensureCudaAvailable();
+  return ExecutionContext(std::move(policy));
+}
+
+ImageProcessor::ImageProcessor() : ImageProcessor(Mode::Sync) {}
+
+ImageProcessor::ImageProcessor(Mode mode) : context_(buildContext(mode)) {}
 
 ImageProcessor::ImageProcessor(ExecutionPolicy policy)
-    : mode_(policy.mode() == ExecutionPolicy::Mode::Sync
-                ? Mode::Sync
-            : policy.mode() == ExecutionPolicy::Mode::Async
-                ? Mode::Async
-                : Mode::Batch),
-      context_(std::move(policy)) {
-  int deviceCount;
-  cudaError_t err = cudaGetDeviceCount(&deviceCount);
-  if (err != cudaSuccess || deviceCount == 0) {
-    throw std::runtime_error("No CUDA devices available");
-  }
-}
-
-ImageProcessor::~ImageProcessor() {
-  // Recycle temp buffer back to pool if pooling enabled
-  if (tempBuffer_.isValid()) {
-    context_.recycleToPool(std::move(tempBuffer_));
-  }
-}
+    : context_(buildContext(std::move(policy))) {}
 
 // ===== Configuration =====
 
@@ -63,12 +56,7 @@ bool ImageProcessor::isMemoryPoolingEnabled() const {
 }
 
 void ImageProcessor::setMode(Mode mode) {
-  mode_ = mode;
-  context_ = ExecutionContext(
-      mode == Mode::Sync ? ExecutionPolicy::sync()
-      : mode == Mode::Async
-          ? ExecutionPolicy::async()
-          : ExecutionPolicy::batch());
+  context_ = ExecutionContext(makePolicy(mode));
 }
 
 // ===== Image Loading/Unloading =====
@@ -216,23 +204,25 @@ GpuImage ImageProcessor::resizeByScale(const GpuImage& input, float scaleX,
 void ImageProcessor::synchronize() { context_.synchronize(); }
 
 bool ImageProcessor::isComplete() const {
-  if (mode_ == Mode::Sync) {
+  if (context_.policy().mode() == ExecutionPolicy::Mode::Sync) {
     return true;
   }
   cudaError_t err = cudaStreamQuery(context_.stream());
-  return err == cudaSuccess;
+  if (err == cudaSuccess) {
+    return true;
+  }
+  if (err == cudaErrorNotReady) {
+    return false; // 操作仍在执行中
+  }
+  // 真实错误（如无效 stream 句柄）：清除粘性错误状态并抛出，避免被静默吞掉
+  cudaGetLastError();
+  throw CudaException(err, __FILE__, __LINE__);
 }
 
 // ===== Private Helpers =====
 
-GpuImage& ImageProcessor::prepareOutput(const GpuImage& input,
-                                        GpuImage& output) {
-  context_.ensureOutputSize(input, output);
-  return output;
-}
-
 void ImageProcessor::autoSync() {
-  if (mode_ == Mode::Sync) {
+  if (context_.policy().mode() == ExecutionPolicy::Mode::Sync) {
     context_.synchronize();
   }
 }

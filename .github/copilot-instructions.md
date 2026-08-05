@@ -8,7 +8,7 @@ Project-specific instructions for GitHub Copilot when working in the mini-opencv
 
 - **Version:** 3.0.0
 - **License:** MIT
-- **Docs:** https://lessup.github.io/mini-opencv/
+- **Docs:** https://aicl-lab.github.io/mini-opencv/
 
 ## Technology Stack
 

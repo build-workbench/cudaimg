@@ -1,21 +1,21 @@
 # Mini-OpenCV — GPU Image Processing Library
 
-[![CI](https://github.com/LessUp/mini-opencv/actions/workflows/ci.yml/badge.svg)](https://github.com/LessUp/mini-opencv/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-blue?logo=github)](https://lessup.github.io/mini-opencv/)
+[![CI](https://github.com/AICL-Lab/mini-opencv/actions/workflows/ci.yml/badge.svg)](https://github.com/AICL-Lab/mini-opencv/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-blue?logo=github)](https://aicl-lab.github.io/mini-opencv/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
 ![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)
-![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)
+![Status](https://img.shields.io/badge/Status-Active%20Development-informational.svg)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 A high-performance CUDA-based image processing library providing GPU-accelerated operators for computer vision applications.
 
-> **⚡ Performance**: 30-50x faster than CPU OpenCV for comparable operations
+> **⚡ GPU Accelerated**: Operators are implemented as CUDA kernels (shared-memory tiling, atomic histograms, `uchar4` vectorization) for parallel image processing.
 >
-> *Tested on RTX 4090 with 4K images vs OpenCV 4.8 CPU implementation. See [benchmarks/](benchmarks/) for details.*
+> *The [benchmarks/](benchmarks/) harness (build with `-DBUILD_BENCHMARKS=ON`) measures absolute GPU latency. This repository does not currently ship a CPU/OpenCV comparison, so no cross-library speedup figures are claimed here.*
 
 ---
 
@@ -23,13 +23,13 @@ A high-performance CUDA-based image processing library providing GPU-accelerated
 
 | Resource | Description |
 |----------|-------------|
-| [Installation](https://lessup.github.io/mini-opencv/en/setup/installation) | Complete setup guide |
-| [Quick Start](https://lessup.github.io/mini-opencv/en/setup/quickstart) | Get started in 5 minutes |
-| [Architecture](https://lessup.github.io/mini-opencv/en/architecture/overview) | Three-layer design overview |
-| [API Reference](https://lessup.github.io/mini-opencv/en/api/) | Complete API documentation |
-| [Examples](https://lessup.github.io/mini-opencv/en/tutorials/examples) | Code examples and tutorials |
+| [Installation](https://aicl-lab.github.io/mini-opencv/en/setup/installation) | Complete setup guide |
+| [Quick Start](https://aicl-lab.github.io/mini-opencv/en/setup/quickstart) | Get started in 5 minutes |
+| [Architecture](https://aicl-lab.github.io/mini-opencv/en/architecture/overview) | Three-layer design overview |
+| [API Reference](https://aicl-lab.github.io/mini-opencv/en/api/) | Complete API documentation |
+| [Examples](https://aicl-lab.github.io/mini-opencv/en/tutorials/examples) | Code examples and tutorials |
 
-**Full Documentation:** https://lessup.github.io/mini-opencv/
+**Full Documentation:** https://aicl-lab.github.io/mini-opencv/
 
 ---
 
@@ -51,7 +51,7 @@ A high-performance CUDA-based image processing library providing GPU-accelerated
 
 ## 🏗️ Architecture
 
-> **See the [Architecture Overview](https://lessup.github.io/mini-opencv/en/architecture/overview) for complete design details.**
+> **See the [Architecture Overview](https://aicl-lab.github.io/mini-opencv/en/architecture/overview) for complete design details.**
 
 Three-layer design: **High-level APIs** → **CUDA Kernels** → **Infrastructure**
 
@@ -65,7 +65,7 @@ Application Layer → Operator Layer → Infrastructure Layer
 
 ```bash
 # Clone and build
-git clone https://github.com/LessUp/mini-opencv.git
+git clone https://github.com/AICL-Lab/mini-opencv.git
 cd mini-opencv
 cmake -S . -B build -DBUILD_EXAMPLES=ON
 cmake --build build -j$(nproc)
@@ -96,7 +96,7 @@ GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
 GpuImage edges = processor.sobelEdgeDetection(gpu);
 
 // Step 4: Download result back to host
-HostImage result = processor.downloadImage(edges);
+HostImage result = processor.download(edges);
 ```
 
 ---
@@ -119,7 +119,7 @@ HostImage result = processor.downloadImage(edges);
 | JPEG/JPG | ✓ | ✓ |
 | PNG | ✓ | ✓ |
 | BMP | ✓ | ✓ |
-| TGA | ✓ | ✗ |
+| TGA | ✓ | ✓ |
 
 **Note:** All formats support 8-bit per channel (Grayscale, RGB, RGBA)
 
@@ -127,14 +127,14 @@ HostImage result = processor.downloadImage(edges);
 
 ## 📖 Documentation
 
-Complete documentation available at [GitHub Pages](https://lessup.github.io/mini-opencv/):
+Complete documentation available at [GitHub Pages](https://aicl-lab.github.io/mini-opencv/):
 
-- [Installation Guide](https://lessup.github.io/mini-opencv/en/setup/installation)
-- [Quick Start](https://lessup.github.io/mini-opencv/en/setup/quickstart)
-- [Architecture Overview](https://lessup.github.io/mini-opencv/en/architecture/overview)
-- [Benchmarks](https://lessup.github.io/mini-opencv/en/benchmarks/)
-- [API Reference](https://lessup.github.io/mini-opencv/en/api/)
-- [FAQ](https://lessup.github.io/mini-opencv/en/tutorials/faq)
+- [Installation Guide](https://aicl-lab.github.io/mini-opencv/en/setup/installation)
+- [Quick Start](https://aicl-lab.github.io/mini-opencv/en/setup/quickstart)
+- [Architecture Overview](https://aicl-lab.github.io/mini-opencv/en/architecture/overview)
+- [Benchmarks](https://aicl-lab.github.io/mini-opencv/en/benchmarks/)
+- [API Reference](https://aicl-lab.github.io/mini-opencv/en/api/)
+- [FAQ](https://aicl-lab.github.io/mini-opencv/en/tutorials/faq)
 
 ---
 
@@ -176,7 +176,7 @@ cd build && ctest --output-on-failure
 # All tests should pass
 ```
 
-For more issues, check [GitHub Discussions](https://github.com/LessUp/mini-opencv/discussions).
+For more issues, check [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions).
 
 ---
 
@@ -188,4 +188,4 @@ MIT License — see [LICENSE](LICENSE) file.
 
 **⭐ Star this repo if you find it helpful!**
 
-For support, open an [issue](https://github.com/LessUp/mini-opencv/issues) or start a [discussion](https://github.com/LessUp/mini-opencv/discussions).
+For support, open an [issue](https://github.com/AICL-Lab/mini-opencv/issues) or start a [discussion](https://github.com/AICL-Lab/mini-opencv/discussions).

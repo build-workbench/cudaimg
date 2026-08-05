@@ -185,7 +185,8 @@ int main() {
     GpuImage step1 = processor.adjustBrightness(gpu, 20);
     GpuImage step2 = processor.gaussianBlur(step1, 3, 1.0f);
     GpuImage step3 = processor.invert(step2);
-    HostImage result = processor.downloadImage(step3);
+    HostImage result = processor.download(step3);
+    (void)result;
   }
   double sequentialTime = timer.elapsedMs();
 

@@ -37,21 +37,21 @@ Key architectural decisions and their rationale.
 **Decision**: Use shared memory tiling to cache image data.
 
 **Consequences**:
-- ✅ 10× faster than naive implementation
-- ⚠️ Kernel size limited to ~15×15
+- ✅ Much less global-memory traffic than a naive convolution
+- ⚠️ Kernel size limited to odd sizes up to 7×7 (larger or even sizes throw)
 
-## Decision 4: Texture Memory for Resize
+## Decision 4: Global-Memory Interpolation for Resize
 
-**Status**: Accepted
+**Status**: Accepted (texture memory not implemented)
 
 **Context**: Image resize needs interpolation.
 
-**Decision**: Use CUDA texture memory with hardware interpolation.
+**Decision**: `ImageResizer` performs nearest-neighbor or bilinear interpolation with ordinary global-memory reads. CUDA texture memory is **not** used anywhere in the codebase.
 
 **Consequences**:
-- ✅ Free hardware bilinear interpolation
-- ✅ Cached texture reads
-- ⚠️ Limited to 2D images
+- ✅ Simple implementation, no texture-object setup
+- ⚠️ No hardware texture cache; bilinear weights are computed in the kernel
+- ℹ️ Texture memory remains a possible future optimization; it is currently unimplemented
 
 ## Decision 5: Atomic Operations for Histogram
 
@@ -64,6 +64,19 @@ Key architectural decisions and their rationale.
 **Consequences**:
 - ✅ Correct parallel histogram
 - ⚠️ Some atomic contention
+
+## Decision 6: Unified Execution Model
+
+**Status**: Accepted
+
+**Context**: Callers need sync, async, and batch execution without managing CUDA streams by hand.
+
+**Decision**: `ExecutionPolicy` (Sync/Async/Batch) owns the stream — Async/Batch create one with `cudaStreamCreate`; `ExecutionContext` pairs a policy with output allocation (`allocateOutput` / `ensureOutputSize` / `recycleToPool`). An earlier `StreamManager` stream-pool class was removed as dead code.
+
+**Consequences**:
+- ✅ One consistent interface across all operators
+- ✅ Streams are created only when needed and destroyed with the policy (move-only)
+- ⚠️ Memory pooling is disabled by default; opt in via `ImageAllocator::setPoolingEnabled` or `ImageProcessor::setMemoryPooling`
 
 ## See Also
 

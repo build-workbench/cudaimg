@@ -1,45 +1,65 @@
-#!/bin/bash
-# Create GitHub Release Script
+#!/usr/bin/env bash
+# Create a GitHub Release for mini-opencv.
+#
+# Usage:
+#   GH_TOKEN=<token> ./scripts/create_release.sh <version> [title]
+#   e.g. GH_TOKEN=*** ./scripts/create_release.sh v3.1.0
+#
+# Requires: curl, jq, and a GH_TOKEN env var with release scope.
+# The release notes point to CHANGELOG.md; edit the BODY below to customize.
 
-VERSION="v3.0.0"
-TITLE="v3.0.0 - AI Framework Removal & Repository Simplification"
+set -euo pipefail
+
+REPO="AICL-Lab/mini-opencv"
+
+VERSION="${1:-}"
+TITLE="${2:-$VERSION}"
+
+if [[ -z "$VERSION" ]]; then
+  echo "error: version argument required (e.g. v3.1.0)" >&2
+  echo "usage: GH_TOKEN=<token> $0 <version> [title]" >&2
+  exit 1
+fi
+
+for dep in curl jq; do
+  if ! command -v "$dep" >/dev/null 2>&1; then
+    echo "error: required dependency '$dep' not found on PATH" >&2
+    exit 1
+  fi
+done
+
+if [[ -z "${GH_TOKEN:-}" ]]; then
+  echo "error: GH_TOKEN environment variable is not set" >&2
+  exit 1
+fi
 
 BODY=$(cat << 'EOF'
 ## What's New
 
-This release removes AI workflow frameworks and simplifies the repository back to a minimal, maintainable structure.
-
-### Cleanup
-- Removed OpenSpec specs, Claude skills, and AI-only control files
-- Reduced repository complexity and dead documentation paths
-- Consolidated changelog ownership to the root `CHANGELOG.md`
-
-### Files Changed
-- Simplified contributing and Copilot guidance
-- Removed GitHub Pages changelog pages and sync script
-- Updated README.md and README.zh-CN.md to point to live VitePress docs
+See [CHANGELOG.md](https://github.com/AICL-Lab/mini-opencv/blob/main/CHANGELOG.md)
+for the full list of changes in this release.
 
 ### Quick Start
 ```bash
-git clone https://github.com/LessUp/mini-opencv.git
+git clone https://github.com/AICL-Lab/mini-opencv.git
 cd mini-opencv
 cmake -S . -B build
 cmake --build build -j$(nproc)
 ```
 
-**Full Documentation**: https://lessup.github.io/mini-opencv/
+**Full Documentation**: https://aicl-lab.github.io/mini-opencv/
 EOF
 )
 
-# Create release using curl
-curl -X POST \
+# -f: fail on HTTP errors instead of printing the error body as if successful.
+curl -fsS -X POST \
   -H "Authorization: token $GH_TOKEN" \
   -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/LessUp/mini-opencv/releases \
+  "https://api.github.com/repos/$REPO/releases" \
   -d "{
     \"tag_name\": \"$VERSION\",
     \"name\": \"$TITLE\",
     \"body\": $(echo "$BODY" | jq -Rs .),
     \"draft\": false,
     \"prerelease\": false
-  }" 2>&1
+  }"

@@ -18,7 +18,7 @@ export default withMermaid(defineConfig({
   head: [
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'Mini-OpenCV - GPU Image Processing Library' }],
-    ['meta', { property: 'og:description', content: 'High-performance CUDA-based image processing library. 30-50× faster than CPU OpenCV.' }],
+    ['meta', { property: 'og:description', content: 'High-performance CUDA-based image processing library with GPU-accelerated operators.' }],
     ['meta', { property: 'og:image', content: '/mini-opencv/images/og-image.png' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['link', { rel: 'icon', href: '/mini-opencv/favicon.ico' }],
@@ -206,14 +206,14 @@ export default withMermaid(defineConfig({
     outline: [2, 3],
     search: { provider: 'local' },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/LessUp/mini-opencv' },
+      { icon: 'github', link: 'https://github.com/AICL-Lab/mini-opencv' },
     ],
     footer: {
       message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2024-present LessUp',
+      copyright: 'Copyright © 2024-present AICL-Lab',
     },
     editLink: {
-      pattern: 'https://github.com/LessUp/mini-opencv/edit/main/docs/:path',
+      pattern: 'https://github.com/AICL-Lab/mini-opencv/edit/main/docs/:path',
       text: 'Edit this page on GitHub',
     },
   },

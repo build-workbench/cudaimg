@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gpu_image/core/image_utils.hpp"
 #include "gpu_image/operators/image_operator.hpp"
 #include <vector>
 
@@ -21,17 +22,20 @@ public:
   }
 
   GpuImage apply(const GpuImage& input, ExecutionContext& ctx) override {
-    if (operators_.empty()) {
-      return input;
-    }
     if (!input.isValid()) {
       return GpuImage{};
     }
+    if (operators_.empty()) {
+      // 恒等：返回一个独立副本（GpuImage 为 move-only，不能直接返回 input）
+      return ImageUtils::clone(input);
+    }
 
-    GpuImage current = input;
-    for (auto& op : operators_) {
-      GpuImage next = op->apply(current, ctx);
-      if (current.isValid() && &current != &input) {
+    // 每个算子都以 const& 读取输入并产出全新输出，因此无需拷贝 input：
+    // 直接把它喂给首个算子，之后在线程间传递工作缓冲区并回收中间结果。
+    GpuImage current = operators_.front()->apply(input, ctx);
+    for (size_t i = 1; i < operators_.size(); ++i) {
+      GpuImage next = operators_[i]->apply(current, ctx);
+      if (current.isValid()) {
         ctx.recycleToPool(std::move(current));
       }
       current = std::move(next);

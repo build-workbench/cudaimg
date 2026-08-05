@@ -41,7 +41,7 @@ nvidia-smi
 
 ```bash
 # Clone
-git clone https://github.com/LessUp/mini-opencv.git
+git clone https://github.com/AICL-Lab/mini-opencv.git
 cd mini-opencv
 
 # Configure with options
@@ -59,10 +59,15 @@ cmake --build build -j$(nproc)
 
 | Option | Default | Description |
 |--------|---------|-------------|
+| `GPU_IMAGE_ENABLE_IO` | ON | Enable image file I/O (via stb) |
 | `BUILD_EXAMPLES` | ON | Build example programs |
 | `BUILD_TESTS` | ON | Build test suite |
 | `BUILD_BENCHMARKS` | OFF | Build benchmarks |
-| `CUDA_ARCH` | auto | GPU architecture(s) |
+| `CMAKE_CUDA_ARCHITECTURES` | auto | GPU architecture(s) (standard CMake variable) |
+
+The library is always built as a static library (`BUILD_SHARED_LIBS` has no effect).
+If `CMAKE_CUDA_ARCHITECTURES` is not set, it defaults to `native` on CMake 3.24+
+(auto-detects the local GPU), otherwise `75;80;86;89`.
 
 ## Verify Build
 
@@ -87,7 +92,7 @@ cmake -S . -B build
 
 ```bash
 # Specify architecture explicitly
-cmake -S . -B build -DCUDA_ARCH="80;86;89"
+cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES="80;86;89"
 ```
 
 ## Next Steps

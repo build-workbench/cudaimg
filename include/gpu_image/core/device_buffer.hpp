@@ -35,6 +35,9 @@ public:
   // 从 Device 复制数据到 Host
   void copyToHost(void* hostPtr, size_t size) const;
 
+  // 从另一个 Device 缓冲区复制数据到本缓冲区（Device-to-Device）
+  void copyFromDevice(const void* devicePtr, size_t size);
+
   // 异步版本（使用指定的 stream）
   void copyFromHostAsync(const void* hostPtr, size_t size, cudaStream_t stream);
   void copyToHostAsync(void* hostPtr, size_t size, cudaStream_t stream) const;

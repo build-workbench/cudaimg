@@ -44,10 +44,7 @@ DeviceBuffer MemoryManager::allocate(size_t size) {
 
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    totalAllocated_ += alignedSize;
-    if (totalAllocated_ > peakUsage_) {
-      peakUsage_ = totalAllocated_;
-    }
+    totalAllocated_ += alignedSize; // 累计分配量（单调递增）
   }
 
   return buffer;
@@ -64,11 +61,14 @@ void MemoryManager::deallocate(DeviceBuffer&& buffer) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     // 池未满时回收，否则直接释放
-    if (poolSize_ + alignedSize <= maxPoolSize_) {
+    if (poolSize_ + alignedSize <= maxPoolSize_.load(std::memory_order_relaxed)) {
       auto detached = buffer.detach();
       void* ptr = detached.first;
       memoryPool_[alignedSize].push_back(ptr);
       poolSize_ += alignedSize;
+      if (poolSize_ > peakUsage_) {
+        peakUsage_ = poolSize_; // 记录池占用的历史峰值
+      }
       return;
     }
   }

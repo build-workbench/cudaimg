@@ -1,142 +1,67 @@
 # Benchmarks
 
-Performance comparison between Mini-OpenCV (GPU) and OpenCV (CPU).
+The benchmark suite measures the **absolute GPU latency** of Mini-OpenCV's own operators. It does not compare against CPU OpenCV or any other library, and this page deliberately publishes no speedup numbers: results depend on your hardware, driver, and system state, so the only figures worth quoting are the ones you reproduce yourself.
 
-## Test Environment
+## What Is Measured
 
-| Component | Specification |
-|-----------|--------------|
-| GPU | NVIDIA RTX 4090 (24GB) |
-| CPU | Intel i9-13900K |
-| CUDA | 12.4 |
-| OpenCV | 4.8 (CPU) |
-| Image Size | 3840×2160 (4K) |
+A single executable, `gpu_image_benchmark` (source: `benchmarks/benchmark_main.cpp`), times each operator at five square image sizes — 256×256, 512×512, 1024×1024, 2048×2048, 4096×4096 — and prints the average time per call in milliseconds.
 
-## Performance Comparison
+Covered operations:
 
-### Processing Time
+| Category | Operations |
+|----------|-----------|
+| Pixel operations | Invert, grayscale, brightness adjustment |
+| Convolution | Gaussian blur 3×3 / 5×5, Sobel edge detection |
+| Histogram | Calculation, equalization |
+| Geometric | Bilinear resize 2× / 0.5× |
+| Morphology | Erode 3×3, dilate 3×3 |
+| Threshold | Fixed threshold, Otsu binarization |
+| Color space | RGB→HSV, RGB→YUV |
+| Data transfer | Host→Device upload, Device→Host download |
 
-```mermaid
-xychart-beta
-    title "Processing Time Comparison (4K Image)"
-    x-axis ["Gaussian Blur", "Sobel Edge", "Bilateral Filter", "Histogram Eq."]
-    y-axis "Time (ms)" 0 --> 200
-    bar [45.2, 38.1, 180.5, 12.3]
-    bar [1.2, 0.9, 4.8, 0.3]
-```
+A pipeline section then processes a batch of 10 images sequentially and with 1 / 2 / 4 / 8 CUDA streams via `PipelineProcessor`, reporting total batch time for each configuration.
 
-### Speedup Factor
+## Timing Method
 
-```mermaid
-xychart-beta
-    title "Speedup vs OpenCV CPU"
-    x-axis ["Gaussian Blur", "Sobel Edge", "Bilateral Filter", "Histogram Eq."]
-    y-axis "Speedup (×)" 0 --> 50
-    bar [37.7, 42.3, 37.6, 41.0]
-```
+The harness uses a hand-written `std::chrono` timer (the Google Benchmark library is linked by the build but not used by the current harness):
 
-## Detailed Results
+- 10 untimed warm-up calls
+- 100 timed iterations
+- `cudaDeviceSynchronize()` before and after the timed loop
+- Reported value = total time / iterations
 
-### Convolution Operations
+Per-operation timings measure kernel execution on data already resident on the device; transfer costs appear as the separate Upload/Download entries.
 
-| Operation | Image Size | CPU (ms) | GPU (ms) | Speedup |
-|-----------|-----------|----------|----------|---------|
-| Gaussian Blur (5×5) | 4K | 45.2 | 1.2 | **37.7×** |
-| Gaussian Blur (15×15) | 4K | 120.5 | 3.8 | **31.7×** |
-| Sobel Edge | 4K | 38.1 | 0.9 | **42.3×** |
-| Custom Kernel (7×7) | 4K | 65.3 | 2.1 | **31.1×** |
+## Optimization Techniques Exercised
 
-### Filter Operations
-
-| Operation | Image Size | CPU (ms) | GPU (ms) | Speedup |
-|-----------|-----------|----------|----------|---------|
-| Median Filter (3×3) | 4K | 28.4 | 2.5 | **11.4×** |
-| Bilateral Filter | 4K | 180.5 | 4.8 | **37.6×** |
-| Box Filter (5×5) | 4K | 25.2 | 0.8 | **31.5×** |
-| Sharpen | 4K | 42.1 | 1.1 | **38.3×** |
-
-### Geometric Operations
-
-| Operation | Image Size | CPU (ms) | GPU (ms) | Speedup |
-|-----------|-----------|----------|----------|---------|
-| Resize (2× up) | 4K | 18.3 | 0.6 | **30.5×** |
-| Resize (0.5× down) | 4K | 8.2 | 0.3 | **27.3×** |
-| Rotate 90° | 4K | 5.4 | 0.2 | **27.0×** |
-| Flip Horizontal | 4K | 2.1 | 0.1 | **21.0×** |
-
-### Histogram Operations
-
-| Operation | Image Size | CPU (ms) | GPU (ms) | Speedup |
-|-----------|-----------|----------|----------|---------|
-| Histogram Calculation | 4K | 3.2 | 0.15 | **21.3×** |
-| Histogram Equalization | 4K | 12.3 | 0.3 | **41.0×** |
-| Otsu Threshold | 4K | 5.8 | 0.25 | **23.2×** |
-
-## CUDA Optimization Techniques
+These techniques are implemented in the kernels the benchmark measures:
 
 ### 1. Shared Memory Tiling
 
-For convolution operations, we use shared memory tiling to reduce global memory access:
+The convolution kernels cache the input tile plus a halo region in shared memory (`src/operators/convolution_engine.cu`), so each pixel is loaded from global memory once and reused across overlapping kernel positions.
 
-```cpp
-// Kernel uses shared memory to cache image data + halo region
-extern __shared__ float sharedMem[];
-// Each thread loads data to shared memory
-// Convolution computed from fast shared memory
-```
+### 2. Atomic Histogram
 
-**Benefit**: ~10× speedup over naive global memory access
+Histogram calculation accumulates bins with `atomicAdd` (`src/operators/histogram_calculator.cu`), letting all threads update the histogram concurrently without a separate reduction pass.
 
-### 2. Atomic Operations
+### 3. uchar4 Vectorization
 
-Histogram calculations use atomic operations for parallel reduction:
+Pixel-wise operators load and store four bytes per thread via `uchar4` (`src/operators/pixel_operator.cu`), turning four byte accesses into one vectorized access.
 
-```cpp
-__global__ void histogramKernel(...) {
-    atomicAdd(&histogram[value], 1);
-}
-```
-
-**Benefit**: Parallel histogram without race conditions
-
-### 3. Texture Memory
-
-Image resize operations leverage texture memory for hardware interpolation:
-
-```cpp
-cudaBindTextureToArray(texRef, imageArray);
-tex2D(texRef, x, y); // Hardware bilinear interpolation
-```
-
-**Benefit**: Free hardware interpolation, reduced kernel complexity
-
-### 4. Multi-Stream Execution
-
-Pipeline operations use multiple CUDA streams for overlap:
-
-```cpp
-cudaStream_t streams[N];
-for (int i = 0; i < N; i++) {
-    cudaMemcpyAsync(..., streams[i]);
-    kernel<<<..., streams[i]>>>(...);
-}
-```
-
-**Benefit**: Overlap compute and transfer, higher throughput
+Texture memory, warp-level primitives (`__shfl`/`__reduce`), and pinned/zero-copy memory are **not** used in the current codebase.
 
 ## Reproducing Benchmarks
 
+Benchmarks are disabled by default (`BUILD_BENCHMARKS=OFF`):
+
 ```bash
-# Build with benchmarks
 cmake -S . -B build -DBUILD_BENCHMARKS=ON
 cmake --build build -j$(nproc)
-
-# Run benchmarks
-./build/bin/benchmark_convolution
-./build/bin/benchmark_filters
-./build/bin/benchmark_geometric
+./build/bin/gpu_image_benchmark
 ```
+
+The executable prints the detected CUDA device first, then one latency table per image size, followed by the pipeline results.
 
 ## Methodology
 
-See [Methodology](./methodology) for detailed testing procedures and hardware specifications.
+See [Methodology](./methodology) for details on how times are measured and how to interpret the output.

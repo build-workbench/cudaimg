@@ -7,6 +7,7 @@
  */
 
 #include "gpu_image/gpu_image_processing.hpp"
+#include <algorithm>
 #include <cmath>
 #include <cuda_runtime.h>
 #include <gtest/gtest.h>
@@ -144,11 +145,10 @@ TEST_F(ConvolutionTest, GaussianBlur) {
   EXPECT_EQ(result.height, height);
   EXPECT_EQ(result.channels, channels);
 
-  // 验证值在有效范围内
-  for (unsigned char v : result.data) {
-    EXPECT_GE(v, 0);
-    EXPECT_LE(v, 255);
-  }
+  // 验证内核确实产生了内容（输出并非全零）。
+  // 原先对 unsigned char 的 EXPECT_GE(v,0)/EXPECT_LE(v,255) 是恒真空断言。
+  EXPECT_TRUE(std::any_of(result.data.begin(), result.data.end(),
+                          [](unsigned char v) { return v != 0; }));
 }
 
 // 测试 Sobel 边缘检测

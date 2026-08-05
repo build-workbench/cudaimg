@@ -41,7 +41,7 @@ nvidia-smi
 
 ```bash
 # 克隆
-git clone https://github.com/LessUp/mini-opencv.git
+git clone https://github.com/AICL-Lab/mini-opencv.git
 cd mini-opencv
 
 # 配置选项
@@ -59,10 +59,15 @@ cmake --build build -j$(nproc)
 
 | 选项 | 默认值 | 描述 |
 |------|--------|------|
+| `GPU_IMAGE_ENABLE_IO` | ON | 启用图像文件 I/O（通过 stb） |
 | `BUILD_EXAMPLES` | ON | 构建示例程序 |
 | `BUILD_TESTS` | ON | 构建测试套件 |
 | `BUILD_BENCHMARKS` | OFF | 构建基准测试 |
-| `CUDA_ARCH` | auto | GPU 架构 |
+| `CMAKE_CUDA_ARCHITECTURES` | auto | GPU 架构（标准 CMake 变量） |
+
+库始终以静态库方式构建（`BUILD_SHARED_LIBS` 无效）。
+未设置 `CMAKE_CUDA_ARCHITECTURES` 时，CMake 3.24+ 默认为 `native`
+（自动检测本机 GPU），否则默认为 `75;80;86;89`。
 
 ## 验证构建
 
@@ -87,7 +92,7 @@ cmake -S . -B build
 
 ```bash
 # 显式指定架构
-cmake -S . -B build -DCUDA_ARCH="80;86;89"
+cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES="80;86;89"
 ```
 
 ## 下一步

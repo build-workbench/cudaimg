@@ -6,7 +6,7 @@
 
 ### 缓冲区复用
 
-复用 `GpuImage` 对象避免重复分配：
+`ImageProcessor` 门面每次调用都返回新的 `GpuImage`。若要复用输出缓冲区，请下沉到算子层并自行管理输出：
 
 ```cpp
 // 不好的做法：每次都分配新内存
@@ -14,52 +14,69 @@ for (int i = 0; i < 100; i++) {
     GpuImage result = processor.gaussianBlur(gpu, 5, 1.5f);
 }
 
-// 好的做法：复用缓冲区
-GpuImage result = processor.gaussianBlur(gpu, 5, 1.5f);
-for (int i = 0; i < 99; i++) {
-    processor.gaussianBlur(gpu, 5, 1.5f, result);
+// 好的做法：复用输出缓冲区（算子层 + ExecutionContext）
+ExecutionContext ctx(ExecutionPolicy::sync());
+GpuImage result = ctx.allocateOutput(gpu);
+for (int i = 0; i < 100; i++) {
+    ConvolutionEngine::gaussianBlur(gpu, result, 5, 1.5f, ctx.stream());
 }
 ```
 
+`ctx.ensureOutputSize(input, result)` 仅在尺寸变化时才重新分配。
+
 ### 内存池
 
-对于高吞吐量应用：
+对于高吞吐量应用，启用 `MemoryManager` 中按大小分桶的内存池（池化**默认关闭**）：
 
 ```cpp
-MemoryPool pool;
-DeviceBuffer* buffer = pool.allocate(size);
-// ... 使用缓冲区 ...
-pool.release(buffer);
+// 通过门面
+ImageProcessor processor;
+processor.setMemoryPooling(true);
+
+// 或通过分配器全局开启
+ImageAllocator::instance().setPoolingEnabled(true);
+
+// 底层池控制
+MemoryManager::instance().setMaxPoolSize(512 * 1024 * 1024);
+MemoryStats stats = MemoryManager::instance().getStats();
+MemoryManager::instance().clearPool();
 ```
+
+注意：内存池不跟踪 CUDA 流的完成情况——多线程使用不同流时，回收可能仍被读取的缓冲区前请先同步。
 
 ## CUDA 流
 
 ### 多流处理
 
+使用 `PipelineProcessor`，它持有一个流池并将图像轮流分配到各条流：
+
 ```cpp
-// 创建流
-std::vector<cudaStream_t> streams(4);
-for (auto& s : streams) {
-    cudaStreamCreate(&s);
-}
+PipelineProcessor pipeline(4);  // 4 条流（默认 3 条）
 
-// 并行处理
-for (size_t i = 0; i < images.size(); i++) {
-    auto stream = streams[i % streams.size()];
-    processor.gaussianBlur(images[i], 5, 1.5f, stream);
-}
+pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+    GpuImage temp;
+    ConvolutionEngine::gaussianBlur(img, temp, 5, 1.5f, stream);
+    img = std::move(temp);
+});
 
-// 同步所有流
-for (auto& s : streams) {
-    cudaStreamSynchronize(s);
-}
+// 返回前在内部完成同步
+std::vector<HostImage> results = pipeline.processBatchHost(images);
+```
+
+单个异步操作可使用带 async 策略的 `ExecutionContext`：
+
+```cpp
+ExecutionContext ctx(ExecutionPolicy::async());  // 持有内部流
+GpuImage out = ctx.allocateOutput(input);
+PixelOperator::invert(input, out, ctx.stream());
+ctx.synchronize();
 ```
 
 ## 内核优化
 
 ### 共享内存分块
 
-对于自定义内核，使用共享内存：
+卷积和直方图内核使用了共享内存分块。编写自定义内核时可沿用相同模式：
 
 ```cpp
 __global__ void myKernel(float* output, const float* input, int width) {
@@ -77,56 +94,62 @@ __global__ void myKernel(float* output, const float* input, int width) {
 }
 ```
 
-### 纹理内存
+### 实际使用的优化
 
-对于插值密集型操作：
+当前实现依赖以下技术：
 
-```cpp
-texture<float, 2, cudaReadModeElementType> texRef;
+- **共享内存分块** —— 卷积（`convolution_engine.cu`）和直方图（`histogram_calculator.cu`）
+- **共享内存原子直方图** —— 每个块先写本地直方图，再合并到全局结果
+- **`uchar4` 向量化** —— 像素内核每线程处理 4 字节（`pixel_operator.cu`）
 
-__global__ void resizeKernel(float* output, int outWidth, int outHeight) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    
-    if (x < outWidth && y < outHeight) {
-        float u = (float)x / outWidth;
-        float v = (float)y / outHeight;
-        output[y * outWidth + x] = tex2D(texRef, u, v);
-    }
-}
-```
+纹理内存、warp shuffle/归约、cooperative groups 以及 pinned/zero-copy 主机内存均**未**使用——它们仍是可选的未来优化方向。
 
 ## 性能技巧
 
-1. **批量操作**: 一起处理多张图像
-2. **使用流**: 重叠计算和传输
-3. **复用缓冲区**: 避免重复分配
-4. **选择合适的内核大小**: 小内核更快
+1. **批量操作**: `PipelineProcessor::processBatch` 跨流处理多张图像
+2. **复用缓冲区**: `ensureOutputSize` 避免重复分配
+3. **启用池化**: 适用于重复的同尺寸负载
+4. **卷积核保持小尺寸**: 仅接受 7×7 以内的奇数尺寸（更大尺寸会抛异常）
 5. **先分析**: 使用 Nsight 识别瓶颈
 
 ## 调试
 
 ### 错误检查
 
+库使用 `CUDA_CHECK` 宏（`gpu_image/core/cuda_error.hpp`）检查每一次 CUDA 调用，失败时抛出 `CudaException`：
+
 ```cpp
-// 启用错误检查
-#define GPU_IMAGE_CUDA_CHECK(call) \
+#define CUDA_CHECK(call) \
     do { \
-        cudaError_t err = call; \
-        if (err != cudaSuccess) { \
-            fprintf(stderr, "CUDA 错误: %s\n", cudaGetErrorString(err)); \
-            exit(1); \
+        cudaError_t error = call; \
+        if (error != cudaSuccess) { \
+            throw gpu_image::CudaException(error, __FILE__, __LINE__); \
         } \
-    } while(0)
+    } while (0)
+```
+
+按标准异常方式捕获：
+
+```cpp
+try {
+    GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
+} catch (const CudaException& e) {
+    std::cerr << "CUDA error: " << e.what() << std::endl;
+}
 ```
 
 ### 内存跟踪
 
 ```cpp
-// 跟踪内存使用
+// 设备级内存
 size_t free, total;
 cudaMemGetInfo(&free, &total);
 printf("GPU 内存: %zu MB 空闲 / %zu MB 总计\n", free/1024/1024, total/1024/1024);
+
+// 库内存池统计（启用池化后有意义）
+MemoryStats stats = MemoryManager::instance().getStats();
+printf("allocated=%zu pool=%zu peak=%zu\n",
+       stats.totalAllocated, stats.poolSize, stats.peakUsage);
 ```
 
 ## 下一步

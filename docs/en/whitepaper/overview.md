@@ -4,12 +4,12 @@ This document provides a detailed overview of Mini-OpenCV's design philosophy, t
 
 ## Project Background
 
-Mini-OpenCV is a CUDA high-performance image processing library designed to achieve **30-50× speedup** over CPU OpenCV implementations. The project's design goals:
+Mini-OpenCV is a CUDA image processing library that implements common computer vision operators as GPU kernels behind a three-layer C++17 architecture. It is a small, self-contained project; no comparative performance claims against CPU OpenCV are made here (see [Benchmarks](../benchmarks/) for what is actually measured). The project's design goals:
 
-1. **Extreme Performance** - Fully leverage GPU parallel computing capabilities
+1. **GPU-Native Operators** - Implement common operators directly as CUDA kernels
 2. **Clean API** - Modern C++17 interface design
-3. **Easy Integration** - Drop-in replacement for performance-critical code paths
-4. **Comprehensive Testing** - Unit tests and performance benchmarks coverage
+3. **Easy Integration** - Usable as a dependency for GPU processing paths
+4. **Testing** - GoogleTest unit tests plus a self-contained GPU latency benchmark
 
 ## Technology Stack
 
@@ -17,11 +17,11 @@ Mini-OpenCV is a CUDA high-performance image processing library designed to achi
 
 | Component | Version | Rationale |
 |-----------|---------|-----------|
-| C++ | 17 | Modern C++ features: structured bindings, std::optional, if constexpr |
-| CUDA | 14+ | Latest CUDA features: cooperative groups, async memory operations |
+| C++ | 17 (host) | Modern C++ features: structured bindings, std::optional, if constexpr |
+| CUDA | Toolkit 11.0+ | Device code is compiled as C++14; host code as C++17 |
 | CMake | 3.18+ | Modern CMake: FetchContent, target-oriented build |
 | GoogleTest | 1.14.0 | Industry-standard testing framework |
-| Google Benchmark | 1.8.3 | Performance benchmarking |
+| Google Benchmark | 1.8.3 | Linked by the optional benchmark target (the current harness uses a custom std::chrono timer) |
 
 ### Why CUDA?
 
@@ -30,14 +30,14 @@ flowchart LR
     A[Image Processing Task] --> B{Compute Intensive?}
     B -->|Yes| C[CUDA GPU Acceleration]
     B -->|No| D[CPU Implementation]
-    C --> E[30-50× Speedup]
+    C --> E[Massively Parallel Execution]
     D --> F[Flexible Control]
 ```
 
 CUDA provides:
 - **Massive Parallelism** - Thousands of threads executing simultaneously
 - **Memory Hierarchy** - Global/Shared/Registers three-level memory
-- **Specialized Hardware** - Tensor Cores, texture memory units
+- **Specialized Hardware** - Texture units, Tensor Cores, etc. (not currently used by this project)
 
 ## Architecture Design
 
@@ -60,7 +60,7 @@ flowchart TB
     subgraph Infrastructure["Infrastructure Layer"]
         I1[DeviceBuffer]
         I2[GpuImage]
-        I3[StreamManager]
+        I3[ExecutionContext]
     end
     
     Application --> Operator
@@ -88,33 +88,34 @@ flowchart TB
 
 ### CUDA Kernel Optimizations
 
-| Technique | Description | Benefit |
-|-----------|-------------|---------|
-| Shared Memory Tiling | Data reuse, reduce global memory access | 2-4× speedup |
-| Coalesced Access | Coalesced global memory access | 1.5-2× speedup |
-| Warp Primitives | Use `__shfl`, `__reduce` | 1.2-1.5× speedup |
-| Atomic Operations | Atomic counting, avoid synchronization | 1.1-1.3× speedup |
-| Loop Unrolling | Unroll critical loops | 1.1-1.2× speedup |
+Techniques actually implemented in the current codebase (no per-technique speedup figures are claimed; see [Benchmarks](../benchmarks/) for how to measure on your hardware):
+
+| Technique | Description | Where |
+|-----------|-------------|-------|
+| Shared Memory Tiling | Cache input tile + halo in shared memory for data reuse | `convolution_engine.cu` |
+| Vectorized Access | `uchar4` loads/stores for coalesced 4-byte access | `pixel_operator.cu` |
+| Atomic Operations | `atomicAdd`-based histogram accumulation without a separate reduction | `histogram_calculator.cu` |
+
+Warp primitives (`__shfl`, `__reduce`), texture memory, and loop unrolling pragmas are not used in the current kernels.
 
 ### Memory Optimization
 
 ```mermaid
 flowchart LR
-    A[Host Memory] -->|Upload| B[Pinned Memory]
-    B -->|DMA| C[Device Memory]
-    C -->|Compute| D[Shared Memory]
-    D -->|Cache| E[Registers]
+    A[Host Memory] -->|Upload| B[Device Memory]
+    B -->|Compute| C[Shared Memory]
+    C -->|Cache| D[Registers]
 ```
 
-1. **Zero-Copy Optimization**
-   - Use Pinned Memory
-   - DMA direct transfer
-   - Avoid intermediate buffers
+1. **RAII Device Memory**
+   - `DeviceBuffer` owns device allocations and frees them on destruction
+   - No manual `cudaMalloc`/`cudaFree` bookkeeping in user code
+   - Pinned/zero-copy host memory is not used; transfers are explicit uploads/downloads
 
 2. **Memory Pool Reuse**
-   - Pre-allocate large memory blocks
-   - Reduce allocation overhead
-   - Minimize fragmentation
+   - `ImageAllocator` can pool host image allocations (`ImageUtils::setMemoryPoolingEnabled`)
+   - Reduces repeated allocation overhead
+   - Minimizes fragmentation
 
 ### Asynchronous Execution
 
@@ -135,16 +136,9 @@ gantt
     Download Result 2 :2, 3
 ```
 
-## Comparison with Similar Projects
+## Relationship to Similar Projects
 
-| Feature | Mini-OpenCV | OpenCV CUDA | cv-cuda | NPP |
-|---------|:-----------:|:-----------:|:-------:|:---:|
-| Modern C++ API | ✅ | ❌ | ✅ | ❌ |
-| Memory Management | RAII | Manual | RAII | Manual |
-| Async Execution | ✅ | Partial | ✅ | ✅ |
-| Complete Tests | ✅ | ❌ | ✅ | ❌ |
-| Open Source | ✅ | ✅ | ✅ | Partial |
-| Learning Curve | Low | Medium | Medium | High |
+Mini-OpenCV is a small, self-contained project with a limited operator set. Mature libraries — OpenCV (including its `cv::cuda` C++ module and extensive test suite), CV-CUDA, and NPP — offer far broader operator coverage, production hardening, and years of optimization; they are the right choice for production workloads, and Mini-OpenCV does not claim to outperform them. Mini-OpenCV's value is a readable three-layer implementation of a core operator set with modern C++ RAII memory management, suitable for learning and for embedding where a minimal dependency footprint matters.
 
 ## Future Roadmap
 

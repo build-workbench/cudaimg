@@ -141,14 +141,14 @@
 ```bibtex
 @software{mini_opencv_2024,
   title = {Mini-OpenCV: High-Performance CUDA Image Processing Library},
-  author = {LessUp},
+  author = {AICL-Lab},
   year = {2024},
   version = {3.0.0},
-  url = {https://github.com/LessUp/mini-opencv},
-  note = {CUDA-accelerated operators achieving 30-50× speedup over CPU implementations}
+  url = {https://github.com/AICL-Lab/mini-opencv},
+  note = {CUDA-accelerated image processing operators with a three-layer C++17 architecture}
 }
 ```
 
 ## 贡献参考文献
 
-发现了相关的论文或项目？请[提交 Issue](https://github.com/LessUp/mini-opencv/issues) 或发送 Pull Request！
+发现了相关的论文或项目？请[提交 Issue](https://github.com/AICL-Lab/mini-opencv/issues) 或发送 Pull Request！

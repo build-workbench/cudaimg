@@ -1,11 +1,15 @@
 # Filter Operators
 
-Image filtering operations.
+Image filtering operations (static class `Filters`).
+
+All operations write into a caller-provided output image and accept an
+optional CUDA stream.
 
 ## medianFilter
 
 ```cpp
-GpuImage medianFilter(const GpuImage& input, int kernelSize);
+static void medianFilter(const GpuImage& input, GpuImage& output,
+                         int kernelSize = 3, cudaStream_t stream = nullptr);
 ```
 
 Applies median filter for noise reduction while preserving edges.
@@ -13,19 +17,24 @@ Applies median filter for noise reduction while preserving edges.
 ## bilateralFilter
 
 ```cpp
-GpuImage bilateralFilter(const GpuImage& input, float sigmaSpace, float sigmaColor);
+static void bilateralFilter(const GpuImage& input, GpuImage& output,
+                            int kernelSize = 5, float sigmaSpace = 10.0f,
+                            float sigmaColor = 50.0f,
+                            cudaStream_t stream = nullptr);
 ```
 
 Edge-preserving smoothing filter.
 
 **Parameters:**
+- `kernelSize`: Window size
 - `sigmaSpace`: Spatial extent
 - `sigmaColor`: Color similarity threshold
 
 ## boxFilter
 
 ```cpp
-GpuImage boxFilter(const GpuImage& input, int kernelSize);
+static void boxFilter(const GpuImage& input, GpuImage& output,
+                      int kernelSize = 3, cudaStream_t stream = nullptr);
 ```
 
 Applies box (mean) filter.
@@ -33,18 +42,50 @@ Applies box (mean) filter.
 ## sharpen
 
 ```cpp
-GpuImage sharpen(const GpuImage& input, float strength = 1.0f);
+static void sharpen(const GpuImage& input, GpuImage& output,
+                    float strength = 1.0f, cudaStream_t stream = nullptr);
 ```
 
-Sharpens image using unsharp masking.
+Sharpens image using a 3×3 sharpening kernel.
 
-## Performance
+## laplacian
 
-| Filter | 4K Image | Speedup |
-|--------|----------|---------|
-| Median 3×3 | 2.5 ms | 11.4× |
-| Bilateral | 4.8 ms | 37.6× |
-| Box 5×5 | 0.8 ms | 31.5× |
-| Sharpen | 1.1 ms | 38.3× |
+```cpp
+static void laplacian(const GpuImage& input, GpuImage& output,
+                      cudaStream_t stream = nullptr);
+```
+
+Laplacian filter (edge enhancement).
+
+## Image Arithmetic
+
+The same header defines static class `ImageArithmetic` for per-pixel arithmetic
+(same signature style: output parameter + optional stream):
+
+```cpp
+static void add(const GpuImage& src1, const GpuImage& src2, GpuImage& output,
+                cudaStream_t stream = nullptr);
+static void subtract(const GpuImage& src1, const GpuImage& src2,
+                     GpuImage& output, cudaStream_t stream = nullptr);
+static void multiply(const GpuImage& src1, const GpuImage& src2,
+                     GpuImage& output, float scale = 1.0f,
+                     cudaStream_t stream = nullptr);
+static void blend(const GpuImage& src1, const GpuImage& src2,
+                  GpuImage& output, float alpha, cudaStream_t stream = nullptr);
+static void addWeighted(const GpuImage& src1, float alpha,
+                        const GpuImage& src2, float beta, GpuImage& output,
+                        float gamma = 0.0f, cudaStream_t stream = nullptr);
+static void absDiff(const GpuImage& src1, const GpuImage& src2,
+                    GpuImage& output, cudaStream_t stream = nullptr);
+static void addScalar(const GpuImage& input, GpuImage& output,
+                      unsigned char value, cudaStream_t stream = nullptr);
+static void multiplyScalar(const GpuImage& input, GpuImage& output,
+                           float scale, cudaStream_t stream = nullptr);
+```
+
+## Notes
+
+- Absolute GPU latency can be measured with the `benchmarks/` harness
+  (`-DBUILD_BENCHMARKS=ON`); the project does not publish CPU comparison figures.
 
 [Back to API](../)

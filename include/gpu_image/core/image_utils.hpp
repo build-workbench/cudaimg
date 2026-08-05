@@ -50,6 +50,11 @@ GpuImage uploadToGpu(const HostImage& hostImage);
 /// 下载 GpuImage 到主机，返回新的 HostImage
 HostImage downloadFromGpu(const GpuImage& gpuImage);
 
+/// Deep-copy a GpuImage (device-to-device), returning an independent image
+/// 深拷贝 GpuImage（设备到设备），返回相互独立的新图像
+/// An invalid input yields an empty (invalid) GpuImage.
+GpuImage clone(const GpuImage& gpuImage);
+
 /// Async upload: resizes gpuImage if needed
 /// 异步上传：需要时调整 gpuImage 大小
 void uploadToGpuAsync(const HostImage& hostImage, GpuImage& gpuImage,

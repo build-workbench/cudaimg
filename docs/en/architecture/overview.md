@@ -27,13 +27,17 @@ graph TB
         GI[GpuImage]
         CE[CudaError]
         IO[ImageIO]
-        SM[StreamManager]
+        EC[ExecutionPolicy / ExecutionContext]
+        MM[ImageAllocator / MemoryManager]
     end
     
+    IP --> EC
     IP --> PO & CV & GM & MP & TH & CS & FT & HG
-    PP --> IP
+    PP --> PO & CV
     
-    PO & CV & GM & MP & TH & CS & FT & HG --> DB & GI & SM
+    PO & CV & GM & MP & TH & CS & FT & HG --> DB & GI
+    EC --> MM
+    MM --> DB
     DB --> CE
     IO --> GI
 ```
@@ -46,22 +50,22 @@ The top-level API that users interact with:
 
 | Component | Purpose |
 |-----------|---------|
-| `ImageProcessor` | Main entry point for image operations |
-| `PipelineProcessor` | Chain multiple operations with async execution |
+| `ImageProcessor` | Main entry point for image operations (holds an `ExecutionContext`) |
+| `PipelineProcessor` | Multi-stream batch pipeline built from user-defined steps (`addStep` + `processBatch`) |
 
 ### 2. Operator Layer
 
-CUDA kernels implementing image processing algorithms:
+CUDA kernels implementing image processing algorithms. All operators are static functions that take an optional `cudaStream_t`:
 
 | Category | Operations | CUDA Technique |
 |----------|------------|----------------|
-| **Pixel** | Invert, grayscale, brightness | Per-pixel parallelism |
+| **Pixel** | Invert, grayscale, brightness | Per-pixel parallelism, `uchar4` vectorization |
 | **Convolution** | Gaussian blur, Sobel, custom kernels | Shared memory tiling |
-| **Histogram** | Calculation, equalization | Atomic operations + reduction |
-| **Geometric** | Resize, rotate, flip, affine | Bilinear interpolation |
+| **Histogram** | Calculation, equalization | Shared-memory atomic histogram + block merge |
+| **Geometric** | Resize, rotate, flip, affine | Nearest-neighbor / bilinear interpolation |
 | **Morphology** | Erosion, dilation, open/close | Custom structuring elements |
 | **Threshold** | Global, adaptive, Otsu | Histogram-driven |
-| **Color Space** | RGB/HSV/YUV conversion | Matrix operations |
+| **Color Space** | RGB/HSV/YUV/Lab conversion | Per-pixel color transforms |
 | **Filters** | Median, bilateral, sharpen | Edge-preserving filters |
 
 ### 3. Infrastructure Layer
@@ -71,10 +75,28 @@ Core utilities for GPU computing:
 | Component | Purpose |
 |-----------|---------|
 | `DeviceBuffer` | RAII GPU memory management |
-| `GpuImage` | Image container with GPU memory |
-| `CudaError` | Error handling and checking |
-| `ImageIO` | Image file I/O (JPEG, PNG, BMP) |
-| `StreamManager` | CUDA stream pool for async execution |
+| `GpuImage` / `HostImage` | Image containers (device / host) |
+| `ExecutionPolicy` / `ExecutionContext` | Sync / Async / Batch execution model wrapping a CUDA stream |
+| `ImageAllocator` / `MemoryManager` | Output allocation with optional memory pooling |
+| `CudaError` | Error handling (`CUDA_CHECK` macro, `CudaException`) |
+| `ImageIO` | Image file I/O (via stb) |
+
+## Execution Model
+
+The core abstraction is `ExecutionContext` (`include/gpu_image/core/execution_context.hpp`):
+
+- **`ExecutionPolicy`** — Sync, Async, or Batch. Async/Batch policies create and own a `cudaStream_t` (`cudaStreamCreate`); the policy is move-only and destroys its stream on destruction.
+- **`ExecutionContext`** — wraps a policy and provides `allocateOutput` / `ensureOutputSize` / `recycleToPool` / `synchronize` / `stream()`.
+- **`ImageAllocator`** — singleton used by the context for output buffers; memory pooling is **disabled by default**.
+
+```cpp
+ExecutionContext ctx(ExecutionPolicy::async());
+GpuImage output = ctx.allocateOutput(input);
+PixelOperator::invert(input, output, ctx.stream());
+ctx.synchronize();  // only needed for async/batch
+```
+
+`ImageProcessor` is a facade over the operator layer driven by such a context; `PipelineProcessor` manages its own stream pool for batch processing (see [CUDA Streams](./cuda-streams)).
 
 ## Data Flow
 
@@ -97,14 +119,14 @@ sequenceDiagram
     K-->>P: sync
     P-->>G: return result
     
-    H->>P: downloadImage(gpu)
+    H->>P: download(gpu)
     P->>D: cudaMemcpy D2H
     P-->>H: return HostImage
 ```
 
 ## Memory Model
 
-### Zero-Copy Optimization
+### Host–Device Data Flow
 
 ```mermaid
 graph LR
@@ -123,15 +145,15 @@ graph LR
     GI -- cudaMemcpy D2H --> HI
 ```
 
-Key optimizations:
+Key points:
 
-1. **Lazy Allocation**: Memory allocated on first use
-2. **Buffer Reuse**: Memory pool for temporary buffers
-3. **Async Transfer**: Overlap compute and transfer using CUDA streams
+1. **RAII Buffers**: `DeviceBuffer` frees device memory automatically; `GpuImage` is a plain struct holding a buffer plus width/height/channels
+2. **Optional Memory Pooling**: `MemoryManager` recycles allocations by size, gated by `ImageAllocator` — pooling is disabled by default
+3. **Multi-Stream Batching**: `PipelineProcessor` overlaps transfer and compute across CUDA streams
 
 ## CUDA Stream Pipeline
 
-Multi-stream execution enables overlapping operations:
+`PipelineProcessor(numStreams)` round-robins images over its streams, overlapping per-image stages:
 
 ```mermaid
 gantt
@@ -155,14 +177,17 @@ gantt
     D2H Transfer 2    :7, 9
 ```
 
-## Supported GPU Architectures
+## Build Configuration
+
+Host code is compiled as **C++17**, device code as **C++14** (`CMAKE_CXX_STANDARD 17`, `CMAKE_CUDA_STANDARD 14`).
+
+`CMAKE_CUDA_ARCHITECTURES` defaults to `native` (CMake ≥ 3.24), falling back to `75;80;86;89`:
 
 | Architecture | Compute Capability | Example GPUs |
 |--------------|-------------------|--------------|
 | Turing | SM 75 | RTX 20 series, T4 |
 | Ampere | SM 80/86 | A100, RTX 30 series |
 | Ada Lovelace | SM 89 | RTX 40 series, L4 |
-| Hopper | SM 90 | H100 |
 
 ## Next Steps
 

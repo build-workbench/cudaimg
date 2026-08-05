@@ -20,31 +20,36 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
 | 选项 | 默认值 | 描述 |
 |------|--------|------|
+| `GPU_IMAGE_ENABLE_IO` | ON | 启用图像文件 I/O（通过 stb） |
 | `BUILD_EXAMPLES` | ON | 构建示例程序 |
 | `BUILD_TESTS` | ON | 构建 GoogleTest 套件 |
 | `BUILD_BENCHMARKS` | OFF | 构建性能基准测试 |
-| `BUILD_SHARED_LIBS` | OFF | 构建为动态库 |
+
+库始终以静态库方式构建——`BUILD_SHARED_LIBS` 无效。
 
 ### CUDA 选项
 
 | 选项 | 默认值 | 描述 |
 |------|--------|------|
-| `CUDA_ARCH` | auto | GPU 架构（如 "80;86;89"） |
-| `CUDA_FAST_MATH` | ON | 快速数学模式 |
-| `CUDA_VERBOSE_PTXAS` | OFF | 详细 PTX 汇编输出 |
+| `CMAKE_CUDA_ARCHITECTURES` | auto | GPU 架构（如 `"75;80;86;89"`） |
 
-### 高级选项
+`CMAKE_CUDA_ARCHITECTURES` 是标准 CMake 变量。未设置时，CMake 3.24+ 默认为
+`native`（自动检测本机 GPU），否则默认为 `75;80;86;89`。
 
-| 选项 | 默认值 | 描述 |
-|------|--------|------|
-| `ENABLE_CUDA_ERROR_CHECK` | ON | 运行时错误检查 |
-| `ENABLE_MEMORY_TRACKING` | OFF | 跟踪 GPU 内存使用 |
+### 语言标准
+
+| 范围 | 标准 |
+|------|------|
+| 主机代码（C++） | C++17 |
+| 设备代码（CUDA） | C++14（通过 `CMAKE_CUDA_STANDARD`） |
+
+不存在 "CUDA 14" 这个版本——"14" 指的是设备代码所用的 C++ 标准。
 
 ## GPU 架构
 
 ### 自动检测
 
-默认情况下，CMake 检测已安装的 GPU：
+默认情况下，CMake 检测已安装的 GPU（CMake 3.24+）：
 
 ```bash
 cmake -S . -B build  # 自动检测
@@ -54,10 +59,10 @@ cmake -S . -B build  # 自动检测
 
 ```bash
 # 单一架构
-cmake -S . -B build -DCUDA_ARCH=89
+cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES=89
 
 # 多架构
-cmake -S . -B build -DCUDA_ARCH="75;80;86;89"
+cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES="75;80;86;89"
 ```
 
 ### 架构参考
@@ -78,8 +83,7 @@ cmake -S . -B build -DCUDA_ARCH="75;80;86;89"
 cmake -S . -B build \
     -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_EXAMPLES=ON \
-    -DBUILD_TESTS=ON \
-    -DENABLE_CUDA_ERROR_CHECK=ON
+    -DBUILD_TESTS=ON
 ```
 
 ### 生产环境
@@ -88,8 +92,7 @@ cmake -S . -B build \
 cmake -S . -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_EXAMPLES=OFF \
-    -DBUILD_TESTS=OFF \
-    -DENABLE_CUDA_ERROR_CHECK=OFF
+    -DBUILD_TESTS=OFF
 ```
 
 ### 性能测试
@@ -98,7 +101,7 @@ cmake -S . -B build \
 cmake -S . -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_BENCHMARKS=ON \
-    -DCUDA_ARCH=89
+    -DCMAKE_CUDA_ARCHITECTURES=89
 ```
 
 ## 下一步

@@ -2,51 +2,74 @@
 
 Main entry point for GPU image operations.
 
-## Constructor
+## Constructors
 
 ```cpp
 ImageProcessor();
+explicit ImageProcessor(Mode mode);
+explicit ImageProcessor(ExecutionPolicy policy);
 ```
 
-Creates a new processor with default CUDA stream.
+- `ImageProcessor()` creates a processor in default `Sync` mode.
+- `Mode` is an alias of `ExecutionPolicy::Mode`: `Sync`, `Async`, `Batch`.
+- Pass an `ExecutionPolicy` for full control (mode + stream).
+
+## Configuration
+
+```cpp
+void setMemoryPooling(bool enabled);
+bool isMemoryPoolingEnabled() const;
+void setMode(Mode mode);
+Mode mode() const;
+```
 
 ## Image Transfer
+
+### loadFromMemory
+
+```cpp
+GpuImage loadFromMemory(const unsigned char* data, int width, int height,
+                        int channels);
+```
+
+Uploads raw pixel data to GPU memory.
 
 ### loadFromHost
 
 ```cpp
-GpuImage loadFromHost(const HostImage& host);
+GpuImage loadFromHost(const HostImage& hostImage);
 ```
 
 Uploads image data from host to GPU memory.
 
 **Parameters:**
-- `host`: Host image data
+- `hostImage`: Host image data
 
 **Returns:** `GpuImage` with data on GPU
 
-### downloadImage
+### download
 
 ```cpp
-HostImage downloadImage(const GpuImage& gpu);
+HostImage download(const GpuImage& image);
 ```
 
 Downloads image data from GPU to host memory.
 
 **Parameters:**
-- `gpu`: GPU image
+- `image`: GPU image
 
 **Returns:** `HostImage` with data on CPU
 
-## Pixel Operations
-
-### grayscale
+### downloadToBuffer
 
 ```cpp
-GpuImage grayscale(const GpuImage& input);
+void downloadToBuffer(const GpuImage& image, unsigned char* buffer,
+                      size_t bufferSize);
 ```
 
-Converts RGB image to grayscale.
+Downloads image data into a pre-allocated host buffer.
+
+## Pixel Operations
 
 ### invert
 
@@ -56,26 +79,45 @@ GpuImage invert(const GpuImage& input);
 
 Inverts image colors.
 
-### brightness
+### toGrayscale
 
 ```cpp
-GpuImage brightness(const GpuImage& input, float factor);
+GpuImage toGrayscale(const GpuImage& input);
 ```
 
-Adjusts image brightness.
+Converts RGB image to grayscale.
+
+### adjustBrightness
+
+```cpp
+GpuImage adjustBrightness(const GpuImage& input, int offset);
+```
+
+Adjusts image brightness by adding `offset` to each channel value
+(clamped to 0–255). The parameter is an integer offset, not a factor.
+
+### In-place variants
+
+```cpp
+void invertInPlace(GpuImage& image);
+void adjustBrightnessInPlace(GpuImage& image, int offset);
+```
+
+Modify the image in place instead of returning a new one.
 
 ## Convolution
 
 ### gaussianBlur
 
 ```cpp
-GpuImage gaussianBlur(const GpuImage& input, int kernelSize, float sigma);
+GpuImage gaussianBlur(const GpuImage& input, int kernelSize = 5,
+                      float sigma = 1.0f);
 ```
 
 Applies Gaussian blur.
 
 **Parameters:**
-- `kernelSize`: Must be odd, ≥3
+- `kernelSize`: Must be odd, ≤ 7 (throws `std::invalid_argument` otherwise)
 - `sigma`: Standard deviation, >0
 
 ### sobelEdgeDetection
@@ -86,46 +128,78 @@ GpuImage sobelEdgeDetection(const GpuImage& input);
 
 Detects edges using Sobel operator.
 
+### convolve
+
+```cpp
+GpuImage convolve(const GpuImage& input, const float* kernel, int kernelSize);
+```
+
+Applies a custom convolution kernel (`kernelSize × kernelSize` weights,
+odd, ≤ 7).
+
+## Histogram
+
+### histogram
+
+```cpp
+std::array<int, 256> histogram(const GpuImage& input);
+```
+
+Computes a grayscale histogram (256 bins).
+
+### histogramRGB
+
+```cpp
+std::array<std::array<int, 256>, 3> histogramRGB(const GpuImage& input);
+```
+
+Computes per-channel RGB histograms.
+
+### histogramEqualize
+
+```cpp
+GpuImage histogramEqualize(const GpuImage& input);
+```
+
+Applies histogram equalization.
+
 ## Geometric
 
 ### resize
 
 ```cpp
-GpuImage resize(const GpuImage& input, int width, int height);
+GpuImage resize(const GpuImage& input, int newWidth, int newHeight);
 ```
 
 Resizes image using bilinear interpolation.
 
-### rotate
+### resizeByScale
 
 ```cpp
-GpuImage rotate(const GpuImage& input, float angle);
+GpuImage resizeByScale(const GpuImage& input, float scaleX, float scaleY);
 ```
 
-Rotates image by angle in degrees.
+Resizes image by scale factors.
 
-## Threshold
-
-### threshold
+## Synchronization
 
 ```cpp
-GpuImage threshold(const GpuImage& input, float value);
+void synchronize();        // Block until async/batch operations complete
+bool isComplete() const;   // Non-blocking completion check
 ```
-
-Applies binary threshold.
 
 ## Example
 
 ```cpp
 ImageProcessor processor;
 
-HostImage input = ImageIO::load("input.jpg");
+HostImage input = ImageIO::loadFromFile("input.jpg");
 GpuImage gpu = processor.loadFromHost(input);
 
 GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
 GpuImage edges = processor.sobelEdgeDetection(blurred);
-GpuImage result = processor.threshold(edges, 128);
+GpuImage gray = processor.toGrayscale(gpu);
 
-HostImage output = processor.downloadImage(result);
-ImageIO::save("output.jpg", output);
+HostImage output = processor.download(edges);
+ImageIO::saveToFile(output, "output.jpg");
 ```

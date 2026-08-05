@@ -1,46 +1,30 @@
 # Benchmark Methodology
 
-How we measure and report performance.
+How Mini-OpenCV measures and reports performance.
 
-## Test Environment
+## Scope
 
-### Hardware
-
-| Component | Specification |
-|-----------|--------------|
-| GPU | NVIDIA RTX 4090 (24GB VRAM) |
-| CPU | Intel i9-13900K (24 cores) |
-| RAM | 64GB DDR5-6000 |
-| Storage | NVMe SSD |
-
-### Software
-
-| Component | Version |
-|-----------|---------|
-| OS | Ubuntu 22.04 LTS |
-| CUDA | 12.4 |
-| Driver | 550.x |
-| OpenCV | 4.8.0 |
-| GCC | 11.4 |
+The benchmark suite measures **GPU-only absolute latency**. It does not measure CPU implementations and does not compute speedup ratios against OpenCV or any other library. No fixed hardware environment is documented here on purpose: numbers depend on your GPU, driver, and system state, and the only results we stand behind are the ones you reproduce yourself. The benchmark executable prints the CUDA device it detected at the start of every run.
 
 ## Measurement Methodology
 
 ### Warm-up
 
-Before each measurement:
-1. Run operation 10 times to warm up GPU
-2. Clear GPU cache with `cudaDeviceSynchronize()`
+Before each measurement (`benchmarks/benchmark_main.cpp`):
+1. Run the operation 10 times (untimed) to warm up the GPU
+2. Call `cudaDeviceSynchronize()`
 
 ### Timing
+
+A hand-written `std::chrono` timer wraps the timed loop (the Google Benchmark library is linked by the build but not used by the current harness):
 
 ```cpp
 auto start = std::chrono::high_resolution_clock::now();
 
-// Run operation N times
-for (int i = 0; i < iterations; i++) {
+for (int i = 0; i < iterations; i++) {   // iterations = 100
     operation();
-    cudaDeviceSynchronize();
 }
+cudaDeviceSynchronize();
 
 auto end = std::chrono::high_resolution_clock::now();
 auto avg_time = (end - start) / iterations;
@@ -48,32 +32,34 @@ auto avg_time = (end - start) / iterations;
 
 ### Metrics
 
-- **Latency**: Average time per operation
-- **Throughput**: Operations per second
-- **Speedup**: CPU time / GPU time
+- **Latency**: average milliseconds per operation — the only metric the harness reports
 
 ## Image Sizes
 
-| Name | Dimensions | Pixels |
-|------|------------|--------|
-| HD | 1280×720 | 921K |
-| FHD | 1920×1080 | 2.1M |
-| 4K | 3840×2160 | 8.3M |
-| 8K | 7680×4320 | 33.2M |
+The harness sweeps five square sizes:
+
+| Dimensions | Pixels |
+|------------|--------|
+| 256×256 | 66K |
+| 512×512 | 262K |
+| 1024×1024 | 1.0M |
+| 2048×2048 | 4.2M |
+| 4096×4096 | 16.8M |
 
 ## Reproducibility
 
-All benchmarks are available in the `benchmarks/` directory:
+The benchmark target is `gpu_image_benchmark` (benchmarks are disabled by default):
 
 ```bash
-mkdir build && cd build
-cmake -DBUILD_BENCHMARKS=ON ..
-make -j$(nproc)
-./bin/benchmark_convolution
+cmake -S . -B build -DBUILD_BENCHMARKS=ON
+cmake --build build -j$(nproc)
+./build/bin/gpu_image_benchmark
 ```
+
+The executable prints the detected CUDA device, one latency table per image size, and a pipeline section comparing sequential processing of a 10-image batch against 1 / 2 / 4 / 8 CUDA streams.
 
 ## Notes
 
-- CPU benchmarks use single-threaded OpenCV
-- GPU benchmarks include host-device transfer time
-- Results may vary based on GPU temperature and clock speed
+- There are no CPU benchmarks in this repository; no CPU/GPU comparison is implied anywhere in these docs
+- Per-operation timings measure kernel execution on data already resident on the device; host↔device transfer costs appear as the separate "Upload (H2D)" / "Download (D2H)" entries
+- Results vary with GPU model, temperature, clock speed, and driver version

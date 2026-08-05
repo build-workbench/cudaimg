@@ -27,13 +27,17 @@ graph TB
         GI[GpuImage]
         CE[CudaError]
         IO[ImageIO]
-        SM[StreamManager]
+        EC[ExecutionPolicy / ExecutionContext]
+        MM[ImageAllocator / MemoryManager]
     end
     
+    IP --> EC
     IP --> PO & CV & GM & MP & TH & CS & FT & HG
-    PP --> IP
+    PP --> PO & CV
     
-    PO & CV & GM & MP & TH & CS & FT & HG --> DB & GI & SM
+    PO & CV & GM & MP & TH & CS & FT & HG --> DB & GI
+    EC --> MM
+    MM --> DB
     DB --> CE
     IO --> GI
 ```
@@ -46,22 +50,22 @@ graph TB
 
 | 组件 | 用途 |
 |------|------|
-| `ImageProcessor` | 图像操作的主入口 |
-| `PipelineProcessor` | 链式多操作异步执行 |
+| `ImageProcessor` | 图像操作的主入口（持有一个 `ExecutionContext`） |
+| `PipelineProcessor` | 基于用户自定义步骤的多流批处理流水线（`addStep` + `processBatch`） |
 
 ### 2. 算子层
 
-实现图像处理算法的 CUDA 内核：
+实现图像处理算法的 CUDA 内核。所有算子都是静态函数，并接受可选的 `cudaStream_t`：
 
 | 类别 | 操作 | CUDA 技术 |
 |------|------|-----------|
-| **像素** | 反转、灰度、亮度 | 逐像素并行 |
+| **像素** | 反转、灰度、亮度 | 逐像素并行、`uchar4` 向量化 |
 | **卷积** | 高斯模糊、Sobel、自定义核 | 共享内存分块 |
-| **直方图** | 计算、均衡化 | 原子操作 + 归约 |
-| **几何** | 缩放、旋转、翻转、仿射 | 双线性插值 |
+| **直方图** | 计算、均衡化 | 共享内存原子直方图 + 块间合并 |
+| **几何** | 缩放、旋转、翻转、仿射 | 最近邻 / 双线性插值 |
 | **形态学** | 腐蚀、膨胀、开闭运算 | 自定义结构元素 |
 | **阈值** | 全局、自适应、Otsu | 直方图驱动 |
-| **色彩空间** | RGB/HSV/YUV 转换 | 矩阵运算 |
+| **色彩空间** | RGB/HSV/YUV/Lab 转换 | 逐像素颜色变换 |
 | **滤波** | 中值、双边、锐化 | 边缘保持滤波 |
 
 ### 3. 基础设施层
@@ -71,10 +75,28 @@ GPU 计算的核心工具：
 | 组件 | 用途 |
 |------|------|
 | `DeviceBuffer` | RAII GPU 内存管理 |
-| `GpuImage` | 带 GPU 内存的图像容器 |
-| `CudaError` | 错误处理和检查 |
-| `ImageIO` | 图像文件 I/O (JPEG, PNG, BMP) |
-| `StreamManager` | 异步执行的 CUDA 流池 |
+| `GpuImage` / `HostImage` | 图像容器（设备端 / 主机端） |
+| `ExecutionPolicy` / `ExecutionContext` | 封装 CUDA 流的同步 / 异步 / 批处理执行模型 |
+| `ImageAllocator` / `MemoryManager` | 输出缓冲区分配，可选内存池 |
+| `CudaError` | 错误处理（`CUDA_CHECK` 宏、`CudaException`） |
+| `ImageIO` | 图像文件 I/O（基于 stb） |
+
+## 执行模型
+
+核心抽象是 `ExecutionContext`（`include/gpu_image/core/execution_context.hpp`）：
+
+- **`ExecutionPolicy`** —— Sync、Async 或 Batch。Async/Batch 策略会创建并持有一个 `cudaStream_t`（`cudaStreamCreate`）；策略对象仅可移动（move-only），析构时销毁其流。
+- **`ExecutionContext`** —— 包装执行策略，提供 `allocateOutput` / `ensureOutputSize` / `recycleToPool` / `synchronize` / `stream()`。
+- **`ImageAllocator`** —— 上下文用于分配输出缓冲区的单例；内存池**默认关闭**。
+
+```cpp
+ExecutionContext ctx(ExecutionPolicy::async());
+GpuImage output = ctx.allocateOutput(input);
+PixelOperator::invert(input, output, ctx.stream());
+ctx.synchronize();  // 仅异步/批处理模式需要
+```
+
+`ImageProcessor` 是由该上下文驱动的算子层门面；`PipelineProcessor` 则管理自己的流池用于批处理（见 [CUDA 流](./cuda-streams)）。
 
 ## 数据流
 
@@ -97,14 +119,14 @@ sequenceDiagram
     K-->>P: 同步
     P-->>G: 返回结果
     
-    H->>P: downloadImage(gpu)
+    H->>P: download(gpu)
     P->>D: cudaMemcpy D2H
     P-->>H: 返回 HostImage
 ```
 
 ## 内存模型
 
-### 零拷贝优化
+### 主机–设备数据流
 
 ```mermaid
 graph LR
@@ -123,15 +145,15 @@ graph LR
     GI -- cudaMemcpy D2H --> HI
 ```
 
-关键优化：
+要点：
 
-1. **延迟分配**: 首次使用时分配内存
-2. **缓冲区复用**: 临时缓冲区的内存池
-3. **异步传输**: 使用 CUDA 流重叠计算和传输
+1. **RAII 缓冲区**: `DeviceBuffer` 自动释放设备内存；`GpuImage` 是持有缓冲区及 width/height/channels 的普通 struct
+2. **可选内存池**: `MemoryManager` 按大小回收分配，由 `ImageAllocator` 控制开关——默认关闭
+3. **多流批处理**: `PipelineProcessor` 通过 CUDA 流重叠传输与计算
 
 ## CUDA 流水线
 
-多流执行实现操作重叠：
+`PipelineProcessor(numStreams)` 将图像轮流分配到各条流上，重叠每张图像的处理阶段：
 
 ```mermaid
 gantt
@@ -155,14 +177,17 @@ gantt
     D2H 传输 2    :7, 9
 ```
 
-## 支持的 GPU 架构
+## 构建配置
+
+主机代码按 **C++17** 编译，设备代码按 **C++14** 编译（`CMAKE_CXX_STANDARD 17`、`CMAKE_CUDA_STANDARD 14`）。
+
+`CMAKE_CUDA_ARCHITECTURES` 默认为 `native`（CMake ≥ 3.24），回退值为 `75;80;86;89`：
 
 | 架构 | 计算能力 | 示例 GPU |
 |------|---------|----------|
 | Turing | SM 75 | RTX 20 系列, T4 |
 | Ampere | SM 80/86 | A100, RTX 30 系列 |
 | Ada Lovelace | SM 89 | RTX 40 系列, L4 |
-| Hopper | SM 90 | H100 |
 
 ## 下一步
 

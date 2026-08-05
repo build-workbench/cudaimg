@@ -4,29 +4,29 @@
 # Code owners are automatically requested for review when someone opens a pull request that modifies code that they own.
 
 # Default owners for everything in the repo
-* @LessUp
+* @AICL-Lab
 
 # CUDA kernels and GPU code
-/src/*.cu @LessUp
-/src/*.cuh @LessUp
-/include/gpu_image/*.cuh @LessUp
+/src/*.cu @AICL-Lab
+/src/*.cuh @AICL-Lab
+/include/gpu_image/*.cuh @AICL-Lab
 
 # CMake build system
-/CMakeLists.txt @LessUp
-/cmake/ @LessUp
+/CMakeLists.txt @AICL-Lab
+/cmake/ @AICL-Lab
 
 # CI/CD workflows
-/.github/workflows/ @LessUp
+/.github/workflows/ @AICL-Lab
 
 # Documentation
-/README.md @LessUp
-/README.zh-CN.md @LessUp
-/index.md @LessUp
-/CHANGELOG.md @LessUp
-/CONTRIBUTING.md @LessUp
+/README.md @AICL-Lab
+/README.zh-CN.md @AICL-Lab
+/index.md @AICL-Lab
+/CHANGELOG.md @AICL-Lab
+/CONTRIBUTING.md @AICL-Lab
 
 # Tests
-/tests/ @LessUp
+/tests/ @AICL-Lab
 
 # Examples
-/examples/ @LessUp
+/examples/ @AICL-Lab

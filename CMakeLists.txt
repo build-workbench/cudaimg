@@ -45,8 +45,6 @@ add_library(gpu_image_processing STATIC
     src/core/memory_manager.cpp
     src/core/image_utils.cpp
     src/core/execution_context.cpp
-    # Utils
-    src/utils/stream_manager.cu
     # Operators
     src/operators/pixel_operator.cu
     src/operators/convolution_engine.cu
@@ -89,7 +87,8 @@ if(GPU_IMAGE_ENABLE_IO)
     FetchContent_Declare(
         stb
         GIT_REPOSITORY https://github.com/nothings/stb.git
-        GIT_TAG ae721c548fd61d0af42f99ab55b29c132b7a231a
+        # stb master HEAD（2026-07 核实存在；旧 tag ae721c54 在上游不存在，导致配置失败）
+        GIT_TAG 31c1ad37456438565541f4919958214b6e762fb4
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
     )
@@ -133,6 +132,7 @@ if(BUILD_TESTS)
         tests/operators/test_color_space.cpp
         tests/operators/test_geometric.cpp
         tests/operators/test_filters.cpp
+        tests/io/test_io.cpp
     )
     
     target_link_libraries(gpu_image_tests
@@ -175,6 +175,7 @@ endif()
 
 # ── Install ──────────────────────────────────────────────────────
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 install(TARGETS gpu_image_processing
     EXPORT gpu_image_processing-targets
@@ -184,8 +185,29 @@ install(TARGETS gpu_image_processing
 install(DIRECTORY include/gpu_image
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+# 包配置文件：声明对 CUDAToolkit 的依赖（库 PUBLIC 链接 CUDA::cudart），
+# 否则下游 find_package(gpu_image_processing) 会因找不到 CUDA::cudart 失败。
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config.cmake
+    "include(CMakeFindDependencyMacro)\n"
+    "find_dependency(CUDAToolkit)\n"
+    "include(\"\${CMAKE_CURRENT_LIST_DIR}/gpu_image_processing-targets.cmake\")\n"
+)
+
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config-version.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gpu_image_processing
+)
+
 install(EXPORT gpu_image_processing-targets
-    FILE gpu_image_processing-config.cmake
+    FILE gpu_image_processing-targets.cmake
     NAMESPACE gpu_image::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gpu_image_processing
 )

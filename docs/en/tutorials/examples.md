@@ -13,14 +13,14 @@ using namespace gpu_image;
 int main() {
     ImageProcessor processor;
     
-    HostImage input = ImageIO::load("input.jpg");
+    HostImage input = ImageIO::loadFromFile("input.jpg");
     GpuImage gpu = processor.loadFromHost(input);
     
     // Apply Gaussian blur with 5x5 kernel, sigma=1.5
     GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
     
-    HostImage output = processor.downloadImage(blurred);
-    ImageIO::save("blurred.jpg", output);
+    HostImage output = processor.download(blurred);
+    ImageIO::saveToFile(output, "blurred.jpg");
 }
 ```
 
@@ -31,8 +31,8 @@ int main() {
 GpuImage edges = processor.sobelEdgeDetection(gpu);
 
 // Convert to grayscale first for better results
-GpuImage gray = processor.grayscale(gpu);
-GpuImage edges = processor.sobelEdgeDetection(gray);
+GpuImage gray = processor.toGrayscale(gpu);
+GpuImage grayEdges = processor.sobelEdgeDetection(gray);
 ```
 
 ### Resize
@@ -42,19 +42,16 @@ GpuImage edges = processor.sobelEdgeDetection(gray);
 GpuImage resized = processor.resize(gpu, 1920, 1080);
 
 // Scale by factor
-int newWidth = gpu.width() * 2;
-int newHeight = gpu.height() * 2;
-GpuImage doubled = processor.resize(gpu, newWidth, newHeight);
+GpuImage doubled = processor.resizeByScale(gpu, 2.0f, 2.0f);
 ```
 
 ## Image Processing Pipeline
 
 ```cpp
 // Multi-step processing
-GpuImage gray = processor.grayscale(gpu);
+GpuImage gray = processor.toGrayscale(gpu);
 GpuImage blurred = processor.gaussianBlur(gray, 5, 1.0f);
 GpuImage edges = processor.sobelEdgeDetection(blurred);
-GpuImage thresholded = processor.threshold(edges, 128);
 ```
 
 ## Batch Processing
@@ -64,70 +61,74 @@ GpuImage thresholded = processor.threshold(edges, 128);
 std::vector<std::string> files = {"img1.jpg", "img2.jpg", "img3.jpg"};
 
 for (const auto& file : files) {
-    HostImage input = ImageIO::load(file);
+    HostImage input = ImageIO::loadFromFile(file);
     GpuImage gpu = processor.loadFromHost(input);
     GpuImage processed = processor.gaussianBlur(gpu, 5, 1.5f);
-    HostImage output = processor.downloadImage(processed);
+    HostImage output = processor.download(processed);
     
-    std::string outFile = "processed_" + file;
-    ImageIO::save(outFile, output);
+    ImageIO::saveToFile(output, "processed_" + file);
 }
 ```
 
-## Async Processing
+## Async / Multi-Stream Processing
 
 ```cpp
-// Using PipelineProcessor for async operations
-PipelineProcessor pipeline(4);  // 4 CUDA streams
+// PipelineProcessor owns a pool of CUDA streams
+PipelineProcessor pipeline(4);  // 4 streams (default: 3)
 
-std::vector<GpuImage> images;
-for (auto& img : images) {
-    auto stream = pipeline.getStream();
-    pipeline.gaussianBlur(img, 5, 1.5f, stream);
-}
+// Steps receive the image and the stream assigned to it
+pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+    GpuImage temp;
+    ConvolutionEngine::gaussianBlur(img, temp, 5, 1.5f, stream);
+    img = std::move(temp);
+});
+pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+    PixelOperator::invertInPlace(img, stream);
+});
 
-pipeline.synchronize();
+// Images are round-robined across streams; synchronizes before returning
+std::vector<HostImage> results = pipeline.processBatchHost(images);
 ```
 
 ## Morphological Operations
 
+Morphology is available at the operator layer (not on the `ImageProcessor` facade):
+
 ```cpp
-// Erosion and dilation
-GpuImage eroded = processor.erode(gpu, 5);  // 5x5 kernel
-GpuImage dilated = processor.dilate(gpu, 5);
+GpuImage eroded, dilated, opened, closed;
+Morphology::erode(gpu, eroded, 5);    // 5x5 rectangle element
+Morphology::dilate(gpu, dilated, 5);
 
 // Opening (erosion followed by dilation)
-GpuImage opened = processor.morphologyOpen(gpu, 5);
+Morphology::open(gpu, opened, 5);
 
 // Closing (dilation followed by erosion)
-GpuImage closed = processor.morphologyClose(gpu, 5);
+Morphology::close(gpu, closed, 5);
 ```
 
 ## Color Space Conversion
 
-```cpp
-// RGB to HSV
-GpuImage hsv = processor.rgbToHsv(gpu);
+Color conversion is also an operator-layer API:
 
-// RGB to YUV
-GpuImage yuv = processor.rgbToYuv(gpu);
+```cpp
+GpuImage hsv, yuv;
+ColorSpace::rgbToHsv(gpu, hsv);
+ColorSpace::rgbToYuv(gpu, yuv);
 ```
 
 ## Histogram Operations
 
 ```cpp
-// Calculate histogram
-std::vector<int> hist = processor.histogram(gpu);
+// Calculate histogram (256 bins, fixed-size array)
+std::array<int, 256> hist = processor.histogram(gpu);
 
 // Histogram equalization
-GpuImage equalized = processor.histogramEqualization(gpu);
+GpuImage equalized = processor.histogramEqualize(gpu);
 ```
 
 ## More Examples
 
 See the `examples/` directory in the repository for complete programs:
 
-- `basic_example.cpp` - Basic operations
-- `pipeline_example.cpp` - Multi-step processing
-- `batch_example.cpp` - Batch processing
-- `benchmark_example.cpp` - Performance testing
+- `basic_example.cpp` - Pixel ops, convolution, histogram, and resize via `ImageProcessor`
+- `pipeline_example.cpp` - Multi-stream batch processing with `PipelineProcessor`

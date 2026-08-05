@@ -1,21 +1,21 @@
 # Mini-OpenCV — GPU 图像处理库
 
-[![CI](https://github.com/LessUp/mini-opencv/actions/workflows/ci.yml/badge.svg)](https://github.com/LessUp/mini-opencv/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-blue?logo=github)](https://lessup.github.io/mini-opencv/)
+[![CI](https://github.com/AICL-Lab/mini-opencv/actions/workflows/ci.yml/badge.svg)](https://github.com/AICL-Lab/mini-opencv/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-blue?logo=github)](https://aicl-lab.github.io/mini-opencv/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
 ![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)
-![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)
+![Status](https://img.shields.io/badge/Status-Active%20Development-informational.svg)
 
 [English](README.md) | 简体中文
 
 基于 CUDA 的高性能图像处理库，为计算机视觉应用提供 GPU 加速算子。
 
-> **⚡ 性能**：相比 CPU OpenCV 同等操作快 30-50 倍
+> **⚡ GPU 加速**：算子以 CUDA 内核实现（shared memory tiling、原子直方图、`uchar4` 向量化），并行处理图像。
 >
-> *在 RTX 4090 上测试 4K 图像，对比 OpenCV 4.8 CPU 实现。详见 [benchmarks/](benchmarks/)*
+> *[benchmarks/](benchmarks/) 基准测试（以 `-DBUILD_BENCHMARKS=ON` 构建）测量 GPU 绝对延迟。本仓库目前不提供 CPU/OpenCV 对比，因此此处不声明任何跨库加速倍数。*
 
 ---
 
@@ -23,13 +23,13 @@
 
 | 资源 | 描述 |
 |------|------|
-| [安装指南](https://lessup.github.io/mini-opencv/zh/setup/installation) | 完整的安装配置指南 |
-| [快速入门](https://lessup.github.io/mini-opencv/zh/setup/quickstart) | 5 分钟快速上手 |
-| [架构概览](https://lessup.github.io/mini-opencv/zh/architecture/overview) | 三层架构与模块边界 |
-| [API 参考](https://lessup.github.io/mini-opencv/zh/api/) | 完整 API 文档 |
-| [示例代码](https://lessup.github.io/mini-opencv/zh/tutorials/examples) | 代码示例和教程 |
+| [安装指南](https://aicl-lab.github.io/mini-opencv/zh/setup/installation) | 完整的安装配置指南 |
+| [快速入门](https://aicl-lab.github.io/mini-opencv/zh/setup/quickstart) | 5 分钟快速上手 |
+| [架构概览](https://aicl-lab.github.io/mini-opencv/zh/architecture/overview) | 三层架构与模块边界 |
+| [API 参考](https://aicl-lab.github.io/mini-opencv/zh/api/) | 完整 API 文档 |
+| [示例代码](https://aicl-lab.github.io/mini-opencv/zh/tutorials/examples) | 代码示例和教程 |
 
-**完整文档：** https://lessup.github.io/mini-opencv/
+**完整文档：** https://aicl-lab.github.io/mini-opencv/
 
 ---
 
@@ -63,7 +63,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │                      基础设施层                               │
 │  显存缓冲区  ·  GPU/Host 图像容器  ·  错误处理                 │
-│  图像 I/O    ·  流管理器                                      │
+│  图像 I/O    ·  内存池  ·  执行上下文                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -73,7 +73,7 @@
 
 ```bash
 # 克隆并构建
-git clone https://github.com/LessUp/mini-opencv.git
+git clone https://github.com/AICL-Lab/mini-opencv.git
 cd mini-opencv
 cmake -S . -B build -DBUILD_EXAMPLES=ON
 cmake --build build -j$(nproc)
@@ -104,7 +104,7 @@ GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
 GpuImage edges = processor.sobelEdgeDetection(gpu);
 
 // 第4步：下载结果回主机
-HostImage result = processor.downloadImage(edges);
+HostImage result = processor.download(edges);
 ```
 
 ---
@@ -127,7 +127,7 @@ HostImage result = processor.downloadImage(edges);
 | JPEG/JPG | ✓ | ✓ |
 | PNG | ✓ | ✓ |
 | BMP | ✓ | ✓ |
-| TGA | ✓ | ✗ |
+| TGA | ✓ | ✓ |
 
 **注意：** 所有格式均支持 8 位每通道（灰度、RGB、RGBA）
 
@@ -135,14 +135,14 @@ HostImage result = processor.downloadImage(edges);
 
 ## 📖 文档
 
-完整文档请访问 [GitHub Pages](https://lessup.github.io/mini-opencv/)：
+完整文档请访问 [GitHub Pages](https://aicl-lab.github.io/mini-opencv/)：
 
-- [安装指南](https://lessup.github.io/mini-opencv/zh/setup/installation)
-- [快速入门](https://lessup.github.io/mini-opencv/zh/setup/quickstart)
-- [架构概览](https://lessup.github.io/mini-opencv/zh/architecture/overview)
-- [性能基准](https://lessup.github.io/mini-opencv/zh/benchmarks/)
-- [API 参考](https://lessup.github.io/mini-opencv/zh/api/)
-- [常见问题](https://lessup.github.io/mini-opencv/zh/tutorials/faq)
+- [安装指南](https://aicl-lab.github.io/mini-opencv/zh/setup/installation)
+- [快速入门](https://aicl-lab.github.io/mini-opencv/zh/setup/quickstart)
+- [架构概览](https://aicl-lab.github.io/mini-opencv/zh/architecture/overview)
+- [性能基准](https://aicl-lab.github.io/mini-opencv/zh/benchmarks/)
+- [API 参考](https://aicl-lab.github.io/mini-opencv/zh/api/)
+- [常见问题](https://aicl-lab.github.io/mini-opencv/zh/tutorials/faq)
 
 ---
 
@@ -184,7 +184,7 @@ cd build && ctest --output-on-failure
 # 所有测试应该通过
 ```
 
-更多问题请查看 [GitHub Discussions](https://github.com/LessUp/mini-opencv/discussions)。
+更多问题请查看 [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions)。
 
 ---
 
@@ -196,4 +196,4 @@ MIT 许可证 — 详见 [LICENSE](LICENSE) 文件。
 
 **⭐ 如果本项目对你有帮助，请给个 Star！**
 
-如需支持，请提交 [Issue](https://github.com/LessUp/mini-opencv/issues) 或发起 [讨论](https://github.com/LessUp/mini-opencv/discussions)。
+如需支持，请提交 [Issue](https://github.com/AICL-Lab/mini-opencv/issues) 或发起 [讨论](https://github.com/AICL-Lab/mini-opencv/discussions)。

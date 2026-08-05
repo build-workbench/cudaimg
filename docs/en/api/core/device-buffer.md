@@ -6,13 +6,18 @@ RAII GPU memory management.
 
 `DeviceBuffer` provides automatic GPU memory allocation and deallocation using RAII pattern.
 
-## Constructor
+## Constructors
 
 ```cpp
-explicit DeviceBuffer(size_t size);
+DeviceBuffer() noexcept;             // Empty buffer (null pointer, size 0)
+explicit DeviceBuffer(size_t size);  // Allocates `size` bytes on GPU
 ```
 
-Allocates `size` bytes on GPU.
+`fromRaw` takes ownership of an existing allocation (used by the memory pool):
+
+```cpp
+static DeviceBuffer fromRaw(void* ptr, size_t size) noexcept;
+```
 
 ## Destructor
 
@@ -20,26 +25,62 @@ Allocates `size` bytes on GPU.
 ~DeviceBuffer();
 ```
 
-Automatically calls `cudaFree()`.
+Automatically frees GPU memory (`cudaFree()`).
 
-## Methods
+## Data Access
 
 ### data
 
 ```cpp
-void* data();
-const void* data() const;
+void* data() noexcept;
+const void* data() const noexcept;
 ```
 
 Returns pointer to GPU memory.
 
+### dataAs
+
+```cpp
+template <typename T> T* dataAs() noexcept;
+template <typename T> const T* dataAs() const noexcept;
+```
+
+Returns a typed pointer to GPU memory.
+
 ### size
 
 ```cpp
-size_t size() const;
+size_t size() const noexcept;
 ```
 
 Returns allocated size in bytes.
+
+### isValid
+
+```cpp
+bool isValid() const noexcept;
+```
+
+True if the buffer holds a non-null pointer with size > 0.
+
+## Host/Device Transfers
+
+```cpp
+void copyFromHost(const void* hostPtr, size_t size);
+void copyToHost(void* hostPtr, size_t size) const;
+void copyFromDevice(const void* devicePtr, size_t size);  // Device-to-device
+
+// Async variants on a given stream
+void copyFromHostAsync(const void* hostPtr, size_t size, cudaStream_t stream);
+void copyToHostAsync(void* hostPtr, size_t size, cudaStream_t stream) const;
+```
+
+## Ownership
+
+```cpp
+void release() noexcept;                     // Free memory (cudaFree)
+std::pair<void*, size_t> detach() noexcept;  // Release ownership without freeing
+```
 
 ## Move Semantics
 
@@ -54,7 +95,7 @@ Copy is disabled to prevent accidental deep copies.
 
 ```cpp
 // Allocate GPU memory
-DeviceBuffer buffer(1920 * 1080 * 3);  // 4K RGB image
+DeviceBuffer buffer(1920 * 1080 * 3);  // 1080p RGB image
 
 // Use with CUDA kernel
 myKernel<<<grid, block>>>(buffer.data());
@@ -67,17 +108,18 @@ myKernel<<<grid, block>>>(buffer.data());
 ```cpp
 class DeviceBuffer {
 public:
+    DeviceBuffer() noexcept;
     explicit DeviceBuffer(size_t size);
     ~DeviceBuffer();
-    
+
     DeviceBuffer(DeviceBuffer&& other) noexcept;
     DeviceBuffer& operator=(DeviceBuffer&& other) noexcept;
-    
+
     DeviceBuffer(const DeviceBuffer&) = delete;
     DeviceBuffer& operator=(const DeviceBuffer&) = delete;
-    
+
 private:
-    void* d_data_;
+    void* devicePtr_;
     size_t size_;
 };
 ```

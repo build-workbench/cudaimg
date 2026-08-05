@@ -32,23 +32,21 @@ cmake -S . -B build -DCUDA_ARCH="80;86;89"
 ### Q: How do I load an image?
 
 ```cpp
-HostImage image = ImageIO::load("image.jpg");
+HostImage image = ImageIO::loadFromFile("image.jpg");
 GpuImage gpu = processor.loadFromHost(image);
 ```
 
 ### Q: How do I save an image?
 
 ```cpp
-HostImage result = processor.downloadImage(gpu);
-ImageIO::save("output.jpg", result);
+HostImage result = processor.download(gpu);
+ImageIO::saveToFile(result, "output.jpg");
 ```
 
 ### Q: What image formats are supported?
 
-- JPEG/JPG
-- PNG
-- BMP
-- TGA (read only)
+- Read: JPEG, PNG, BMP, TGA, GIF, PSD, HDR, PNM
+- Write: JPEG, PNG, BMP, TGA
 
 ### Q: How do I process multiple images efficiently?
 
@@ -56,10 +54,12 @@ Use `PipelineProcessor` with multiple streams:
 
 ```cpp
 PipelineProcessor pipeline(4);  // 4 streams
-for (auto& img : images) {
-    pipeline.gaussianBlur(img, 5, 1.5f, pipeline.getStream());
-}
-pipeline.synchronize();
+pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+    GpuImage temp;
+    ConvolutionEngine::gaussianBlur(img, temp, 5, 1.5f, stream);
+    img = std::move(temp);
+});
+std::vector<HostImage> results = pipeline.processBatchHost(images);
 ```
 
 ## Performance
@@ -79,8 +79,8 @@ For 4K images (3840×2160):
 ### Q: What's the optimal kernel size?
 
 For Gaussian blur:
-- 3×3 to 15×15: Best performance
-- Larger: Use separable convolution
+- Supported: odd sizes from 3×3 up to 7×7 (the convolution kernels throw for even sizes or sizes above 7)
+- The separable path (`separableConvolve`) has the same 7×7 limit
 
 ## Errors
 
@@ -110,7 +110,7 @@ ctest --test-dir build --output-on-failure -V
 | Feature | OpenCV | Mini-OpenCV |
 |---------|--------|-------------|
 | Execution | CPU | GPU |
-| Speed | Baseline | 30-50× faster |
+| Speed | Baseline | GPU-parallel — see [Benchmarks](../benchmarks/) for measured GPU latency (no CPU comparison is shipped) |
 | Memory | System RAM | GPU VRAM |
 
 ### Q: When should I use Mini-OpenCV?
@@ -129,5 +129,5 @@ ctest --test-dir build --output-on-failure -V
 
 ## More Help
 
-- [GitHub Issues](https://github.com/LessUp/mini-opencv/issues)
-- [GitHub Discussions](https://github.com/LessUp/mini-opencv/discussions)
+- [GitHub Issues](https://github.com/AICL-Lab/mini-opencv/issues)
+- [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions)

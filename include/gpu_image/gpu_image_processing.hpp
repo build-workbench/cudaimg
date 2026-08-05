@@ -3,6 +3,9 @@
 // GPU Image Processing Library
 // 基于 CUDA 的高性能图像处理库
 
+#include <cuda_runtime.h>
+#include <string>
+
 // Core components
 #include "gpu_image/core/cuda_error.hpp"
 #include "gpu_image/core/device_buffer.hpp"
@@ -32,9 +35,6 @@
 
 // I/O
 #include "gpu_image/io/image_io.hpp"
-
-// Utils
-#include "gpu_image/utils/stream_manager.hpp"
 
 namespace gpu_image {
 

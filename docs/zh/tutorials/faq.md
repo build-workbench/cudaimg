@@ -32,23 +32,21 @@ cmake -S . -B build -DCUDA_ARCH="80;86;89"
 ### Q: 如何加载图像？
 
 ```cpp
-HostImage image = ImageIO::load("image.jpg");
+HostImage image = ImageIO::loadFromFile("image.jpg");
 GpuImage gpu = processor.loadFromHost(image);
 ```
 
 ### Q: 如何保存图像？
 
 ```cpp
-HostImage result = processor.downloadImage(gpu);
-ImageIO::save("output.jpg", result);
+HostImage result = processor.download(gpu);
+ImageIO::saveToFile(result, "output.jpg");
 ```
 
 ### Q: 支持哪些图像格式？
 
-- JPEG/JPG
-- PNG
-- BMP
-- TGA（仅读取）
+- 读取：JPEG、PNG、BMP、TGA、GIF、PSD、HDR、PNM
+- 写入：JPEG、PNG、BMP、TGA
 
 ### Q: 如何高效处理多张图像？
 
@@ -56,10 +54,12 @@ ImageIO::save("output.jpg", result);
 
 ```cpp
 PipelineProcessor pipeline(4);  // 4 个流
-for (auto& img : images) {
-    pipeline.gaussianBlur(img, 5, 1.5f, pipeline.getStream());
-}
-pipeline.synchronize();
+pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+    GpuImage temp;
+    ConvolutionEngine::gaussianBlur(img, temp, 5, 1.5f, stream);
+    img = std::move(temp);
+});
+std::vector<HostImage> results = pipeline.processBatchHost(images);
 ```
 
 ## 性能
@@ -79,8 +79,8 @@ pipeline.synchronize();
 ### Q: 最优内核大小是多少？
 
 对于高斯模糊：
-- 3×3 到 15×15：最佳性能
-- 更大：使用可分离卷积
+- 支持的尺寸：3×3 到 7×7 的奇数（卷积内核对偶数或超过 7 的尺寸抛异常）
+- 可分离卷积路径（`separableConvolve`）同样限制在 7×7
 
 ## 错误
 
@@ -110,7 +110,7 @@ ctest --test-dir build --output-on-failure -V
 | 特性 | OpenCV | Mini-OpenCV |
 |------|--------|-------------|
 | 执行位置 | CPU | GPU |
-| 速度 | 基准 | 快 30-50 倍 |
+| 速度 | 基准 | GPU 并行——实测 GPU 延迟见[性能基准](../benchmarks/)（仓库不提供 CPU 对比） |
 | 内存 | 系统内存 | GPU 显存 |
 
 ### Q: 何时使用 Mini-OpenCV？
@@ -129,5 +129,5 @@ ctest --test-dir build --output-on-failure -V
 
 ## 更多帮助
 
-- [GitHub Issues](https://github.com/LessUp/mini-opencv/issues)
-- [GitHub Discussions](https://github.com/LessUp/mini-opencv/discussions)
+- [GitHub Issues](https://github.com/AICL-Lab/mini-opencv/issues)
+- [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions)

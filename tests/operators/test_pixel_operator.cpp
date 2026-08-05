@@ -8,6 +8,7 @@
  */
 
 #include "gpu_image/gpu_image_processing.hpp"
+#include <algorithm>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <vector>
@@ -143,11 +144,15 @@ TEST_F(PixelOperatorTest, BrightnessRangeInvariant) {
 
     HostImage result = ImageUtils::downloadFromGpu(adjusted);
 
+    ASSERT_EQ(result.data.size(), original.data.size());
     for (size_t i = 0; i < result.data.size(); ++i) {
-      EXPECT_GE(result.data[i], 0)
-          << "Value below 0 at index " << i << " with offset " << offset;
-      EXPECT_LE(result.data[i], 255)
-          << "Value above 255 at index " << i << " with offset " << offset;
+      // 期望值：clamp(original + offset, 0, 255)，与内核语义一致
+      // （原先对 unsigned char 的 EXPECT_GE(v,0)/EXPECT_LE(v,255)
+      // 是恒真空断言）
+      const int expected =
+          std::clamp(static_cast<int>(original.data[i]) + offset, 0, 255);
+      EXPECT_EQ(result.data[i], static_cast<unsigned char>(expected))
+          << "index " << i << " with offset " << offset;
     }
   }
 }

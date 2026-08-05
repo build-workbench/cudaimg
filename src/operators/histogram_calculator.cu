@@ -57,34 +57,6 @@ __global__ void histogramKernelShared(const unsigned char* input,
   }
 }
 
-// 简单直方图 Kernel（用于小图像）
-__global__ void histogramKernelSimple(const unsigned char* input,
-                                      int* histogram, int width, int height,
-                                      int channels, int targetChannel) {
-
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-  if (x < width && y < height) {
-    unsigned char value;
-
-    if (targetChannel < 0) {
-      if (channels >= 3) {
-        int idx = (y * width + x) * channels;
-        float gray = 0.299f * input[idx] + 0.587f * input[idx + 1] +
-                     0.114f * input[idx + 2];
-        value = static_cast<unsigned char>(min(max(gray + 0.5f, 0.0f), 255.0f));
-      } else {
-        value = input[(y * width + x) * channels];
-      }
-    } else {
-      value = input[(y * width + x) * channels + targetChannel];
-    }
-
-    atomicAdd(&histogram[value], 1);
-  }
-}
-
 // 直方图均衡化 Kernel
 __global__ void equalizeKernel(const unsigned char* input,
                                unsigned char* output, const int* cdf, int width,
@@ -116,9 +88,10 @@ HistogramCalculator::calculate(const GpuImage& input, cudaStream_t stream) {
     throw std::invalid_argument("Invalid input image");
   }
 
-  // 分配 GPU 直方图内存
+  // 分配 GPU 直方图内存（在用户 stream 上清零，避免默认流串行化/PTDS 竞态）
   DeviceBuffer histBuffer(NUM_BINS * sizeof(int));
-  CUDA_CHECK(cudaMemset(histBuffer.data(), 0, NUM_BINS * sizeof(int)));
+  CUDA_CHECK(
+      cudaMemsetAsync(histBuffer.data(), 0, NUM_BINS * sizeof(int), stream));
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -175,7 +148,8 @@ HistogramCalculator::calculateChannel(const GpuImage& input, int channel,
   }
 
   DeviceBuffer histBuffer(NUM_BINS * sizeof(int));
-  CUDA_CHECK(cudaMemset(histBuffer.data(), 0, NUM_BINS * sizeof(int)));
+  CUDA_CHECK(
+      cudaMemsetAsync(histBuffer.data(), 0, NUM_BINS * sizeof(int), stream));
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -244,9 +218,10 @@ void HistogramCalculator::equalize(const GpuImage& input, GpuImage& output,
     return;
   }
 
-  // 上传 CDF 到 GPU
+  // 上传 CDF 到 GPU（走用户 stream，保证与后续 kernel
+  // 的顺序且不被默认流串行化）
   DeviceBuffer cdfBuffer(NUM_BINS * sizeof(int));
-  cdfBuffer.copyFromHost(cdf.data(), NUM_BINS * sizeof(int));
+  cdfBuffer.copyFromHostAsync(cdf.data(), NUM_BINS * sizeof(int), stream);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,

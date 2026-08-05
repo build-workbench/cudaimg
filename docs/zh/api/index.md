@@ -21,12 +21,22 @@ Mini-OpenCV 完整 API 文档。
 
 ## 图像 I/O
 
+`ImageIO` 的所有函数均为静态函数。
+
 | 函数 | 描述 |
 |------|------|
-| `ImageIO::load(path)` | 从文件加载图像 |
-| `ImageIO::save(path, image)` | 保存图像到文件 |
+| `ImageIO::loadFromFile(filepath)` | 从文件加载图像，返回 `HostImage` |
+| `ImageIO::saveToFile(image, filepath)` | 保存图像到文件（图像在前、路径在后），返回 `bool` |
+| `ImageIO::loadFromMemory(data, size)` | 从内存缓冲区解码图像 |
+| `ImageIO::encodeToMemory(image, format)` | 将图像编码到内存缓冲区 |
+| `ImageIO::getSupportedFormats()` | 列出可读格式 |
+| `ImageIO::getWritableFormats()` | 列出可写格式 |
+| `ImageIO::isFormatSupported(filepath)` | 检查文件格式是否可读 |
 
-支持格式：JPEG、PNG、BMP、TGA
+支持格式：
+
+- 可读：JPEG、PNG、BMP、TGA、PSD、GIF、HDR、PNM
+- 可写：JPEG、PNG、BMP、TGA
 
 ## 快速参考
 
@@ -38,7 +48,7 @@ using namespace gpu_image;
 ImageProcessor processor;
 
 // 加载并上传
-HostImage host = ImageIO::load("image.jpg");
+HostImage host = ImageIO::loadFromFile("image.jpg");
 GpuImage gpu = processor.loadFromHost(host);
 
 // 操作
@@ -47,6 +57,6 @@ GpuImage edges = processor.sobelEdgeDetection(gpu);
 GpuImage resized = processor.resize(gpu, 1920, 1080);
 
 // 下载并保存
-HostImage result = processor.downloadImage(gpu);
-ImageIO::save("output.jpg", result);
+HostImage result = processor.download(gpu);
+ImageIO::saveToFile(result, "output.jpg");
 ```

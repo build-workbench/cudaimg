@@ -13,7 +13,7 @@ Get started with Mini-OpenCV in 5 minutes.
 
 ```bash
 # Clone the repository
-git clone https://github.com/LessUp/mini-opencv.git
+git clone https://github.com/AICL-Lab/mini-opencv.git
 cd mini-opencv
 
 # Configure
@@ -36,22 +36,22 @@ int main() {
     // Create an ImageProcessor
     ImageProcessor processor;
 
-    // Load an image from host
-    HostImage hostImage = ImageIO::load("input.jpg");
-    
+    // Load an image from file
+    HostImage hostImage = ImageIO::loadFromFile("input.jpg");
+
     // Upload to GPU
     GpuImage gpu = processor.loadFromHost(hostImage);
 
     // Apply operations (all GPU-accelerated)
     GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
     GpuImage edges = processor.sobelEdgeDetection(gpu);
-    GpuImage gray = processor.grayscale(gpu);
+    GpuImage gray = processor.toGrayscale(gpu);
 
     // Download result back to host
-    HostImage result = processor.downloadImage(blurred);
-    
-    // Save result
-    ImageIO::save("output.jpg", result);
+    HostImage result = processor.download(blurred);
+
+    // Save result (returns true on success)
+    ImageIO::saveToFile(result, "output.jpg");
 
     return 0;
 }
@@ -63,12 +63,14 @@ int main() {
 |-----------|--------|
 | Gaussian Blur | `gaussianBlur(image, kernelSize, sigma)` |
 | Sobel Edge Detection | `sobelEdgeDetection(image)` |
-| Grayscale | `grayscale(image)` |
+| Custom Convolution | `convolve(image, kernel, kernelSize)` |
+| Grayscale | `toGrayscale(image)` |
 | Invert | `invert(image)` |
+| Brightness | `adjustBrightness(image, offset)` |
 | Resize | `resize(image, width, height)` |
-| Rotate | `rotate(image, angle)` |
-| Threshold | `threshold(image, value)` |
-| Histogram Equalization | `histogramEqualization(image)` |
+| Resize by Scale | `resizeByScale(image, scaleX, scaleY)` |
+| Histogram | `histogram(image)` / `histogramRGB(image)` |
+| Histogram Equalization | `histogramEqualize(image)` |
 
 ## Next Steps
 

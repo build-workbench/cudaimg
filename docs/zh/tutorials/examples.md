@@ -13,14 +13,14 @@ using namespace gpu_image;
 int main() {
     ImageProcessor processor;
     
-    HostImage input = ImageIO::load("input.jpg");
+    HostImage input = ImageIO::loadFromFile("input.jpg");
     GpuImage gpu = processor.loadFromHost(input);
     
     // 应用 5x5 高斯模糊，sigma=1.5
     GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
     
-    HostImage output = processor.downloadImage(blurred);
-    ImageIO::save("blurred.jpg", output);
+    HostImage output = processor.download(blurred);
+    ImageIO::saveToFile(output, "blurred.jpg");
 }
 ```
 
@@ -31,8 +31,8 @@ int main() {
 GpuImage edges = processor.sobelEdgeDetection(gpu);
 
 // 先转灰度效果更好
-GpuImage gray = processor.grayscale(gpu);
-GpuImage edges = processor.sobelEdgeDetection(gray);
+GpuImage gray = processor.toGrayscale(gpu);
+GpuImage grayEdges = processor.sobelEdgeDetection(gray);
 ```
 
 ### 图像缩放
@@ -42,19 +42,16 @@ GpuImage edges = processor.sobelEdgeDetection(gray);
 GpuImage resized = processor.resize(gpu, 1920, 1080);
 
 // 按比例缩放
-int newWidth = gpu.width() * 2;
-int newHeight = gpu.height() * 2;
-GpuImage doubled = processor.resize(gpu, newWidth, newHeight);
+GpuImage doubled = processor.resizeByScale(gpu, 2.0f, 2.0f);
 ```
 
 ## 图像处理流水线
 
 ```cpp
 // 多步骤处理
-GpuImage gray = processor.grayscale(gpu);
+GpuImage gray = processor.toGrayscale(gpu);
 GpuImage blurred = processor.gaussianBlur(gray, 5, 1.0f);
 GpuImage edges = processor.sobelEdgeDetection(blurred);
-GpuImage thresholded = processor.threshold(edges, 128);
 ```
 
 ## 批量处理
@@ -64,70 +61,74 @@ GpuImage thresholded = processor.threshold(edges, 128);
 std::vector<std::string> files = {"img1.jpg", "img2.jpg", "img3.jpg"};
 
 for (const auto& file : files) {
-    HostImage input = ImageIO::load(file);
+    HostImage input = ImageIO::loadFromFile(file);
     GpuImage gpu = processor.loadFromHost(input);
     GpuImage processed = processor.gaussianBlur(gpu, 5, 1.5f);
-    HostImage output = processor.downloadImage(processed);
+    HostImage output = processor.download(processed);
     
-    std::string outFile = "processed_" + file;
-    ImageIO::save(outFile, output);
+    ImageIO::saveToFile(output, "processed_" + file);
 }
 ```
 
-## 异步处理
+## 异步 / 多流处理
 
 ```cpp
-// 使用 PipelineProcessor 进行异步操作
-PipelineProcessor pipeline(4);  // 4 个 CUDA 流
+// PipelineProcessor 持有一个 CUDA 流池
+PipelineProcessor pipeline(4);  // 4 条流（默认 3 条）
 
-std::vector<GpuImage> images;
-for (auto& img : images) {
-    auto stream = pipeline.getStream();
-    pipeline.gaussianBlur(img, 5, 1.5f, stream);
-}
+// 处理步骤接收图像及分配给它的流
+pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+    GpuImage temp;
+    ConvolutionEngine::gaussianBlur(img, temp, 5, 1.5f, stream);
+    img = std::move(temp);
+});
+pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+    PixelOperator::invertInPlace(img, stream);
+});
 
-pipeline.synchronize();
+// 图像轮流分配到各条流；返回前完成同步
+std::vector<HostImage> results = pipeline.processBatchHost(images);
 ```
 
 ## 形态学操作
 
+形态学位于算子层（不在 `ImageProcessor` 门面上）：
+
 ```cpp
-// 腐蚀和膨胀
-GpuImage eroded = processor.erode(gpu, 5);  // 5x5 内核
-GpuImage dilated = processor.dilate(gpu, 5);
+GpuImage eroded, dilated, opened, closed;
+Morphology::erode(gpu, eroded, 5);    // 5x5 矩形结构元素
+Morphology::dilate(gpu, dilated, 5);
 
 // 开运算（先腐蚀后膨胀）
-GpuImage opened = processor.morphologyOpen(gpu, 5);
+Morphology::open(gpu, opened, 5);
 
 // 闭运算（先膨胀后腐蚀）
-GpuImage closed = processor.morphologyClose(gpu, 5);
+Morphology::close(gpu, closed, 5);
 ```
 
 ## 色彩空间转换
 
-```cpp
-// RGB 转 HSV
-GpuImage hsv = processor.rgbToHsv(gpu);
+色彩转换同样是算子层 API：
 
-// RGB 转 YUV
-GpuImage yuv = processor.rgbToYuv(gpu);
+```cpp
+GpuImage hsv, yuv;
+ColorSpace::rgbToHsv(gpu, hsv);
+ColorSpace::rgbToYuv(gpu, yuv);
 ```
 
 ## 直方图操作
 
 ```cpp
-// 计算直方图
-std::vector<int> hist = processor.histogram(gpu);
+// 计算直方图（256 个区间，定长数组）
+std::array<int, 256> hist = processor.histogram(gpu);
 
 // 直方图均衡化
-GpuImage equalized = processor.histogramEqualization(gpu);
+GpuImage equalized = processor.histogramEqualize(gpu);
 ```
 
 ## 更多示例
 
 参见仓库中的 `examples/` 目录：
 
-- `basic_example.cpp` - 基本操作
-- `pipeline_example.cpp` - 多步骤处理
-- `batch_example.cpp` - 批量处理
-- `benchmark_example.cpp` - 性能测试
+- `basic_example.cpp` - 通过 `ImageProcessor` 演示像素操作、卷积、直方图和缩放
+- `pipeline_example.cpp` - 使用 `PipelineProcessor` 的多流批处理

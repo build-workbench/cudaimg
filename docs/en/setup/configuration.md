@@ -20,31 +20,37 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
 | Option | Default | Description |
 |--------|---------|-------------|
+| `GPU_IMAGE_ENABLE_IO` | ON | Enable image file I/O (via stb) |
 | `BUILD_EXAMPLES` | ON | Build example programs |
 | `BUILD_TESTS` | ON | Build GoogleTest suite |
 | `BUILD_BENCHMARKS` | OFF | Build performance benchmarks |
-| `BUILD_SHARED_LIBS` | OFF | Build as shared library |
+
+The library is always built as a static library — `BUILD_SHARED_LIBS` has no effect.
 
 ### CUDA Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `CUDA_ARCH` | auto | GPU architectures (e.g., "80;86;89") |
-| `CUDA_FAST_MATH` | ON | Fast math mode |
-| `CUDA_VERBOSE_PTXAS` | OFF | Verbose PTX assembly |
+| `CMAKE_CUDA_ARCHITECTURES` | auto | GPU architectures (e.g., `"75;80;86;89"`) |
 
-### Advanced Options
+`CMAKE_CUDA_ARCHITECTURES` is a standard CMake variable. When it is not set,
+the project defaults to `native` on CMake 3.24+ (auto-detects the local GPU),
+otherwise `75;80;86;89`.
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `ENABLE_CUDA_ERROR_CHECK` | ON | Runtime error checking |
-| `ENABLE_MEMORY_TRACKING` | OFF | Track GPU memory usage |
+### Language Standards
+
+| Scope | Standard |
+|-------|----------|
+| Host code (C++) | C++17 |
+| Device code (CUDA) | C++14 (via `CMAKE_CUDA_STANDARD`) |
+
+There is no "CUDA 14" — the "14" refers to the C++ standard used for device code.
 
 ## GPU Architecture
 
 ### Auto Detection
 
-By default, CMake detects installed GPU:
+By default, CMake detects the installed GPU (CMake 3.24+):
 
 ```bash
 cmake -S . -B build  # Auto-detect
@@ -54,10 +60,10 @@ cmake -S . -B build  # Auto-detect
 
 ```bash
 # Single architecture
-cmake -S . -B build -DCUDA_ARCH=89
+cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES=89
 
 # Multiple architectures
-cmake -S . -B build -DCUDA_ARCH="75;80;86;89"
+cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES="75;80;86;89"
 ```
 
 ### Architecture Reference
@@ -78,8 +84,7 @@ cmake -S . -B build -DCUDA_ARCH="75;80;86;89"
 cmake -S . -B build \
     -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_EXAMPLES=ON \
-    -DBUILD_TESTS=ON \
-    -DENABLE_CUDA_ERROR_CHECK=ON
+    -DBUILD_TESTS=ON
 ```
 
 ### Production
@@ -88,8 +93,7 @@ cmake -S . -B build \
 cmake -S . -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_EXAMPLES=OFF \
-    -DBUILD_TESTS=OFF \
-    -DENABLE_CUDA_ERROR_CHECK=OFF
+    -DBUILD_TESTS=OFF
 ```
 
 ### Benchmarking
@@ -98,7 +102,7 @@ cmake -S . -B build \
 cmake -S . -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_BENCHMARKS=ON \
-    -DCUDA_ARCH=89
+    -DCMAKE_CUDA_ARCHITECTURES=89
 ```
 
 ## Next Steps

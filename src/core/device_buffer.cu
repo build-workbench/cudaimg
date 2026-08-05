@@ -56,6 +56,17 @@ void DeviceBuffer::copyToHost(void* hostPtr, size_t copySize) const {
   CUDA_CHECK(cudaMemcpy(hostPtr, devicePtr_, copySize, cudaMemcpyDeviceToHost));
 }
 
+void DeviceBuffer::copyFromDevice(const void* devicePtr, size_t copySize) {
+  if (devicePtr == nullptr) {
+    throw std::invalid_argument("Device pointer is null");
+  }
+  if (copySize > size_) {
+    throw std::invalid_argument("Copy size exceeds buffer size");
+  }
+  CUDA_CHECK(
+      cudaMemcpy(devicePtr_, devicePtr, copySize, cudaMemcpyDeviceToDevice));
+}
+
 void DeviceBuffer::copyFromHostAsync(const void* hostPtr, size_t copySize,
                                      cudaStream_t stream) {
   if (hostPtr == nullptr) {
@@ -83,9 +94,8 @@ void DeviceBuffer::copyToHostAsync(void* hostPtr, size_t copySize,
 void DeviceBuffer::release() noexcept {
   if (devicePtr_ != nullptr) {
     cudaError_t err = cudaFree(devicePtr_);
-    if (err != cudaSuccess) {
-      // Don't throw in destructor/release - just silently handle
-    }
+    // 不在析构/release 中抛异常；忽略错误（可能发生在 CUDA 上下文已销毁时）
+    (void)err;
     devicePtr_ = nullptr;
     size_ = 0;
   }

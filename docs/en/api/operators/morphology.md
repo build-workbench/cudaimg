@@ -1,11 +1,24 @@
 # Morphology Operators
 
-Mathematical morphology operations.
+Mathematical morphology operations (static class `Morphology`).
+
+All operations share the same signature shape: they write into a
+caller-provided output image and accept an optional CUDA stream.
+
+```cpp
+static void op(const GpuImage& input, GpuImage& output, int kernelSize = 3,
+               StructuringElement element = StructuringElement::Rectangle,
+               cudaStream_t stream = nullptr);
+```
+
+`StructuringElement`: `Rectangle`, `Cross`, or `Ellipse`.
 
 ## erode
 
 ```cpp
-GpuImage erode(const GpuImage& input, int kernelSize);
+static void erode(const GpuImage& input, GpuImage& output, int kernelSize = 3,
+                  StructuringElement element = StructuringElement::Rectangle,
+                  cudaStream_t stream = nullptr);
 ```
 
 Applies erosion (shrinks white regions).
@@ -13,41 +26,62 @@ Applies erosion (shrinks white regions).
 ## dilate
 
 ```cpp
-GpuImage dilate(const GpuImage& input, int kernelSize);
+static void dilate(const GpuImage& input, GpuImage& output, int kernelSize = 3,
+                   StructuringElement element = StructuringElement::Rectangle,
+                   cudaStream_t stream = nullptr);
 ```
 
 Applies dilation (expands white regions).
 
-## morphologyOpen
+## open
 
 ```cpp
-GpuImage morphologyOpen(const GpuImage& input, int kernelSize);
+static void open(const GpuImage& input, GpuImage& output, int kernelSize = 3,
+                 StructuringElement element = StructuringElement::Rectangle,
+                 cudaStream_t stream = nullptr);
 ```
 
 Opening: erosion followed by dilation. Removes small bright spots.
 
-## morphologyClose
+## close
 
 ```cpp
-GpuImage morphologyClose(const GpuImage& input, int kernelSize);
+static void close(const GpuImage& input, GpuImage& output, int kernelSize = 3,
+                  StructuringElement element = StructuringElement::Rectangle,
+                  cudaStream_t stream = nullptr);
 ```
 
 Closing: dilation followed by erosion. Fills small dark holes.
 
-## morphologyGradient
+## gradient
 
 ```cpp
-GpuImage morphologyGradient(const GpuImage& input, int kernelSize);
+static void gradient(const GpuImage& input, GpuImage& output,
+                     int kernelSize = 3,
+                     StructuringElement element = StructuringElement::Rectangle,
+                     cudaStream_t stream = nullptr);
 ```
 
 Morphological gradient: difference between dilation and erosion.
 
-## Performance
+## topHat / blackHat
 
-| Operation | 4K Image | Speedup |
-|-----------|----------|---------|
-| Erode 5×5 | 1.5 ms | 25.0× |
-| Dilate 5×5 | 1.5 ms | 25.0× |
-| Open 5×5 | 3.0 ms | 25.0× |
+```cpp
+static void topHat(const GpuImage& input, GpuImage& output, int kernelSize = 3,
+                   StructuringElement element = StructuringElement::Rectangle,
+                   cudaStream_t stream = nullptr);
+
+static void blackHat(const GpuImage& input, GpuImage& output,
+                     int kernelSize = 3,
+                     StructuringElement element = StructuringElement::Rectangle,
+                     cudaStream_t stream = nullptr);
+```
+
+Top-hat: original minus opening. Black-hat: closing minus original.
+
+## Notes
+
+- Absolute GPU latency can be measured with the `benchmarks/` harness
+  (`-DBUILD_BENCHMARKS=ON`); the project does not publish CPU comparison figures.
 
 [Back to API](../)

@@ -7,25 +7,24 @@ layout: home
     <div class="home-logo">MO</div>
     <div>
       <div class="home-title">Mini-OpenCV</div>
-      <div class="home-subtitle">v3.0.0 · CUDA 14 · C++17</div>
+      <div class="home-subtitle">v3.0.0 · CUDA 11.0+ · C++17</div>
     </div>
   </div>
   <div class="home-nav">
     <a href="./setup/quickstart">Quick Start</a>
     <a href="./architecture/overview">Architecture</a>
     <a href="./api/">API</a>
-    <a href="https://github.com/LessUp/mini-opencv" target="_blank">GitHub</a>
+    <a href="https://github.com/AICL-Lab/mini-opencv" target="_blank">GitHub</a>
   </div>
 </div>
 
 <div class="home-intro-row">
   <div class="home-intro">
-    High-performance CUDA image processing library achieving <strong>30-50× speedup</strong> over CPU OpenCV.
-    Supports 9+ operator categories with a three-layer architecture and clean C++17 API.
-    Comprehensive GoogleTest suite and Google Benchmark included.
+    CUDA image processing library with <strong>9+ operator categories</strong>, a three-layer architecture, and a clean C++17 API.
+    Includes a GoogleTest suite and a self-contained GPU latency benchmark.
   </div>
   <div class="home-stats">
-    <span><strong>30-50×</strong> Speedup</span>
+    <span><strong>GPU</strong> Accelerated</span>
     <span><strong>9+</strong> Operators</span>
     <span><strong>MIT</strong> License</span>
   </div>
@@ -37,22 +36,22 @@ layout: home
   <div class="feature-card">
     <div class="feature-card-title">⚡ High Performance</div>
     <div class="feature-card-desc">
-      CUDA kernel optimizations: shared memory tiling, atomic operations, warp-level primitives
+      CUDA kernel optimizations: shared memory tiling, atomic histogram, uchar4 vectorization
     </div>
     <div class="feature-tags">
       <a href="./architecture/overview#cuda-optimization" class="feature-tag">Shared Memory</a>
       <a href="./architecture/overview#cuda-optimization" class="feature-tag">Atomic Ops</a>
-      <a href="./architecture/overview#cuda-optimization" class="feature-tag">Warp Primitives</a>
+      <a href="./architecture/overview#cuda-optimization" class="feature-tag">uchar4 Vectorized</a>
     </div>
   </div>
 
   <div class="feature-card">
     <div class="feature-card-title">🧠 Smart Memory</div>
     <div class="feature-card-desc">
-      Zero-copy optimization minimizes host-device transfers, memory pool reuse reduces allocation overhead
+      RAII device buffers and optional memory pooling reduce allocation overhead; multi-stream pipelines overlap work
     </div>
     <div class="feature-tags">
-      <a href="./architecture/memory-model" class="feature-tag">Zero-Copy</a>
+      <a href="./architecture/memory-model" class="feature-tag">RAII Buffers</a>
       <a href="./architecture/memory-model" class="feature-tag">Memory Pool</a>
       <a href="./architecture/cuda-streams" class="feature-tag">Stream Async</a>
     </div>
@@ -85,7 +84,7 @@ layout: home
   <div class="feature-card">
     <div class="feature-card-title">🧪 Well Tested</div>
     <div class="feature-card-desc">
-      GoogleTest unit tests + Google Benchmark performance baselines ensure correctness and performance
+      GoogleTest unit tests plus a custom GPU latency benchmark (build with -DBUILD_BENCHMARKS=ON)
     </div>
     <div class="feature-tags">
       <a href="./benchmarks/" class="feature-tag">Benchmarks</a>
@@ -105,16 +104,17 @@ layout: home
   </div>
 </div>
 
-## Performance Comparison
+## Benchmarks
 
-| Operation | OpenCV CPU | Mini-OpenCV GPU | Speedup |
-|-----------|:----------:|:---------------:|:-------:|
-| Gaussian Blur (4K) | 45.2 ms | 1.2 ms | **37.7×** |
-| Sobel Edge (4K) | 38.1 ms | 0.9 ms | **42.3×** |
-| Bilateral Filter (4K) | 180.5 ms | 4.8 ms | **37.6×** |
-| Histogram Equalization (4K) | 12.3 ms | 0.3 ms | **41.0×** |
+The repository ships a GPU-only latency benchmark: it measures Mini-OpenCV's own operators and does **not** compare against CPU OpenCV, so no speedup tables are published here. Build and run it on your own hardware:
 
-*Tested on RTX 4090 vs Intel i9-13900K, 3840×2160 images*
+```bash
+cmake -S . -B build -DBUILD_BENCHMARKS=ON
+cmake --build build -j$(nproc)
+./build/bin/gpu_image_benchmark
+```
+
+See [Benchmarks](./benchmarks/) for what is measured and how.
 
 ## Quick Start
 
@@ -131,7 +131,7 @@ GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
 GpuImage edges = processor.sobelEdgeDetection(gpu);
 
 // Download result
-HostImage result = processor.downloadImage(edges);
+HostImage result = processor.download(edges);
 ```
 
 ## Learn More
