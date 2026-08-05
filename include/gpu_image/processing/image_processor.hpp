@@ -115,7 +115,8 @@ public:
 
   /// General convolution
   /// 通用卷积
-  GpuImage convolve(const GpuImage& input, const float* kernel, int kernelSize);
+  GpuImage convolve(const GpuImage& input, const float* kernel, int kernelSize,
+                    BorderMode borderMode = BorderMode::Zero);
 
   // ===== Histogram Operations =====
 
@@ -135,11 +136,13 @@ public:
 
   /// Resize to specific dimensions
   /// 调整到指定尺寸
-  GpuImage resize(const GpuImage& input, int newWidth, int newHeight);
+  GpuImage resize(const GpuImage& input, int newWidth, int newHeight,
+                  InterpolationMode mode = InterpolationMode::Bilinear);
 
   /// Resize by scale factors
   /// 按比例因子调整
-  GpuImage resizeByScale(const GpuImage& input, float scaleX, float scaleY);
+  GpuImage resizeByScale(const GpuImage& input, float scaleX, float scaleY,
+                         InterpolationMode mode = InterpolationMode::Bilinear);
 
   // ===== Synchronization =====
 

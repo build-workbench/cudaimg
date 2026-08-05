@@ -150,10 +150,10 @@ GpuImage ImageProcessor::sobelEdgeDetection(const GpuImage& input) {
 }
 
 GpuImage ImageProcessor::convolve(const GpuImage& input, const float* kernel,
-                                  int kernelSize) {
+                                  int kernelSize, BorderMode borderMode) {
   GpuImage output;
-  ConvolutionEngine::convolve(input, output, kernel, kernelSize,
-                              BorderMode::Zero, context_.stream());
+  ConvolutionEngine::convolve(input, output, kernel, kernelSize, borderMode,
+                              context_.stream());
   autoSync();
   return output;
 }
@@ -183,19 +183,20 @@ GpuImage ImageProcessor::histogramEqualize(const GpuImage& input) {
 // ===== Geometric Operations =====
 
 GpuImage ImageProcessor::resize(const GpuImage& input, int newWidth,
-                                int newHeight) {
+                                int newHeight, InterpolationMode mode) {
   GpuImage output;
-  ImageResizer::resize(input, output, newWidth, newHeight,
-                       InterpolationMode::Bilinear, context_.stream());
+  ImageResizer::resize(input, output, newWidth, newHeight, mode,
+                       context_.stream());
   autoSync();
   return output;
 }
 
 GpuImage ImageProcessor::resizeByScale(const GpuImage& input, float scaleX,
-                                       float scaleY) {
+                                       float scaleY,
+                                       InterpolationMode mode) {
   GpuImage output;
-  ImageResizer::resizeByScale(input, output, scaleX, scaleY,
-                              InterpolationMode::Bilinear, context_.stream());
+  ImageResizer::resizeByScale(input, output, scaleX, scaleY, mode,
+                              context_.stream());
   autoSync();
   return output;
 }
