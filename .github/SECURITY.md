@@ -1,35 +1,35 @@
-# Security Policy
+# 安全策略
 
-## Supported Versions
+## 受支持版本
 
-| Version | Supported |
+| 版本 | 支持 |
 | ------- | --------- |
 | 2.0.x   | ✅ |
-| 1.x.x   | ⚠️ (security fixes only) |
+| 1.x.x   | ⚠️（仅安全修复） |
 | < 1.0   | ❌ |
 
-## Reporting a Vulnerability
+## 报告漏洞
 
-If you discover a security vulnerability in this project, please report it by:
+如果你在本项目中发现安全漏洞，请按以下方式报告：
 
-1. **Do not** open a public issue for security vulnerabilities
-2. Email the maintainer directly or use GitHub's private vulnerability reporting feature
-3. Include:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Suggested fix (if available)
+1. **不要**为安全漏洞开启公开 Issue
+2. 直接邮件联系维护者，或使用 GitHub 的私密漏洞报告功能
+3. 报告内容应包含：
+   - 漏洞描述
+   - 复现步骤
+   - 潜在影响
+   - 修复建议（如有）
 
-We will respond to security reports within 48 hours and aim to release fixes within 7 days for critical vulnerabilities.
+我们将在 48 小时内回复安全报告，并力争在 7 天内发布严重漏洞的修复。
 
-## Security Considerations
+## 安全注意事项
 
-This library:
-- Does not process untrusted input by default
-- Does not have network connectivity
-- Runs on the local GPU device only
-- Uses standard CUDA runtime APIs
+本库：
+- 默认不处理不可信输入
+- 无网络连接
+- 仅在本地 GPU 设备上运行
+- 使用标准 CUDA 运行时 API
 
-Potential security concerns:
-- Image file parsing (via stb library) - ensure image files are from trusted sources
-- GPU memory operations - no data leaves the GPU except through explicit download APIs
+潜在安全关注点：
+- 图像文件解析（通过 stb 库）——请确保图像文件来源可信
+- GPU 内存操作——除通过显式 download API 外，数据不会离开 GPU

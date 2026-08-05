@@ -1,29 +1,30 @@
-# Changelog
+# 更新日志
 
-All notable changes to this project are documented in this file.
+本项目所有值得注意的变更均记录在此文件中。
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
+并遵循 [语义化版本](https://semver.org/spec/v2.0.0.html)。
 
-> **Note on version history:** the library originated from a single initial
-> commit on 2025-12-31. The incremental version boundaries and dates below
-> (prior to 3.0.0) are an approximate reconstruction of that early work, not
-> individually tagged releases — only `v2.0.1` and `v2.0.2` exist as git tags.
-> Version headers are therefore plain text rather than links to release tags.
+> **版本历史说明**：本库起源于 2025-12-31 的一次初始提交。下方 3.0.0 之前的
+> 版本边界与日期是对早期工作的近似重建，并非逐一打 tag 的发布——仅 `v2.0.1`
+> 与 `v2.0.2` 存在对应 git tag。因此版本标题为纯文本，而非指向发布 tag 的链接。
 
 ## Unreleased
 
 ### Removed
 
+- `README.zh-CN.md` 与 `docs/en/` 全部英文文档，文档仅保留中文
 - `.claude/` OpenSpec command and skill definitions
 - GitHub Pages changelog pages under `docs/en/` and `docs/zh/`
 - `docs/scripts/sync-changelog.mjs` and docs build-time changelog sync
 
 ### Changed
 
-- `README.md` and `README.zh-CN.md` now point to live VitePress docs and no
-  longer reference deleted spec trees
-- `docs/.vitepress/config.ts` no longer exposes changelog pages in the sidebar
+- `README.md` 直接采用中文内容，不再保留英文版与语言切换
+- `docs/.vitepress/config.ts` 改为单语言（zh-CN），移除 en locale 与语言切换
+- 工程模板中文化：PR 模板、Issue 模板、SECURITY、CONTRIBUTING、copilot-instructions
+- `copilot-instructions.md` 修正事实错误（移除虚构的 30-50x 加速比、CUDA 14、
+  Google Benchmark v1.8.3、双语文档等表述）
 - `docs/package.json` builds docs directly without changelog sync
 - `.github/workflows/docs-pages.yml` no longer rebuilds docs on root
   `CHANGELOG.md` edits alone

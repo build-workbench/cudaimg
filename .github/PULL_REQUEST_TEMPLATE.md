@@ -1,57 +1,57 @@
 ---
 name: Pull Request
-about: Submit a pull request
+about: 提交一个 Pull Request
 title: ''
 labels: ''
 assignees: ''
 ---
 
-## Description
+## 变更说明
 
-Brief description of the changes in this PR.
+简要描述本 PR 的改动内容。
 
-## Type of Change
+## 变更类型
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Performance improvement
-- [ ] Code refactoring
+- [ ] Bug 修复（不破坏现有功能）
+- [ ] 新功能（不破坏现有功能）
+- [ ] 破坏性变更（会导致现有功能不工作）
+- [ ] 文档更新
+- [ ] 性能优化
+- [ ] 重构
 
-## Related Issues
+## 关联 Issue
 
-Fixes # (issue)
+Fixes # (issue 编号)
 
-## Changes Made
+## 改动清单
 
-- Change 1
-- Change 2
-- Change 3
+- 改动 1
+- 改动 2
+- 改动 3
 
-## Testing
+## 测试
 
-Describe the tests you ran to verify your changes:
+描述你为验证改动所执行的测试：
 
-- [ ] Unit tests pass (`ctest --output-on-failure`)
-- [ ] Format check passes (`clang-format-14 --dry-run --Werror`)
-- [ ] Tested on GPU: [e.g. RTX 3080]
-- [ ] Tested with CUDA: [e.g. 12.4]
+- [ ] 单元测试通过（`ctest --output-on-failure`）
+- [ ] 格式检查通过（`clang-format --dry-run --Werror`）
+- [ ] 已在 GPU 上测试：[例如 RTX 3080]
+- [ ] 已在 CUDA 版本上测试：[例如 12.4]
 
-## Checklist
+## 自检清单
 
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
+- [ ] 代码遵循本项目风格指南
+- [ ] 已完成自查
+- [ ] 难以理解的代码已添加注释
+- [ ] 文档已同步更新
+- [ ] 改动未引入新的警告
+- [ ] 已添加证明修复有效或功能正常的测试
+- [ ] 本地全部单元测试通过
 
-## Screenshots (if applicable)
+## 截图（如适用）
 
-Add screenshots to help explain your changes.
+添加截图以帮助说明改动。
 
-## Additional Notes
+## 补充说明
 
-Add any other notes for reviewers.
+为审阅者补充任何其他信息。

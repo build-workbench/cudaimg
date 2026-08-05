@@ -1,67 +1,67 @@
-# GitHub Copilot Instructions
+# GitHub Copilot 指令
 
-Project-specific instructions for GitHub Copilot when working in the mini-opencv repository.
+Copilot 在 mini-opencv 仓库中工作时使用的项目专属指令。
 
-## Project Overview
+## 项目概览
 
-**Mini-OpenCV** is a CUDA-based high-performance image processing library providing GPU-accelerated operators for computer vision applications. It delivers 30-50x faster performance than CPU OpenCV.
+**Mini-OpenCV** 是基于 CUDA 的高性能图像处理库，为计算机视觉应用提供 GPU 加速算子。算子以 CUDA 内核实现（shared memory tiling、原子直方图、`uchar4` 向量化）。
 
-- **Version:** 3.0.0
-- **License:** MIT
-- **Docs:** https://aicl-lab.github.io/mini-opencv/
+- **版本**：3.0.0
+- **许可证**：MIT
+- **文档**：https://aicl-lab.github.io/mini-opencv/
 
-## Technology Stack
+## 技术栈
 
-| Component | Technology |
+| 组件 | 技术 |
 |-----------|------------|
-| Language | C++17, CUDA 14 |
-| Build System | CMake 3.18+ |
-| CUDA | 11.0+ (Recommended: 12.x) |
-| GPU | Compute Capability 7.5+ (Turing or newer) |
-| Testing | Google Test v1.14.0 |
-| Benchmarking | Google Benchmark v1.8.3 |
-| Image I/O | stb (via CMake FetchContent) |
-| Documentation | VitePress (bilingual EN/ZH) |
+| 语言 | C++17、CUDA 17 |
+| 构建系统 | CMake 3.18+ |
+| CUDA | 11.0+（推荐 12.x） |
+| GPU | 计算能力 7.5+（Turing 或更新） |
+| 测试 | Google Test v1.14.0 |
+| 基准测试 | 自包含手写计时框架（无外部依赖） |
+| 图像 I/O | stb（通过 CMake FetchContent，可由 `GPU_IMAGE_ENABLE_IO` 关闭） |
+| 文档 | VitePress（中文） |
 
-## Architecture
+## 架构
 
-Three-layer architecture:
+三层架构：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Application Layer                         │
+│                    应用层                                     │
 │         ImageProcessor  ·  PipelineProcessor                 │
 ├─────────────────────────────────────────────────────────────┤
-│              Operator Layer (CUDA Kernels)                   │
+│              算子层 (CUDA Kernels)                           │
 │  PixelOperator  │  ConvolutionEngine  │  Geometric          │
 │  Morphology     │  ColorSpace         │  Filters            │
 │  Threshold      │  HistogramCalculator│  ImageResizer       │
 ├─────────────────────────────────────────────────────────────┤
-│                  Infrastructure Layer                        │
+│                  基础设施层                                  │
 │  DeviceBuffer  ·  GpuImage/HostImage  ·  CudaError          │
 │  ImageIO       ·  MemoryManager  ·  ExecutionContext        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Project Structure
+## 项目结构
 
 ```
 mini-opencv/
-├── include/gpu_image/          # Public headers
-│   ├── core/                   # DeviceBuffer, GpuImage, CudaError, memory_manager
-│   ├── operators/              # CUDA operator interfaces
-│   ├── processing/             # ImageProcessor, PipelineProcessor
+├── include/gpu_image/          # 公共头文件
+│   ├── core/                   # DeviceBuffer、GpuImage、CudaError、memory_manager
+│   ├── operators/              # CUDA 算子接口
+│   ├── processing/             # ImageProcessor、PipelineProcessor
 │   ├── io/                     # ImageIO
 │   └── gpu_image_processing.hpp
-├── src/                        # Implementations (.cpp / .cu)
-├── tests/                      # Google Test suite
-├── examples/                   # Example programs
-├── benchmarks/                 # Performance benchmarks
-├── docs/                       # VitePress documentation (EN + ZH)
+├── src/                        # 实现（.cpp / .cu）
+├── tests/                      # Google Test 测试套件
+├── examples/                   # 示例程序
+├── benchmarks/                 # 性能基准
+├── docs/                       # VitePress 文档（中文）
 └── .github/workflows/          # CI/CD
 ```
 
-## Build Commands
+## 构建命令
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -69,79 +69,79 @@ cmake --build build -j$(nproc)
 ctest --test-dir build --output-on-failure
 ```
 
-Build options: `BUILD_TESTS` (ON), `BUILD_EXAMPLES` (ON), `BUILD_BENCHMARKS` (OFF), `GPU_IMAGE_ENABLE_IO` (ON).
+构建选项：`BUILD_TESTS`（ON）、`BUILD_EXAMPLES`（ON）、`BUILD_BENCHMARKS`（OFF）、`GPU_IMAGE_ENABLE_IO`（ON）。
 
-## Test Commands
+## 测试命令
 
 ```bash
-# Full suite via CTest
+# 通过 CTest 运行全套测试
 ctest --test-dir build --output-on-failure
 
-# Run one fixture directly
+# 直接运行一个测试夹具
 ./build/bin/gpu_image_tests --gtest_filter=FiltersTest.*
 
-# Run one test
+# 运行单个测试
 ./build/bin/gpu_image_tests --gtest_filter=FiltersTest.MedianFilter
 ```
 
-## Code Style
+## 代码风格
 
-- **Indentation**: 2 spaces, 80-column limit (`.clang-format` is authoritative)
-- **Naming**:
-  - Files: `snake_case.hpp/.cpp/.cu`
-  - Classes/Structs/Enums: `PascalCase`
-  - Functions/Methods: `lowerCamelCase`
-  - Private members: `snake_case_` (trailing underscore)
-- **Namespace**: `gpu_image`
-- **Header guard**: `#pragma once`
+- **缩进**：2 空格，80 列上限（`.clang-format` 为权威）
+- **命名**：
+  - 文件：`snake_case.hpp/.cpp/.cu`
+  - 类/结构体/枚举：`PascalCase`
+  - 函数/方法：`lowerCamelCase`
+  - 私有成员：`snake_case_`（尾随下划线）
+- **命名空间**：`gpu_image`
+- **头文件保护**：`#pragma once`
 
-## CUDA Kernel Rules
+## CUDA 内核规则
 
-1. Always check boundaries: `if (x < width && y < height)`
-2. Thread block size: 256 threads (16×16 for 2D)
-3. Call `CUDA_CHECK(cudaGetLastError())` after kernel launch
-4. Async-capable operators accept `cudaStream_t stream = nullptr`
+1. 始终检查边界：`if (x < width && y < height)`
+2. 线程块大小：256 线程（2D 用 16×16）
+3. 内核启动后调用 `CUDA_CHECK(cudaGetLastError())`
+4. 支持异步的算子接受 `cudaStream_t stream = nullptr`
 
-## Testing Conventions
+## 测试约定
 
-- Use `TEST_F(...)` fixtures; check `cudaGetDeviceCount()` in `SetUp()` and call `GTEST_SKIP()` when CUDA is unavailable
-- Prefer deterministic inputs and explicit expected values
-- Use `EXPECT_THROW` for invalid-input tests
-- Register new test files in the `gpu_image_tests` CMake target
+- 使用 `TEST_F(...)` 夹具；在 `SetUp()` 中检查 `cudaGetDeviceCount()`，无 CUDA 时调用 `GTEST_SKIP()`
+- 优先使用确定性输入和明确的期望值
+- 无效输入测试使用 `EXPECT_THROW`
+- 新测试文件需注册到 `gpu_image_tests` CMake 目标
 
-## API Design
+## API 设计
 
-- `explicit` on single-argument constructors
-- `[[nodiscard]]` on accessors whose result must not be ignored
-- `noexcept` on trivial accessors and move operations
-- `enum class` over unscoped enums
-- `const T&` for read-only heavy inputs
-- `int` for dimensions/channels, `size_t` for byte counts, `unsigned char` for pixels
+- 单参数构造函数加 `explicit`
+- 不可忽略返回值的访问器加 `[[nodiscard]]`
+- 平凡访问器和移动操作加 `noexcept`
+- 优先用 `enum class` 而非未作用域枚举
+- 只读重型输入用 `const T&`
+- 维度/通道用 `int`，字节数用 `size_t`，像素用 `unsigned char`
 
-## Error Handling
+## 错误处理
 
-- Validate inputs at the top of every public function
-- `std::invalid_argument` for bad caller input
-- `std::runtime_error` for runtime failures
-- Wrap all CUDA runtime calls with `CUDA_CHECK(...)`
-- Low-level operators check `cudaGetLastError()`; high-level wrappers call `cudaDeviceSynchronize()` before returning
+- 在每个公共函数顶部校验输入
+- 错误的调用者输入用 `std::invalid_argument`
+- 运行时失败用 `std::runtime_error`
+- 所有 CUDA 运行时调用用 `CUDA_CHECK(...)` 包裹
+- 低层算子检查 `cudaGetLastError()`；高层包装在返回前调用 `cudaDeviceSynchronize()`
 
-## Formatting
+## 格式化
 
 ```bash
-# Check (CI-equivalent)
+# 检查（CI 等价）
 find . -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' -o -name '*.cu' -o -name '*.cuh' \) \
   -not -path './build/*' -not -path './third_party/*' -print0 | \
-  xargs -0 -r clang-format-14 --dry-run --Werror
+  xargs -0 -r clang-format --dry-run --Werror
 
-# Fix in-place
+# 原地修复
 find . -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' -o -name '*.cu' -o -name '*.cuh' \) \
   -not -path './build/*' -not -path './third_party/*' -print0 | \
-  xargs -0 -r clang-format-14 -i
+  xargs -0 -r clang-format -i
 ```
 
-## Commit Messages
+## 提交信息
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <subject>`.
+遵循 [Conventional Commits](https://www.conventionalcommits.org/)：`<type>(<scope>): <subject>`。
 
-Types: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `ci`.
+类型：`feat`、`fix`、`docs`、`refactor`、`perf`、`test`、`chore`、`ci`。

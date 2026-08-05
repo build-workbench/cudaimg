@@ -1,32 +1,32 @@
 ---
-name: Documentation
-about: Report missing or incorrect documentation
+name: 文档问题
+about: 报告缺失或不正确的文档
 title: '[Docs]: '
 labels: documentation
 assignees: ''
 ---
 
-## Documentation Issue
+## 文档问题
 
-What documentation is missing or incorrect?
+什么文档缺失或不正确？
 
-## Location
+## 位置
 
-- File: [e.g. README.md, include/gpu_image/convolution_engine.hpp]
-- Section: [e.g. API Reference, Build Instructions]
+- 文件：[例如 README.md、include/gpu_image/convolution_engine.hpp]
+- 章节：[例如 API 参考、构建说明]
 
-## Current Content
-
-```markdown
-Paste current documentation content here (if applicable)
-```
-
-## Suggested Improvement
+## 当前内容
 
 ```markdown
-Paste your suggested documentation improvement here
+在此粘贴当前文档内容（如适用）
 ```
 
-## Additional Context
+## 改进建议
 
-Add any other context about the documentation issue.
+```markdown
+在此粘贴你建议的文档改进
+```
+
+## 补充信息
+
+补充任何与该文档问题相关的其他信息。

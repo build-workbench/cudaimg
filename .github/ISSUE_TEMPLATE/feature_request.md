@@ -1,35 +1,35 @@
 ---
-name: Feature Request
-about: Suggest an idea for this project
+name: 功能建议
+about: 为本项目建议一个新想法
 title: '[Feature]: '
 labels: enhancement
 assignees: ''
 ---
 
-## Feature Description
+## 功能描述
 
-A clear and concise description of the feature you'd like to see.
+清晰简洁地描述你希望看到的功能。
 
-## Use Case
+## 使用场景
 
-Why would this feature be useful? What problem does it solve?
+这个功能为什么有用？它解决了什么问题？
 
-## Proposed Solution
+## 期望方案
 
-Describe the solution you'd like to see implemented.
+描述你希望实现的方案。
 
-## Alternatives Considered
+## 备选方案
 
-A clear description of any alternative solutions or features you've considered.
+描述你考虑过的任何备选方案或功能。
 
-## Additional Context
+## 补充信息
 
-- Would this require new CUDA kernels?
-- Are there similar features in OpenCV or other libraries?
-- Any performance considerations?
+- 这个功能是否需要新的 CUDA 内核？
+- OpenCV 或其他库中是否有类似功能？
+- 是否有性能方面的考虑？
 
-## API Suggestion (Optional)
+## API 建议（可选）
 
 ```cpp
-// Example API usage
+// 示例 API 用法
 ```

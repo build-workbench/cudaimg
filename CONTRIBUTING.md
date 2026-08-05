@@ -1,166 +1,94 @@
-# Contributing to Mini-OpenCV
+# 贡献指南
 
-Thank you for your interest in contributing to Mini-OpenCV! This document provides guidelines and instructions for contributing to the project.
-
----
-
-## Table of Contents
-
-- [Getting Started](#getting-started)
-- [Development Workflow](#development-workflow)
-- [Code Style and Guidelines](#code-style-and-guidelines)
-- [Commit Message Format](#commit-message-format)
-- [Testing](#testing)
-- [Submitting Changes](#submitting-changes)
-- [Reporting Issues](#reporting-issues)
+感谢你对 Mini-OpenCV 的兴趣！本文档说明如何参与贡献。
 
 ---
 
-## Getting Started
+## 准备环境
 
-### Prerequisites
-
-Before contributing, ensure you have:
-
-- CUDA Toolkit 11.0+ installed
+- CUDA Toolkit 11.0+
 - CMake 3.18+
-- C++17 compatible compiler (GCC, Clang, or MSVC)
-- NVIDIA GPU (Compute Capability 7.5+)
+- C++17 编译器（GCC、Clang 或 MSVC）
+- NVIDIA GPU（计算能力 7.5+）
 - Git
 
-### Setting Up Development Environment
-
 ```bash
-# Fork and clone the repository
+# Fork 并克隆仓库
 git clone https://github.com/YOUR_USERNAME/mini-opencv.git
 cd mini-opencv
 
-# Add upstream remote
+# 添加上游远程
 git remote add upstream https://github.com/AICL-Lab/mini-opencv.git
 
-# Build the project
-mkdir build && cd build
-cmake -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON ..
-make -j$(nproc)
-
-# Run tests
-ctest --output-on-failure
-```
-
----
-
-## Development Workflow
-
-### 1. Create a Branch
-
-```bash
-git fetch upstream
-git checkout master
-git merge upstream/master
-
-# Create a new feature branch
-git checkout -b feature/your-feature-name
-```
-
-### 2. Make Changes
-
-- Write clean, well-commented code
-- Add tests for new functionality
-- Update documentation as needed
-- Ensure all tests pass
-
-### 3. Test Your Changes
-
-```bash
-# Build
+# 构建
+cmake -S . -B build -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON
 cmake --build build -j$(nproc)
 
-# Run tests
-cd build
-ctest --output-on-failure
-
-# Run specific test
-./bin/gpu_image_tests --gtest_filter=YourTestName
-
-# Format check
-find . -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' -o -name '*.cu' -o -name '*.cuh' \) \
-  -not -path './build/*' -print0 | xargs -0 -r clang-format-14 --dry-run --Werror
-
-# Format code (if needed)
-find . -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' -o -name '*.cu' -o -name '*.cuh' \) \
-  -not -path './build/*' -print0 | xargs -0 -r clang-format-14 -i
+# 运行测试
+ctest --test-dir build --output-on-failure
 ```
-
-### 4. Commit Changes
-
-```bash
-git add .
-git commit -m "feat: add new convolution operator"
-```
-
-### 5. Push and Create Pull Request
-
-```bash
-git push origin feature/your-feature-name
-```
-
-Then create a pull request on GitHub using the [PR template](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/PULL_REQUEST_TEMPLATE.md).
 
 ---
 
-## Code Style and Guidelines
+## 开发流程
 
-### C++/CUDA Code Style
-
-- Use `.editorconfig` and `.clang-format` for consistent formatting
-- Use `snake_case` for filenames
-- Use `PascalCase` for classes, structs, enums
-- Use `lowerCamelCase` for functions and methods
-- Use trailing underscores for private members (`devicePtr_`)
-- Use `#pragma once` in headers
-- Wrap code in `namespace gpu_image`
-
-### Naming Conventions
-
-| Type | Convention | Example |
-|------|------------|---------|
-| Files | `snake_case` | `image_processor.cpp` |
-| Classes/Structs | `PascalCase` | `DeviceBuffer`, `GpuImage` |
-| Functions | `lowerCamelCase` | `copyFromHost`, `downloadImage` |
-| Enum Types | `PascalCase` | `ThresholdType::Binary` |
-| Enum Values | `PascalCase` | `ThresholdType::Otsu` |
-| Private Members | `snake_case_` | `devicePtr_`, `size_` |
-
-### API Design Guidelines
-
-- Mark single-argument constructors `explicit`
-- Use `[[nodiscard]]` for accessors whose result should not be ignored
-- Use `noexcept` for trivial operations when appropriate
-- Prefer `enum class` over unscoped enums
-- Use `const T&` for read-only heavy inputs
-- Use non-const reference output parameters for operator-style APIs
-
-### Error Handling
-
-- Validate inputs at the top of public functions
-- Use `std::invalid_argument` for bad caller input
-- Use `std::runtime_error` for runtime failures
-- Wrap CUDA calls with `CUDA_CHECK(...)`
-- Keep error messages short and specific
-
-### CUDA Specific Guidelines
-
-- Check `cudaGetLastError()` after kernel launches
-- Async-capable operators accept `cudaStream_t stream = nullptr`
-- Use shared memory optimization for compute-intensive kernels
-- Consider coalesced memory access patterns
-- Test on multiple GPU architectures when possible
+1. 基于最新 master 创建分支：`git checkout -b feature/your-feature-name`
+2. 编写代码，为新功能添加测试，按需更新文档
+3. 本地验证：构建、测试、格式化
+4. 提交（遵循下面的提交信息规范）
+5. 推送并创建 PR
 
 ---
 
-## Commit Message Format
+## 代码风格
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/) specification:
+- 使用 `.editorconfig` 和 `.clang-format` 保持格式一致
+- 文件名 `snake_case`，类/结构体/枚举 `PascalCase`，函数/方法 `lowerCamelCase`
+- 私有成员尾随下划线（`devicePtr_`）
+- 头文件用 `#pragma once`
+- 代码置于 `namespace gpu_image`
+
+### API 设计
+
+- 单参数构造函数加 `explicit`
+- 不可忽略返回值的访问器加 `[[nodiscard]]`
+- 平凡访问器和移动操作加 `noexcept`
+- 优先用 `enum class`
+- 只读重型输入用 `const T&`
+
+### 错误处理
+
+- 在公共函数顶部校验输入
+- 错误的调用者输入用 `std::invalid_argument`
+- 运行时失败用 `std::runtime_error`
+- CUDA 调用用 `CUDA_CHECK(...)` 包裹
+
+### CUDA 规则
+
+- 内核启动后检查 `cudaGetLastError()`
+- 支持异步的算子接受 `cudaStream_t stream = nullptr`
+- 计算密集型内核使用 shared memory 优化
+- 注意合并内存访问模式
+
+---
+
+## 格式化
+
+```bash
+# 检查
+find . -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' -o -name '*.cu' -o -name '*.cuh' \) \
+  -not -path './build/*' -print0 | xargs -0 -r clang-format --dry-run --Werror
+
+# 原地修复
+find . -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' -o -name '*.cu' -o -name '*.cuh' \) \
+  -not -path './build/*' -print0 | xargs -0 -r clang-format -i
+```
+
+---
+
+## 提交信息规范
+
+遵循 [Conventional Commits](https://www.conventionalcommits.org/)：
 
 ```
 <type>(<scope>): <subject>
@@ -170,23 +98,21 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/) specifica
 <footer>
 ```
 
-### Types
+| 类型 | 说明 |
+|------|------|
+| `feat` | 新功能 |
+| `fix` | Bug 修复 |
+| `docs` | 仅文档变更 |
+| `style` | 不影响代码语义的格式变更 |
+| `refactor` | 既非修 Bug 也非加功能的重构 |
+| `perf` | 提升性能的变更 |
+| `test` | 新增或更新测试 |
+| `chore` | 构建过程或辅助工具变更 |
+| `ci` | CI 配置变更 |
 
-| Type | Description |
-|------|-------------|
-| `feat` | A new feature |
-| `fix` | A bug fix |
-| `docs` | Documentation only changes |
-| `style` | Changes that do not affect the code meaning (formatting, etc.) |
-| `refactor` | A code change that neither fixes a bug nor adds a feature |
-| `perf` | A code change that improves performance |
-| `test` | Adding or updating tests |
-| `chore` | Changes to the build process or auxiliary tools |
-| `ci` | Changes to CI configuration files |
+示例：
 
-### Examples
-
-```bash
+```
 feat(convolution): add bilateral filter operator
 
 Implements bilateral filter for edge-preserving smoothing with
@@ -195,139 +121,67 @@ configurable spatial and range parameters.
 Closes #123
 ```
 
-```bash
-fix(geometric): correct bilinear interpolation boundary handling
-
-Fixes issue where boundary pixels were incorrectly zeroed out
-when using bilinear interpolation for scaling operations.
-```
-
 ---
 
-## Testing
+## 测试
 
-### Writing Tests
-
-Tests are located in the `tests/` directory and use Google Test framework.
+测试位于 `tests/` 目录，使用 Google Test 框架。
 
 ```cpp
 #include <gtest/gtest.h>
 #include "gpu_image/gpu_image_processing.hpp"
 
 TEST(PixelOperatorTest, Invert) {
-    // Arrange
     ImageProcessor processor;
-    HostImage input = /* create test image */;
-
-    // Act
+    HostImage input = /* 创建测试图像 */;
     GpuImage gpuInput = processor.loadFromHost(input);
     GpuImage result = processor.invert(gpuInput);
-    HostImage output = processor.downloadImage(result);
-
-    // Assert
+    HostImage output = processor.download(result);
     EXPECT_EQ(output.width, input.width);
-    EXPECT_EQ(output.height, input.height);
-    // Verify pixel values
 }
 
 TEST(PixelOperatorTest, InvalidInput) {
     ImageProcessor processor;
     HostImage empty = {0, 0, 0, {}};
-
     EXPECT_THROW(processor.loadFromHost(empty), std::invalid_argument);
 }
 ```
 
-### Test Coverage
-
-- Write unit tests for all new public APIs
-- Test edge cases (empty input, minimum/maximum values)
-- Test error conditions (invalid parameters, out of memory)
-- Ensure existing tests still pass
-- Aim for >80% code coverage for new features
+要求：
+- 为所有新公共 API 编写单元测试
+- 覆盖边界情况（空输入、最小/最大值）和错误条件
+- 确保现有测试仍通过
 
 ---
 
-## Submitting Changes
+## PR 自检清单
 
-### Pull Request Checklist
+提交 PR 前请确认：
 
-Before submitting a PR, ensure:
-
-- [ ] Code follows the project's style guidelines
-- [ ] All tests pass (`ctest --output-on-failure`)
-- [ ] Code is formatted with `clang-format`
-- [ ] Documentation is updated (if applicable)
-- [ ] Commit messages follow the convention
-- [ ] PR description clearly explains the changes
-- [ ] PR links to any related issues
-
-### Review Process
-
-1. Automated checks (CI, format) must pass
-2. Maintainers review the code and provide feedback
-3. Address any review comments
-4. Once approved, the PR will be merged
+- [ ] 代码遵循项目风格
+- [ ] 全部测试通过（`ctest --output-on-failure`）
+- [ ] 已用 `clang-format` 格式化
+- [ ] 文档已同步更新
+- [ ] 提交信息符合规范
+- [ ] PR 描述清晰说明改动
+- [ ] 关联了相关 Issue
 
 ---
 
-## Reporting Issues
+## 报告问题
 
-### Bug Reports
-
-Use the [bug report template](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/bug_report.md) and include:
-
-- Clear description of the bug
-- Steps to reproduce
-- Expected vs actual behavior
-- Environment (OS, CUDA version, GPU, etc.)
-- Minimal reproducible example
-
-### Feature Requests
-
-Use the [feature request template](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/feature_request.md) and include:
-
-- Description of the feature
-- Use case and why it's needed
-- Proposed solution
-- Alternatives considered
-- Any API suggestions
-
-### Documentation Issues
-
-Use the [documentation template](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/documentation.md) and include:
-
-- Location of the issue
-- Current content (if applicable)
-- Suggested improvement
+- Bug 报告：使用 [Bug 报告模板](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/bug_report.md)
+- 功能建议：使用[功能建议模板](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/feature_request.md)
+- 文档问题：使用[文档问题模板](https://github.com/AICL-Lab/mini-opencv/blob/main/.github/ISSUE_TEMPLATE/documentation.md)
 
 ---
 
-## Community Guidelines
+## 获取帮助
 
-### Code of Conduct
-
-- Be respectful and inclusive
-- Welcome newcomers and help them learn
-- Provide constructive feedback
-- Focus on what is best for the community
-- Show empathy towards other community members
-
-### Getting Help
-
-- Check the [documentation](https://aicl-lab.github.io/mini-opencv/)
-- Search [existing issues](https://github.com/AICL-Lab/mini-opencv/issues)
-- Join discussions in [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions)
-- Ask a new question or issue
+- 查看[文档](https://aicl-lab.github.io/mini-opencv/)
+- 搜索[现有 Issue](https://github.com/AICL-Lab/mini-opencv/issues)
+- 在 [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions) 提问
 
 ---
 
-## Additional Resources
-
-- [Project README](README.md)
-- [Documentation](https://aicl-lab.github.io/mini-opencv/)
-- [ChangeLog](CHANGELOG.md)
-
----
-
-Thank you for contributing to Mini-OpenCV! 🎉
+感谢你为 Mini-OpenCV 贡献力量！

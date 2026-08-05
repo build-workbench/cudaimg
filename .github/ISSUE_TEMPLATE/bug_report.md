@@ -1,49 +1,49 @@
 ---
-name: Bug Report
-about: Report a bug to help us improve
+name: Bug 报告
+about: 报告一个 Bug 帮助我们改进
 title: '[Bug]: '
 labels: bug
 assignees: ''
 ---
 
-## Bug Description
+## Bug 描述
 
-A clear and concise description of what the bug is.
+清晰简洁地描述这个 Bug 是什么。
 
-## Steps to Reproduce
+## 复现步骤
 
-1. Build with '...'
-2. Run '....'
-3. See error
+1. 以 '...' 构建
+2. 运行 '....'
+3. 观察到错误
 
-## Expected Behavior
+## 期望行为
 
-A clear and concise description of what you expected to happen.
+清晰简洁地描述你期望发生的行为。
 
-## Actual Behavior
+## 实际行为
 
-A clear and concise description of what actually happened.
+清晰简洁地描述实际发生的行为。
 
-## Environment
+## 环境信息
 
-- OS: [e.g. Ubuntu 22.04]
-- CUDA version: [e.g. 12.4]
-- GPU: [e.g. RTX 3080]
-- CMake version: [e.g. 3.24]
-- Compiler: [e.g. GCC 11]
+- 操作系统：[例如 Ubuntu 22.04]
+- CUDA 版本：[例如 12.4]
+- GPU：[例如 RTX 3080]
+- CMake 版本：[例如 3.24]
+- 编译器：[例如 GCC 11]
 
-## Code Sample
+## 代码示例
 
 ```cpp
-// Minimal reproducible example
+// 最小可复现示例
 ```
 
-## Logs/Output
+## 日志/输出
 
 ```
-Paste relevant logs here
+在此粘贴相关日志
 ```
 
-## Additional Context
+## 补充信息
 
-Add any other context about the problem here.
+补充任何与该问题相关的其他信息。
