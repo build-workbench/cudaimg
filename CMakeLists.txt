@@ -89,6 +89,7 @@ if(GPU_IMAGE_ENABLE_IO)
         GIT_REPOSITORY https://github.com/nothings/stb.git
         # stb master HEAD（2026-07 核实存在；旧 tag ae721c54 在上游不存在，导致配置失败）
         GIT_TAG 31c1ad37456438565541f4919958214b6e762fb4
+        GIT_SHALLOW ON
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
     )
@@ -114,6 +115,7 @@ if(BUILD_TESTS)
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG v1.14.0
+        GIT_SHALLOW ON
     )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
@@ -166,40 +168,46 @@ if(BUILD_BENCHMARKS)
 endif()
 
 # ── Install ──────────────────────────────────────────────────────
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
+# 默认关闭：业余项目多数不需要 `cmake --install` 生成下游可 find_package 的配置。
+# 需要 `find_package(gpu_image_processing)` 的下游，请以
+# `-DGPU_IMAGE_ENABLE_INSTALL=ON` 配置，再 `cmake --install build`。
+option(GPU_IMAGE_ENABLE_INSTALL "Generate install targets and package config" OFF)
+if(GPU_IMAGE_ENABLE_INSTALL)
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
 
-install(TARGETS gpu_image_processing
-    EXPORT gpu_image_processing-targets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-install(DIRECTORY include/gpu_image
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+    install(TARGETS gpu_image_processing
+        EXPORT gpu_image_processing-targets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+    install(DIRECTORY include/gpu_image
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
 
-# 包配置文件：声明对 CUDAToolkit 的依赖（库 PUBLIC 链接 CUDA::cudart），
-# 否则下游 find_package(gpu_image_processing) 会因找不到 CUDA::cudart 失败。
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config.cmake
-    "include(CMakeFindDependencyMacro)\n"
-    "find_dependency(CUDAToolkit)\n"
-    "include(\"\${CMAKE_CURRENT_LIST_DIR}/gpu_image_processing-targets.cmake\")\n"
-)
+    # 包配置文件：声明对 CUDAToolkit 的依赖（库 PUBLIC 链接 CUDA::cudart），
+    # 否则下游 find_package(gpu_image_processing) 会因找不到 CUDA::cudart 失败。
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config.cmake
+        "include(CMakeFindDependencyMacro)\n"
+        "find_dependency(CUDAToolkit)\n"
+        "include(\"\${CMAKE_CURRENT_LIST_DIR}/gpu_image_processing-targets.cmake\")\n"
+    )
 
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config-version.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config-version.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
 
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config-version.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gpu_image_processing
-)
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config-version.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gpu_image_processing
+    )
 
-install(EXPORT gpu_image_processing-targets
-    FILE gpu_image_processing-targets.cmake
-    NAMESPACE gpu_image::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gpu_image_processing
-)
+    install(EXPORT gpu_image_processing-targets
+        FILE gpu_image_processing-targets.cmake
+        NAMESPACE gpu_image::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gpu_image_processing
+    )
+endif()
