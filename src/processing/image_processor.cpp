@@ -192,13 +192,228 @@ GpuImage ImageProcessor::resize(const GpuImage& input, int newWidth,
 }
 
 GpuImage ImageProcessor::resizeByScale(const GpuImage& input, float scaleX,
-                                       float scaleY,
-                                       InterpolationMode mode) {
+                                       float scaleY, InterpolationMode mode) {
   GpuImage output;
   ImageResizer::resizeByScale(input, output, scaleX, scaleY, mode,
                               context_.stream());
   autoSync();
   return output;
+}
+
+// ===== Geometric Transforms =====
+
+GpuImage ImageProcessor::rotate(const GpuImage& input, float angleDegrees) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Geometric::rotate(input, o, angleDegrees, s);
+  });
+}
+
+GpuImage ImageProcessor::rotate90(const GpuImage& input, int times) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Geometric::rotate90(input, o, times, s);
+  });
+}
+
+GpuImage ImageProcessor::flip(const GpuImage& input, FlipDirection direction) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Geometric::flip(input, o, direction, s);
+  });
+}
+
+GpuImage ImageProcessor::crop(const GpuImage& input, int x, int y, int width,
+                              int height) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Geometric::crop(input, o, x, y, width, height, s);
+  });
+}
+
+GpuImage ImageProcessor::pad(const GpuImage& input, int top, int bottom,
+                             int left, int right, unsigned char padValue) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Geometric::pad(input, o, top, bottom, left, right, padValue, s);
+  });
+}
+
+// ===== Morphology =====
+
+GpuImage ImageProcessor::erode(const GpuImage& input, int kernelSize,
+                               StructuringElement element) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Morphology::erode(input, o, kernelSize, element, s);
+  });
+}
+
+GpuImage ImageProcessor::dilate(const GpuImage& input, int kernelSize,
+                                StructuringElement element) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Morphology::dilate(input, o, kernelSize, element, s);
+  });
+}
+
+GpuImage ImageProcessor::morphOpen(const GpuImage& input, int kernelSize,
+                                   StructuringElement element) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Morphology::open(input, o, kernelSize, element, s);
+  });
+}
+
+GpuImage ImageProcessor::morphClose(const GpuImage& input, int kernelSize,
+                                    StructuringElement element) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Morphology::close(input, o, kernelSize, element, s);
+  });
+}
+
+GpuImage ImageProcessor::morphGradient(const GpuImage& input, int kernelSize,
+                                       StructuringElement element) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Morphology::gradient(input, o, kernelSize, element, s);
+  });
+}
+
+// ===== Threshold =====
+
+GpuImage ImageProcessor::threshold(const GpuImage& input, unsigned char thresh,
+                                   unsigned char maxVal, ThresholdType type) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Threshold::threshold(input, o, thresh, maxVal, type, s);
+  });
+}
+
+GpuImage ImageProcessor::adaptiveThreshold(const GpuImage& input,
+                                           unsigned char maxVal,
+                                           AdaptiveMethod method,
+                                           ThresholdType type, int blockSize,
+                                           int C) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Threshold::adaptiveThreshold(input, o, maxVal, method, type, blockSize, C,
+                                 s);
+  });
+}
+
+GpuImage ImageProcessor::otsuBinarize(const GpuImage& input,
+                                      unsigned char maxVal) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Threshold::otsuBinarize(input, o, maxVal, s);
+  });
+}
+
+// ===== Filters =====
+
+GpuImage ImageProcessor::medianFilter(const GpuImage& input, int kernelSize) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Filters::medianFilter(input, o, kernelSize, s);
+  });
+}
+
+GpuImage ImageProcessor::bilateralFilter(const GpuImage& input, int kernelSize,
+                                         float sigmaSpace, float sigmaColor) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Filters::bilateralFilter(input, o, kernelSize, sigmaSpace, sigmaColor, s);
+  });
+}
+
+GpuImage ImageProcessor::boxFilter(const GpuImage& input, int kernelSize) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Filters::boxFilter(input, o, kernelSize, s);
+  });
+}
+
+GpuImage ImageProcessor::sharpen(const GpuImage& input, float strength) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    Filters::sharpen(input, o, strength, s);
+  });
+}
+
+GpuImage ImageProcessor::laplacian(const GpuImage& input) {
+  return invoke(
+      [&](GpuImage& o, cudaStream_t s) { Filters::laplacian(input, o, s); });
+}
+
+// ===== Color Space =====
+
+GpuImage ImageProcessor::rgbToHsv(const GpuImage& input) {
+  return invoke(
+      [&](GpuImage& o, cudaStream_t s) { ColorSpace::rgbToHsv(input, o, s); });
+}
+
+GpuImage ImageProcessor::hsvToRgb(const GpuImage& input) {
+  return invoke(
+      [&](GpuImage& o, cudaStream_t s) { ColorSpace::hsvToRgb(input, o, s); });
+}
+
+GpuImage ImageProcessor::rgbToYuv(const GpuImage& input) {
+  return invoke(
+      [&](GpuImage& o, cudaStream_t s) { ColorSpace::rgbToYuv(input, o, s); });
+}
+
+GpuImage ImageProcessor::yuvToRgb(const GpuImage& input) {
+  return invoke(
+      [&](GpuImage& o, cudaStream_t s) { ColorSpace::yuvToRgb(input, o, s); });
+}
+
+GpuImage ImageProcessor::rgbToLab(const GpuImage& input) {
+  return invoke(
+      [&](GpuImage& o, cudaStream_t s) { ColorSpace::rgbToLab(input, o, s); });
+}
+
+GpuImage ImageProcessor::labToRgb(const GpuImage& input) {
+  return invoke(
+      [&](GpuImage& o, cudaStream_t s) { ColorSpace::labToRgb(input, o, s); });
+}
+
+// ===== Image Arithmetic =====
+
+GpuImage ImageProcessor::add(const GpuImage& src1, const GpuImage& src2) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    ImageArithmetic::add(src1, src2, o, s);
+  });
+}
+
+GpuImage ImageProcessor::subtract(const GpuImage& src1, const GpuImage& src2) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    ImageArithmetic::subtract(src1, src2, o, s);
+  });
+}
+
+GpuImage ImageProcessor::multiply(const GpuImage& src1, const GpuImage& src2,
+                                  float scale) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    ImageArithmetic::multiply(src1, src2, o, scale, s);
+  });
+}
+
+GpuImage ImageProcessor::blend(const GpuImage& src1, const GpuImage& src2,
+                               float alpha) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    ImageArithmetic::blend(src1, src2, o, alpha, s);
+  });
+}
+
+GpuImage ImageProcessor::addWeighted(const GpuImage& src1, float alpha,
+                                     const GpuImage& src2, float beta,
+                                     float gamma) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    ImageArithmetic::addWeighted(src1, alpha, src2, beta, o, gamma, s);
+  });
+}
+
+GpuImage ImageProcessor::absDiff(const GpuImage& src1, const GpuImage& src2) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    ImageArithmetic::absDiff(src1, src2, o, s);
+  });
+}
+
+GpuImage ImageProcessor::addScalar(const GpuImage& input, unsigned char value) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    ImageArithmetic::addScalar(input, o, value, s);
+  });
+}
+
+GpuImage ImageProcessor::multiplyScalar(const GpuImage& input, float scale) {
+  return invoke([&](GpuImage& o, cudaStream_t s) {
+    ImageArithmetic::multiplyScalar(input, o, scale, s);
+  });
 }
 
 // ===== Synchronization =====
