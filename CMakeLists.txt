@@ -16,7 +16,7 @@ enable_language(CUDA)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -135,11 +135,12 @@ if(BUILD_TESTS)
         tests/io/test_io.cpp
     )
     
+    # 注意：不要链接 GTest::gtest_main —— tests/core/test_main.cpp 已提供 main，
+    # 同时链接会导致 main 重复定义、链接失败。
     target_link_libraries(gpu_image_tests
         PRIVATE
             gpu_image_processing
             GTest::gtest
-            GTest::gtest_main
     )
     
     include(GoogleTest)
@@ -159,18 +160,9 @@ endif()
 # ── 基准测试 ─────────────────────────────────────────────────────
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 if(BUILD_BENCHMARKS)
-    FetchContent_Declare(
-        googlebenchmark
-        GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG v1.8.3
-    )
-    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googlebenchmark)
-
+    # 基准测试为自包含的手写计时框架，无需外部 benchmark 依赖
     add_executable(gpu_image_benchmark benchmarks/benchmark_main.cpp)
-    target_link_libraries(gpu_image_benchmark
-        PRIVATE gpu_image_processing benchmark::benchmark
-    )
+    target_link_libraries(gpu_image_benchmark PRIVATE gpu_image_processing)
 endif()
 
 # ── Install ──────────────────────────────────────────────────────
