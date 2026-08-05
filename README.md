@@ -1,4 +1,4 @@
-# Mini-OpenCV — GPU Image Processing Library
+# Mini-OpenCV — GPU 图像处理库
 
 [![CI](https://github.com/AICL-Lab/mini-opencv/actions/workflows/ci.yml/badge.svg)](https://github.com/AICL-Lab/mini-opencv/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-blue?logo=github)](https://aicl-lab.github.io/mini-opencv/)
@@ -9,183 +9,189 @@
 ![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-informational.svg)
 
-[English](README.md) | [简体中文](README.zh-CN.md)
+基于 CUDA 的高性能图像处理库，为计算机视觉应用提供 GPU 加速算子。
 
-A high-performance CUDA-based image processing library providing GPU-accelerated operators for computer vision applications.
-
-> **⚡ GPU Accelerated**: Operators are implemented as CUDA kernels (shared-memory tiling, atomic histograms, `uchar4` vectorization) for parallel image processing.
+> **⚡ GPU 加速**：算子以 CUDA 内核实现（shared memory tiling、原子直方图、`uchar4` 向量化），并行处理图像。
 >
-> *The [benchmarks/](benchmarks/) harness (build with `-DBUILD_BENCHMARKS=ON`) measures absolute GPU latency. This repository does not currently ship a CPU/OpenCV comparison, so no cross-library speedup figures are claimed here.*
+> *[benchmarks/](benchmarks/) 基准测试（以 `-DBUILD_BENCHMARKS=ON` 构建）测量 GPU 绝对延迟。本仓库目前不提供 CPU/OpenCV 对比，因此此处不声明任何跨库加速倍数。*
 
 ---
 
-## 📚 Quick Links
+## 📚 快速链接
 
-| Resource | Description |
-|----------|-------------|
-| [Installation](https://aicl-lab.github.io/mini-opencv/en/setup/installation) | Complete setup guide |
-| [Quick Start](https://aicl-lab.github.io/mini-opencv/en/setup/quickstart) | Get started in 5 minutes |
-| [Architecture](https://aicl-lab.github.io/mini-opencv/en/architecture/overview) | Three-layer design overview |
-| [API Reference](https://aicl-lab.github.io/mini-opencv/en/api/) | Complete API documentation |
-| [Examples](https://aicl-lab.github.io/mini-opencv/en/tutorials/examples) | Code examples and tutorials |
+| 资源 | 描述 |
+|------|------|
+| [安装指南](https://aicl-lab.github.io/mini-opencv/zh/setup/installation) | 完整的安装配置指南 |
+| [快速入门](https://aicl-lab.github.io/mini-opencv/zh/setup/quickstart) | 5 分钟快速上手 |
+| [架构概览](https://aicl-lab.github.io/mini-opencv/zh/architecture/overview) | 三层架构与模块边界 |
+| [API 参考](https://aicl-lab.github.io/mini-opencv/zh/api/) | 完整 API 文档 |
+| [示例代码](https://aicl-lab.github.io/mini-opencv/zh/tutorials/examples) | 代码示例和教程 |
 
-**Full Documentation:** https://aicl-lab.github.io/mini-opencv/
-
----
-
-## ✨ Features
-
-| Category | Operators | Highlights |
-|----------|-----------|------------|
-| **Pixel Operations** | Invert, grayscale, brightness | Per-pixel parallel |
-| **Convolution** | Gaussian blur, Sobel edge detection | Shared memory tiling |
-| **Histogram** | Calculation, equalization | Atomic ops + reduction |
-| **Geometric** | Rotate, resize, flip, affine | Bilinear interpolation |
-| **Morphology** | Erosion, dilation, open/close | Custom structuring elements |
-| **Threshold** | Global, adaptive, Otsu | Histogram-driven |
-| **Color Space** | RGB/HSV/YUV conversion | Batch conversion |
-| **Filters** | Median, bilateral, sharpen | Edge-preserving |
-| **Pipeline** | Multi-step async processing | Multi-stream concurrency |
+**完整文档：** https://aicl-lab.github.io/mini-opencv/
 
 ---
 
-## 🏗️ Architecture
+## ✨ 功能特性
 
-> **See the [Architecture Overview](https://aicl-lab.github.io/mini-opencv/en/architecture/overview) for complete design details.**
+| 类别 | 算子 | 亮点 |
+|------|------|------|
+| **像素操作** | 反色、灰度化、亮度调整 | 逐像素并行 |
+| **卷积** | 高斯模糊、Sobel 边缘检测 | Shared Memory Tiling |
+| **直方图** | 计算、均衡化 | 原子操作 + 规约 |
+| **几何变换** | 旋转、缩放、翻转、仿射 | 双线性插值 |
+| **形态学** | 腐蚀、膨胀、开/闭运算 | 可自定义结构元素 |
+| **阈值** | 全局、自适应、Otsu | 直方图驱动 |
+| **色彩空间** | RGB/HSV/YUV 转换 | 批量转换 |
+| **滤波** | 中值、双边、锐化 | 保边去噪 |
+| **流水线** | 多步异步处理 | 多流并发 |
 
-Three-layer design: **High-level APIs** → **CUDA Kernels** → **Infrastructure**
+---
+
+## 🏗️ 架构
 
 ```
-Application Layer → Operator Layer → Infrastructure Layer
+┌─────────────────────────────────────────────────────────────┐
+│                      应用层                                   │
+│         图像处理器  ·  流水线处理器                            │
+├─────────────────────────────────────────────────────────────┤
+│                   算子层 (CUDA Kernels)                       │
+│  Pixel算子    │  卷积引擎        │  几何变换                  │
+│  形态学        │  色彩空间        │  滤波器                    │
+│  阈值处理      │  直方图计算      │  图像缩放                  │
+├─────────────────────────────────────────────────────────────┤
+│                      基础设施层                               │
+│  显存缓冲区  ·  GPU/Host 图像容器  ·  错误处理                 │
+│  图像 I/O    ·  内存池  ·  执行上下文                          │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 快速开始
 
 ```bash
-# Clone and build
+# 克隆并构建
 git clone https://github.com/AICL-Lab/mini-opencv.git
 cd mini-opencv
 cmake -S . -B build -DBUILD_EXAMPLES=ON
 cmake --build build -j$(nproc)
 
-# Run tests
+# 运行测试
 ctest --test-dir build --output-on-failure
 
-# Run example
+# 运行示例
 ./build/bin/basic_example
 ```
 
-### Basic Usage
+### 基础用法
 
 ```cpp
 #include "gpu_image/gpu_image_processing.hpp"
 using namespace gpu_image;
 
-// Step 1: Create an ImageProcessor
+// 第1步：创建图像处理器
 ImageProcessor processor;
 
-// Step 2: Create/Load a host image
+// 第2步：创建/加载主机端图像
 HostImage hostImage = ImageUtils::createHostImage(1920, 1080, 3);
-// Fill hostImage.data with your pixel data (RGB, 8-bit per channel)
+// 填充 hostImage.data 数据（RGB，8位每通道）
 
-// Step 3: Upload to GPU and process
+// 第3步：上传到GPU并处理
 GpuImage gpu = processor.loadFromHost(hostImage);
 GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
 GpuImage edges = processor.sobelEdgeDetection(gpu);
 
-// Step 4: Download result back to host
+// 第4步：下载结果回主机
 HostImage result = processor.download(edges);
 ```
 
 ---
 
-## 📋 Requirements
+## 📋 系统要求
 
-### System Requirements
+### 硬件/软件要求
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
+| 组件 | 最低要求 | 推荐配置 |
+|------|----------|----------|
 | CUDA | 11.0 | 12.x |
 | CMake | 3.18 | 3.24+ |
 | C++ | C++17 | C++17 |
-| GPU | CC 7.5+ (Turing) | RTX 30/40 series |
+| GPU | CC 7.5+ (Turing) | RTX 30/40 系列 |
 
-### Supported Image Formats
+### 支持的图像格式
 
-| Format | Read | Write |
-|--------|------|-------|
+| 格式 | 读取 | 写入 |
+|------|------|------|
 | JPEG/JPG | ✓ | ✓ |
 | PNG | ✓ | ✓ |
 | BMP | ✓ | ✓ |
 | TGA | ✓ | ✓ |
 
-**Note:** All formats support 8-bit per channel (Grayscale, RGB, RGBA)
+**注意：** 所有格式均支持 8 位每通道（灰度、RGB、RGBA）
 
 ---
 
-## 📖 Documentation
+## 📖 文档
 
-Complete documentation available at [GitHub Pages](https://aicl-lab.github.io/mini-opencv/):
+完整文档请访问 [GitHub Pages](https://aicl-lab.github.io/mini-opencv/)：
 
-- [Installation Guide](https://aicl-lab.github.io/mini-opencv/en/setup/installation)
-- [Quick Start](https://aicl-lab.github.io/mini-opencv/en/setup/quickstart)
-- [Architecture Overview](https://aicl-lab.github.io/mini-opencv/en/architecture/overview)
-- [Benchmarks](https://aicl-lab.github.io/mini-opencv/en/benchmarks/)
-- [API Reference](https://aicl-lab.github.io/mini-opencv/en/api/)
-- [FAQ](https://aicl-lab.github.io/mini-opencv/en/tutorials/faq)
-
----
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+- [安装指南](https://aicl-lab.github.io/mini-opencv/zh/setup/installation)
+- [快速入门](https://aicl-lab.github.io/mini-opencv/zh/setup/quickstart)
+- [架构概览](https://aicl-lab.github.io/mini-opencv/zh/architecture/overview)
+- [性能基准](https://aicl-lab.github.io/mini-opencv/zh/benchmarks/)
+- [API 参考](https://aicl-lab.github.io/mini-opencv/zh/api/)
+- [常见问题](https://aicl-lab.github.io/mini-opencv/zh/tutorials/faq)
 
 ---
 
-## 📝 Changelog
+## 🤝 贡献
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+请参阅 [CONTRIBUTING.md](CONTRIBUTING.md) 了解贡献指南。
 
 ---
 
-## 🛠️ Troubleshooting
+## 📝 更新日志
 
-**Q: CMake cannot find CUDA / `nvcc` not found**
+请参阅 [CHANGELOG.md](CHANGELOG.md) 了解版本历史。
+
+---
+
+## 🛠️ 常见问题
+
+**Q: CMake 找不到 CUDA / `nvcc` 未找到**
 ```bash
-# Set CUDA path explicitly
+# 显式设置 CUDA 路径
 export CUDAToolkit_ROOT=/usr/local/cuda
-# Or when configuring:
+# 或在配置时指定：
 cmake -S . -B build -DCUDAToolkit_ROOT=/usr/local/cuda
 ```
 
-**Q: Running examples shows "CUDA is not available"**
-- Ensure you have an NVIDIA GPU with Compute Capability 7.5+
-- Install CUDA Toolkit 11.0+ from [NVIDIA](https://developer.nvidia.com/cuda-downloads)
-- Verify: `nvidia-smi` should show your GPU
+**Q: 运行示例显示 "CUDA is not available"**
+- 确保你有计算能力 7.5+ 的 NVIDIA GPU
+- 从 [NVIDIA](https://developer.nvidia.com/cuda-downloads) 安装 CUDA Toolkit 11.0+
+- 验证：`nvidia-smi` 应显示你的 GPU
 
-**Q: Tests fail or crash during execution**
-- Check GPU memory: Large images may require more VRAM
-- Try smaller test images or reduce batch size
-- Run with `ctest --test-dir build --output-on-failure -V` for verbose output
+**Q: 测试执行时失败或崩溃**
+- 检查 GPU 显存：大图像可能需要更多显存
+- 尝试较小的测试图像或减少 batch size
+- 使用详细输出运行：`ctest --test-dir build --output-on-failure -V`
 
-**Q: How to verify installation is successful?**
+**Q: 如何验证安装成功？**
 ```bash
 cd build && ctest --output-on-failure
-# All tests should pass
+# 所有测试应该通过
 ```
 
-For more issues, check [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions).
+更多问题请查看 [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions)。
 
 ---
 
-## 📄 License
+## 📄 许可证
 
-MIT License — see [LICENSE](LICENSE) file.
+MIT 许可证 — 详见 [LICENSE](LICENSE) 文件。
 
 ---
 
-**⭐ Star this repo if you find it helpful!**
+**⭐ 如果本项目对你有帮助，请给个 Star！**
 
-For support, open an [issue](https://github.com/AICL-Lab/mini-opencv/issues) or start a [discussion](https://github.com/AICL-Lab/mini-opencv/discussions).
+如需支持，请提交 [Issue](https://github.com/AICL-Lab/mini-opencv/issues) 或发起 [讨论](https://github.com/AICL-Lab/mini-opencv/discussions)。

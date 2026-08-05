@@ -93,9 +93,9 @@ layout: home
   </div>
 
   <div class="feature-card">
-    <div class="feature-card-title">📖 双语文档</div>
+    <div class="feature-card-title">📖 完整文档</div>
     <div class="feature-card-desc">
-      中英文完整的 API 参考、架构指南和教程
+      完整的 API 参考、架构指南和教程
     </div>
     <div class="feature-tags">
       <a href="./api/" class="feature-tag">API Docs</a>

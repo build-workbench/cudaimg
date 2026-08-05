@@ -5,10 +5,7 @@ hero:
   text: ' '
   actions:
     - theme: brand
-      text: English
-      link: /en/
-    - theme: alt
-      text: 简体中文
+      text: 进入文档
       link: /zh/
 ---
 
@@ -18,11 +15,6 @@ import { useRouter } from 'vitepress'
 
 onMounted(() => {
   const router = useRouter()
-  const lang = navigator.language || navigator.userLanguage
-  if (lang.startsWith('zh')) {
-    router.go('/zh/')
-  } else {
-    router.go('/en/')
-  }
+  router.go('/zh/')
 })
 </script>
