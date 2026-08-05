@@ -152,11 +152,8 @@ void Threshold::threshold(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Invalid input image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -185,11 +182,8 @@ void Threshold::adaptiveThreshold(const GpuImage& input, GpuImage& output,
         "Adaptive threshold only supports Binary and BinaryInv types");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,

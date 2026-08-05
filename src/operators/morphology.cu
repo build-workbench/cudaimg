@@ -127,11 +127,8 @@ launchMorphKernel(void (*kernel)(const unsigned char*, unsigned char*, int, int,
     throw std::invalid_argument("Kernel size must be positive and odd");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -179,11 +176,8 @@ void Morphology::gradient(const GpuImage& input, GpuImage& output,
   dilate(input, dilated, kernelSize, element, stream);
   erode(input, eroded, kernelSize, element, stream);
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -203,11 +197,8 @@ void Morphology::topHat(const GpuImage& input, GpuImage& output, int kernelSize,
   GpuImage opened;
   open(input, opened, kernelSize, element, stream);
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -228,11 +219,8 @@ void Morphology::blackHat(const GpuImage& input, GpuImage& output,
   GpuImage closed;
   close(input, closed, kernelSize, element, stream);
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,

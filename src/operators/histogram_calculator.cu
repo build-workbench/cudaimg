@@ -180,11 +180,8 @@ void HistogramCalculator::equalize(const GpuImage& input, GpuImage& output,
   }
 
   // 确保输出图像大小正确
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   // 计算直方图
   auto histogram = calculate(input, stream);

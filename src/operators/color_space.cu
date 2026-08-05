@@ -324,10 +324,7 @@ void ColorSpace::rgbToHsv(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Input must be a valid 3-channel image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != 3) {
-    output = ImageUtils::createGpuImage(input.width, input.height, 3);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height, 3);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -346,10 +343,7 @@ void ColorSpace::hsvToRgb(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Input must be a valid 3-channel image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != 3) {
-    output = ImageUtils::createGpuImage(input.width, input.height, 3);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height, 3);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -368,10 +362,7 @@ void ColorSpace::rgbToYuv(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Input must be a valid 3-channel image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != 3) {
-    output = ImageUtils::createGpuImage(input.width, input.height, 3);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height, 3);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -390,10 +381,7 @@ void ColorSpace::yuvToRgb(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Input must be a valid 3-channel image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != 3) {
-    output = ImageUtils::createGpuImage(input.width, input.height, 3);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height, 3);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -412,10 +400,7 @@ void ColorSpace::rgbToLab(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Input must be a valid 3-channel image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != 3) {
-    output = ImageUtils::createGpuImage(input.width, input.height, 3);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height, 3);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -434,10 +419,7 @@ void ColorSpace::labToRgb(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Input must be a valid 3-channel image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != 3) {
-    output = ImageUtils::createGpuImage(input.width, input.height, 3);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height, 3);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -459,18 +441,9 @@ void ColorSpace::splitChannels(const GpuImage& input, GpuImage& channel0,
   }
 
   // 创建单通道输出
-  if (channel0.width != input.width || channel0.height != input.height ||
-      channel0.channels != 1) {
-    channel0 = ImageUtils::createGpuImage(input.width, input.height, 1);
-  }
-  if (channel1.width != input.width || channel1.height != input.height ||
-      channel1.channels != 1) {
-    channel1 = ImageUtils::createGpuImage(input.width, input.height, 1);
-  }
-  if (channel2.width != input.width || channel2.height != input.height ||
-      channel2.channels != 1) {
-    channel2 = ImageUtils::createGpuImage(input.width, input.height, 1);
-  }
+  ImageUtils::ensureOutputSize(channel0, input.width, input.height, 1);
+  ImageUtils::ensureOutputSize(channel1, input.width, input.height, 1);
+  ImageUtils::ensureOutputSize(channel2, input.width, input.height, 1);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -493,16 +466,17 @@ void ColorSpace::mergeChannels(const GpuImage& channel0,
   if (!channel0.isValid() || !channel1.isValid() || !channel2.isValid()) {
     throw std::invalid_argument("All channels must be valid");
   }
+  if (channel0.channels != 1 || channel1.channels != 1 ||
+      channel2.channels != 1) {
+    throw std::invalid_argument("All inputs must be single-channel images");
+  }
   if (channel0.width != channel1.width || channel0.width != channel2.width ||
       channel0.height != channel1.height ||
       channel0.height != channel2.height) {
     throw std::invalid_argument("All channels must have the same dimensions");
   }
 
-  if (output.width != channel0.width || output.height != channel0.height ||
-      output.channels != 3) {
-    output = ImageUtils::createGpuImage(channel0.width, channel0.height, 3);
-  }
+  ImageUtils::ensureOutputSize(output, channel0.width, channel0.height, 3);
 
   dim3 block(16, 16);
   dim3 grid((channel0.width + block.x - 1) / block.x,

@@ -13,7 +13,7 @@ struct KernelData {
 } // namespace
 
 // 使用 Shared Memory 的卷积 Kernel
-template <int BLOCK_SIZE, int MAX_KERNEL_SIZE>
+template <int BLOCK_SIZE>
 __global__ void convolveKernelShared(const unsigned char* input,
                                      unsigned char* output, int width,
                                      int height, int channels, int kernelSize,
@@ -255,11 +255,8 @@ void ConvolutionEngine::convolve(const GpuImage& input, GpuImage& output,
   }
 
   // 确保输出图像大小正确
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   KernelData kernelData;
   for (int i = 0; i < kernelSize * kernelSize; ++i) {
@@ -278,7 +275,7 @@ void ConvolutionEngine::convolve(const GpuImage& input, GpuImage& output,
       static_cast<size_t>(sharedSize) * sharedSize * sizeof(float);
 
   // 使用支持边界模式的 shared memory 版本
-  convolveKernelShared<kBlockSize, 7><<<grid, block, sharedBytes, stream>>>(
+  convolveKernelShared<kBlockSize><<<grid, block, sharedBytes, stream>>>(
       input.buffer.dataAs<unsigned char>(),
       output.buffer.dataAs<unsigned char>(), input.width, input.height,
       input.channels, kernelSize, borderModeInt, kernelData);
@@ -308,10 +305,7 @@ void ConvolutionEngine::sobelEdgeDetection(const GpuImage& input,
   }
 
   // 输出为单通道
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != 1) {
-    output = ImageUtils::createGpuImage(input.width, input.height, 1);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height, 1);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -416,11 +410,8 @@ void ConvolutionEngine::separableConvolve(const GpuImage& input,
   CUDA_CHECK(cudaGetLastError());
 
   // 第二步：垂直方向卷积（使用 colKernel）
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   KernelData colKernelData;
   for (int i = 0; i < kernelSize; ++i) {

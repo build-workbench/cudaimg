@@ -17,6 +17,8 @@ enum class BorderMode {
 class ConvolutionEngine {
 public:
   // 通用卷积操作
+  // 注意：实现为互相关（不翻转卷积核）。对称核（如高斯）结果与卷积一致；
+  // 方向性核（如 Sobel）梯度符号相反，但幅值不受影响。
   static void convolve(const GpuImage& input, GpuImage& output,
                        const float* kernel, int kernelSize,
                        BorderMode borderMode = BorderMode::Zero,

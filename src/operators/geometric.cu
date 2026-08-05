@@ -14,10 +14,15 @@ namespace {
 __device__ float sampleBilinearOrZero(const unsigned char* input, int srcWidth,
                                       int srcHeight, int channels, float srcX,
                                       float srcY, int channel) {
-  if (srcX < 0.0f || srcX > static_cast<float>(srcWidth - 1) || srcY < 0.0f ||
-      srcY > static_cast<float>(srcHeight - 1)) {
+  // 反向映射在整数角度旋转时坐标可能因浮点误差越出边界约 1e-7，
+  // 直接判零会让角点采到黑像素；对微小越界做钳位而非丢弃。
+  const float kEps = 1e-4f;
+  if (srcX < -kEps || srcX > static_cast<float>(srcWidth - 1) + kEps ||
+      srcY < -kEps || srcY > static_cast<float>(srcHeight - 1) + kEps) {
     return 0.0f;
   }
+  srcX = fminf(fmaxf(srcX, 0.0f), static_cast<float>(srcWidth - 1));
+  srcY = fminf(fmaxf(srcY, 0.0f), static_cast<float>(srcHeight - 1));
 
   int x0 = static_cast<int>(floorf(srcX));
   int y0 = static_cast<int>(floorf(srcY));
@@ -49,9 +54,10 @@ __global__ void rotateKernel(const unsigned char* input, unsigned char* output,
   if (x >= dstWidth || y >= dstHeight)
     return;
 
-  // 计算目标中心
-  float dstCenterX = dstWidth / 2.0f;
-  float dstCenterY = dstHeight / 2.0f;
+  // 计算目标中心（使用像素坐标中心 (n-1)/2，与 host 侧 centerX/Y 一致，
+  // 保证 90° 整数倍旋转与 rotate90 的结果对齐，无半像素偏移）
+  float dstCenterX = (dstWidth - 1) / 2.0f;
+  float dstCenterY = (dstHeight - 1) / 2.0f;
 
   // 反向映射到源图像
   float dx = x - dstCenterX;
@@ -301,17 +307,14 @@ void Geometric::rotate(const GpuImage& input, GpuImage& output,
   int newHeight =
       static_cast<int>(input.width * abssin + input.height * abscos + 0.5f);
 
-  if (output.width != newWidth || output.height != newHeight ||
-      output.channels != input.channels) {
-    output = ImageUtils::createGpuImage(newWidth, newHeight, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, newWidth, newHeight, input.channels);
 
   dim3 block(16, 16);
   dim3 grid((newWidth + block.x - 1) / block.x,
             (newHeight + block.y - 1) / block.y);
 
-  float centerX = input.width / 2.0f;
-  float centerY = input.height / 2.0f;
+  float centerX = (input.width - 1) / 2.0f;
+  float centerY = (input.height - 1) / 2.0f;
 
   rotateKernel<<<grid, block, 0, stream>>>(
       input.buffer.dataAs<unsigned char>(),
@@ -333,10 +336,7 @@ void Geometric::rotate90(const GpuImage& input, GpuImage& output, int times,
   int newWidth = (times % 2 == 0) ? input.width : input.height;
   int newHeight = (times % 2 == 0) ? input.height : input.width;
 
-  if (output.width != newWidth || output.height != newHeight ||
-      output.channels != input.channels) {
-    output = ImageUtils::createGpuImage(newWidth, newHeight, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, newWidth, newHeight, input.channels);
 
   dim3 block(16, 16);
   dim3 grid((newWidth + block.x - 1) / block.x,
@@ -356,11 +356,8 @@ void Geometric::flip(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Invalid input image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -387,11 +384,8 @@ void Geometric::affineTransform(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Invalid output dimensions");
   }
 
-  if (output.width != outputWidth || output.height != outputHeight ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(outputWidth, outputHeight, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, outputWidth, outputHeight,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((outputWidth + block.x - 1) / block.x,
@@ -419,11 +413,8 @@ void Geometric::perspectiveTransform(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Invalid output dimensions");
   }
 
-  if (output.width != outputWidth || output.height != outputHeight ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(outputWidth, outputHeight, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, outputWidth, outputHeight,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((outputWidth + block.x - 1) / block.x,
@@ -448,10 +439,7 @@ void Geometric::crop(const GpuImage& input, GpuImage& output, int x, int y,
     throw std::invalid_argument("Invalid crop dimensions");
   }
 
-  if (output.width != width || output.height != height ||
-      output.channels != input.channels) {
-    output = ImageUtils::createGpuImage(width, height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, width, height, input.channels);
 
   dim3 block(16, 16);
   dim3 grid((width + block.x - 1) / block.x, (height + block.y - 1) / block.y);
@@ -477,10 +465,7 @@ void Geometric::pad(const GpuImage& input, GpuImage& output, int top,
   int newWidth = input.width + left + right;
   int newHeight = input.height + top + bottom;
 
-  if (output.width != newWidth || output.height != newHeight ||
-      output.channels != input.channels) {
-    output = ImageUtils::createGpuImage(newWidth, newHeight, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, newWidth, newHeight, input.channels);
 
   dim3 block(16, 16);
   dim3 grid((newWidth + block.x - 1) / block.x,

@@ -169,10 +169,7 @@ void ImageResizer::resize(const GpuImage& input, GpuImage& output, int newWidth,
   }
 
   // 确保输出图像大小正确
-  if (output.width != newWidth || output.height != newHeight ||
-      output.channels != input.channels) {
-    output = ImageUtils::createGpuImage(newWidth, newHeight, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, newWidth, newHeight, input.channels);
 
   dim3 block(16, 16);
   dim3 grid((newWidth + block.x - 1) / block.x,

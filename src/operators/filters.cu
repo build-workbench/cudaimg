@@ -18,7 +18,6 @@ __global__ void medianFilterKernel(const unsigned char* input,
     return;
 
   int radius = kernelSize / 2;
-  int windowSize = kernelSize * kernelSize;
 
   for (int c = 0; c < channels; ++c) {
     // 收集窗口内的值（最大支持 7x7 = 49 个元素）
@@ -122,7 +121,7 @@ __global__ void boxFilterKernel(const unsigned char* input,
     }
 
     output[(y * width + x) * channels + c] =
-        static_cast<unsigned char>(sum * invArea);
+        static_cast<unsigned char>(sum * invArea + 0.5f);
   }
 }
 
@@ -299,11 +298,8 @@ void Filters::medianFilter(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Kernel size must be odd and between 1-7");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -333,11 +329,8 @@ void Filters::bilateralFilter(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("sigmaColor must be positive");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -360,11 +353,8 @@ void Filters::boxFilter(const GpuImage& input, GpuImage& output, int kernelSize,
     throw std::invalid_argument("Kernel size must be odd and between 1-31");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -387,11 +377,8 @@ void Filters::sharpen(const GpuImage& input, GpuImage& output, float strength,
     throw std::invalid_argument("Strength must be positive");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -411,11 +398,8 @@ void Filters::laplacian(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Invalid input image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   dim3 block(16, 16);
   dim3 grid((input.width + block.x - 1) / block.x,
@@ -440,10 +424,7 @@ void ImageArithmetic::add(const GpuImage& src1, const GpuImage& src2,
     throw std::invalid_argument("Image dimensions must match");
   }
 
-  if (output.width != src1.width || output.height != src1.height ||
-      output.channels != src1.channels) {
-    output = ImageUtils::createGpuImage(src1.width, src1.height, src1.channels);
-  }
+  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
 
   size_t totalSize =
       static_cast<size_t>(src1.width) * src1.height * src1.channels;
@@ -471,10 +452,7 @@ void ImageArithmetic::subtract(const GpuImage& src1, const GpuImage& src2,
     throw std::invalid_argument("Image dimensions must match");
   }
 
-  if (output.width != src1.width || output.height != src1.height ||
-      output.channels != src1.channels) {
-    output = ImageUtils::createGpuImage(src1.width, src1.height, src1.channels);
-  }
+  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
 
   size_t totalSize =
       static_cast<size_t>(src1.width) * src1.height * src1.channels;
@@ -503,10 +481,7 @@ void ImageArithmetic::multiply(const GpuImage& src1, const GpuImage& src2,
     throw std::invalid_argument("Image dimensions must match");
   }
 
-  if (output.width != src1.width || output.height != src1.height ||
-      output.channels != src1.channels) {
-    output = ImageUtils::createGpuImage(src1.width, src1.height, src1.channels);
-  }
+  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
 
   size_t totalSize =
       static_cast<size_t>(src1.width) * src1.height * src1.channels;
@@ -538,10 +513,7 @@ void ImageArithmetic::blend(const GpuImage& src1, const GpuImage& src2,
     throw std::invalid_argument("Alpha must be in range [0, 1]");
   }
 
-  if (output.width != src1.width || output.height != src1.height ||
-      output.channels != src1.channels) {
-    output = ImageUtils::createGpuImage(src1.width, src1.height, src1.channels);
-  }
+  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
 
   size_t totalSize =
       static_cast<size_t>(src1.width) * src1.height * src1.channels;
@@ -571,10 +543,7 @@ void ImageArithmetic::addWeighted(const GpuImage& src1, float alpha,
     throw std::invalid_argument("Image dimensions must match");
   }
 
-  if (output.width != src1.width || output.height != src1.height ||
-      output.channels != src1.channels) {
-    output = ImageUtils::createGpuImage(src1.width, src1.height, src1.channels);
-  }
+  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
 
   size_t totalSize =
       static_cast<size_t>(src1.width) * src1.height * src1.channels;
@@ -602,10 +571,7 @@ void ImageArithmetic::absDiff(const GpuImage& src1, const GpuImage& src2,
     throw std::invalid_argument("Image dimensions must match");
   }
 
-  if (output.width != src1.width || output.height != src1.height ||
-      output.channels != src1.channels) {
-    output = ImageUtils::createGpuImage(src1.width, src1.height, src1.channels);
-  }
+  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
 
   size_t totalSize =
       static_cast<size_t>(src1.width) * src1.height * src1.channels;
@@ -629,11 +595,8 @@ void ImageArithmetic::addScalar(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Invalid input image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   size_t totalSize =
       static_cast<size_t>(input.width) * input.height * input.channels;
@@ -657,11 +620,8 @@ void ImageArithmetic::multiplyScalar(const GpuImage& input, GpuImage& output,
     throw std::invalid_argument("Invalid input image");
   }
 
-  if (output.width != input.width || output.height != input.height ||
-      output.channels != input.channels) {
-    output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
-  }
+  ImageUtils::ensureOutputSize(output, input.width, input.height,
+                               input.channels);
 
   size_t totalSize =
       static_cast<size_t>(input.width) * input.height * input.channels;

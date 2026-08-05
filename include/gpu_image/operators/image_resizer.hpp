@@ -9,7 +9,7 @@ namespace gpu_image {
 enum class InterpolationMode {
   NearestNeighbor, // 最近邻插值
   Bilinear,        // 双线性插值
-  Bicubic          // 双三次插值（暂未实现）
+  Bicubic          // 双三次插值（Catmull-Rom）
 };
 
 // 图像缩放器类
