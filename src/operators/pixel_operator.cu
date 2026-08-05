@@ -1,4 +1,5 @@
 #include "gpu_image/core/cuda_error.hpp"
+#include "gpu_image/core/device_kernels.cuh"
 #include "gpu_image/core/image_utils.hpp"
 #include "gpu_image/core/kernel_helpers.hpp"
 #include "gpu_image/operators/pixel_operator.hpp"
@@ -52,10 +53,9 @@ __global__ void brightnessKernelScalar(const unsigned char* input,
   int y = blockIdx.y * blockDim.y + threadIdx.y;
 
   if (x < width && y < height) {
-    int idx = (y * width + x) * channels;
+    int idx = dev::pixelIndex(x, y, width, channels);
     for (int c = 0; c < channels; ++c) {
-      int value = input[idx + c] + offset;
-      output[idx + c] = static_cast<unsigned char>(min(max(value, 0), 255));
+      output[idx + c] = dev::clampToUchar(input[idx + c] + offset);
     }
   }
 }
@@ -67,14 +67,10 @@ __global__ void toGrayscaleKernel(const unsigned char* input,
   int y = blockIdx.y * blockDim.y + threadIdx.y;
 
   if (x < width && y < height) {
-    int inIdx = (y * width + x) * inputChannels;
+    int inIdx = dev::pixelIndex(x, y, width, inputChannels);
     int outIdx = y * width + x;
-
-    float gray = 0.299f * input[inIdx] + 0.587f * input[inIdx + 1] +
-                 0.114f * input[inIdx + 2];
-
     output[outIdx] =
-        static_cast<unsigned char>(min(max(gray + 0.5f, 0.0f), 255.0f));
+        dev::rgbToGrayUchar(input[inIdx], input[inIdx + 1], input[inIdx + 2]);
   }
 }
 

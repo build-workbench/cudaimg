@@ -9,6 +9,7 @@
 // Core components
 #include "gpu_image/core/cuda_error.hpp"
 #include "gpu_image/core/device_buffer.hpp"
+#include "gpu_image/core/device_kernels.cuh"
 #include "gpu_image/core/execution_context.hpp"
 #include "gpu_image/core/gpu_image.hpp"
 #include "gpu_image/core/image_utils.hpp"

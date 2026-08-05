@@ -50,4 +50,15 @@ validateSameSize(const GpuImage& a, const GpuImage& b,
   }
 }
 
+// 验证卷积核尺寸为正奇数且在 [minSize, maxSize] 范围内。
+// .cu 文件中反复出现的手写校验（如 "Kernel size must be odd and between 1 and
+// 7"） 可统一委托至此。
+inline void validateKernelSize(int kernelSize, int minSize = 1, int maxSize = 7,
+                               const char* context = "Kernel size must be odd "
+                                                     "and within range") {
+  if (kernelSize < minSize || kernelSize > maxSize || kernelSize % 2 == 0) {
+    throw std::invalid_argument(context);
+  }
+}
+
 } // namespace gpu_image
