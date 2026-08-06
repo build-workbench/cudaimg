@@ -20,7 +20,7 @@ jobs:
     container:
       image: nvidia/cuda:12.4.1-devel-ubuntu22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           apt-get update && apt-get install -y --no-install-recommends cmake ninja-build g++ git
@@ -39,7 +39,7 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install clang-format
         run: sudo apt-get update && sudo apt-get install -y clang-format
       - name: Check formatting
