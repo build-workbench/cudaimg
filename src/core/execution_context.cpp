@@ -1,9 +1,9 @@
-#include "gpu_image/core/execution_context.hpp"
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/memory_manager.hpp"
+#include "cudaimg/core/execution_context.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/memory_manager.hpp"
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 // ===== ExecutionPolicy Implementation =====
 
@@ -75,14 +75,14 @@ ImageAllocator& ImageAllocator::instance() {
   return instance;
 }
 
-GpuImage ImageAllocator::allocate(int width, int height, int channels,
+CudaImage ImageAllocator::allocate(int width, int height, int channels,
                                   bool usePool) {
   if (width <= 0 || height <= 0 ||
       (channels != 1 && channels != 3 && channels != 4)) {
     throw std::invalid_argument("Invalid image parameters");
   }
 
-  GpuImage image;
+  CudaImage image;
   image.width = width;
   image.height = height;
   image.channels = channels;
@@ -98,7 +98,7 @@ GpuImage ImageAllocator::allocate(int width, int height, int channels,
   return image;
 }
 
-bool ImageAllocator::ensureSize(const GpuImage& input, GpuImage& output,
+bool ImageAllocator::ensureSize(const CudaImage& input, CudaImage& output,
                                 bool usePool) {
   if (output.width != input.width || output.height != input.height ||
       output.channels != input.channels || !output.isValid()) {
@@ -108,7 +108,7 @@ bool ImageAllocator::ensureSize(const GpuImage& input, GpuImage& output,
   return false;
 }
 
-bool ImageAllocator::ensureSize(GpuImage& output, int width, int height,
+bool ImageAllocator::ensureSize(CudaImage& output, int width, int height,
                                 int channels, bool usePool) {
   if (output.width != width || output.height != height ||
       output.channels != channels || !output.isValid()) {
@@ -118,11 +118,11 @@ bool ImageAllocator::ensureSize(GpuImage& output, int width, int height,
   return false;
 }
 
-void ImageAllocator::recycleToPool(GpuImage&& image) {
+void ImageAllocator::recycleToPool(CudaImage&& image) {
   if (poolingEnabled_.load(std::memory_order_relaxed) && image.isValid()) {
     MemoryManager::instance().deallocate(std::move(image.buffer));
   }
-  // If pooling disabled, just let the GpuImage destructor handle it
+  // If pooling disabled, just let the CudaImage destructor handle it
 }
 
 // ===== ExecutionContext Implementation =====
@@ -136,27 +136,27 @@ ExecutionContext::ExecutionContext(ExecutionPolicy::Mode mode)
                   ? ExecutionPolicy::async()
                   : ExecutionPolicy::batch()) {}
 
-GpuImage ExecutionContext::allocateOutput(const GpuImage& input) {
+CudaImage ExecutionContext::allocateOutput(const CudaImage& input) {
   return ImageAllocator::instance().allocate(input.width, input.height,
                                              input.channels);
 }
 
-GpuImage ExecutionContext::allocateOutput(int width, int height, int channels) {
+CudaImage ExecutionContext::allocateOutput(int width, int height, int channels) {
   return ImageAllocator::instance().allocate(width, height, channels);
 }
 
-bool ExecutionContext::ensureOutputSize(const GpuImage& input,
-                                        GpuImage& output) {
+bool ExecutionContext::ensureOutputSize(const CudaImage& input,
+                                        CudaImage& output) {
   return ImageAllocator::instance().ensureSize(input, output);
 }
 
-bool ExecutionContext::ensureOutputSize(GpuImage& output, int width, int height,
+bool ExecutionContext::ensureOutputSize(CudaImage& output, int width, int height,
                                         int channels) {
   return ImageAllocator::instance().ensureSize(output, width, height, channels);
 }
 
-void ExecutionContext::recycleToPool(GpuImage&& image) {
+void ExecutionContext::recycleToPool(CudaImage&& image) {
   ImageAllocator::instance().recycleToPool(std::move(image));
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

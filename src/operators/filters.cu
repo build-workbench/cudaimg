@@ -1,10 +1,10 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/filters.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/filters.hpp"
 #include <cmath>
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 // 中值滤波 Kernel（使用排序网络）
 __global__ void medianFilterKernel(const unsigned char* input,
@@ -289,7 +289,7 @@ __global__ void multiplyScalarKernel(const unsigned char* input,
 }
 
 // Filters 实现
-void Filters::medianFilter(const GpuImage& input, GpuImage& output,
+void Filters::medianFilter(const CudaImage& input, CudaImage& output,
                            int kernelSize, cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -313,7 +313,7 @@ void Filters::medianFilter(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Filters::bilateralFilter(const GpuImage& input, GpuImage& output,
+void Filters::bilateralFilter(const CudaImage& input, CudaImage& output,
                               int kernelSize, float sigmaSpace,
                               float sigmaColor, cudaStream_t stream) {
   if (!input.isValid()) {
@@ -344,7 +344,7 @@ void Filters::bilateralFilter(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Filters::boxFilter(const GpuImage& input, GpuImage& output, int kernelSize,
+void Filters::boxFilter(const CudaImage& input, CudaImage& output, int kernelSize,
                         cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -368,7 +368,7 @@ void Filters::boxFilter(const GpuImage& input, GpuImage& output, int kernelSize,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Filters::sharpen(const GpuImage& input, GpuImage& output, float strength,
+void Filters::sharpen(const CudaImage& input, CudaImage& output, float strength,
                       cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -392,7 +392,7 @@ void Filters::sharpen(const GpuImage& input, GpuImage& output, float strength,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Filters::laplacian(const GpuImage& input, GpuImage& output,
+void Filters::laplacian(const CudaImage& input, CudaImage& output,
                         cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -414,8 +414,8 @@ void Filters::laplacian(const GpuImage& input, GpuImage& output,
 }
 
 // ImageArithmetic 实现
-void ImageArithmetic::add(const GpuImage& src1, const GpuImage& src2,
-                          GpuImage& output, cudaStream_t stream) {
+void ImageArithmetic::add(const CudaImage& src1, const CudaImage& src2,
+                          CudaImage& output, cudaStream_t stream) {
   if (!src1.isValid() || !src2.isValid()) {
     throw std::invalid_argument("Invalid input images");
   }
@@ -442,8 +442,8 @@ void ImageArithmetic::add(const GpuImage& src1, const GpuImage& src2,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::subtract(const GpuImage& src1, const GpuImage& src2,
-                               GpuImage& output, cudaStream_t stream) {
+void ImageArithmetic::subtract(const CudaImage& src1, const CudaImage& src2,
+                               CudaImage& output, cudaStream_t stream) {
   if (!src1.isValid() || !src2.isValid()) {
     throw std::invalid_argument("Invalid input images");
   }
@@ -470,8 +470,8 @@ void ImageArithmetic::subtract(const GpuImage& src1, const GpuImage& src2,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::multiply(const GpuImage& src1, const GpuImage& src2,
-                               GpuImage& output, float scale,
+void ImageArithmetic::multiply(const CudaImage& src1, const CudaImage& src2,
+                               CudaImage& output, float scale,
                                cudaStream_t stream) {
   if (!src1.isValid() || !src2.isValid()) {
     throw std::invalid_argument("Invalid input images");
@@ -499,8 +499,8 @@ void ImageArithmetic::multiply(const GpuImage& src1, const GpuImage& src2,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::blend(const GpuImage& src1, const GpuImage& src2,
-                            GpuImage& output, float alpha,
+void ImageArithmetic::blend(const CudaImage& src1, const CudaImage& src2,
+                            CudaImage& output, float alpha,
                             cudaStream_t stream) {
   if (!src1.isValid() || !src2.isValid()) {
     throw std::invalid_argument("Invalid input images");
@@ -531,9 +531,9 @@ void ImageArithmetic::blend(const GpuImage& src1, const GpuImage& src2,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::addWeighted(const GpuImage& src1, float alpha,
-                                  const GpuImage& src2, float beta,
-                                  GpuImage& output, float gamma,
+void ImageArithmetic::addWeighted(const CudaImage& src1, float alpha,
+                                  const CudaImage& src2, float beta,
+                                  CudaImage& output, float gamma,
                                   cudaStream_t stream) {
   if (!src1.isValid() || !src2.isValid()) {
     throw std::invalid_argument("Invalid input images");
@@ -561,8 +561,8 @@ void ImageArithmetic::addWeighted(const GpuImage& src1, float alpha,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::absDiff(const GpuImage& src1, const GpuImage& src2,
-                              GpuImage& output, cudaStream_t stream) {
+void ImageArithmetic::absDiff(const CudaImage& src1, const CudaImage& src2,
+                              CudaImage& output, cudaStream_t stream) {
   if (!src1.isValid() || !src2.isValid()) {
     throw std::invalid_argument("Invalid input images");
   }
@@ -589,7 +589,7 @@ void ImageArithmetic::absDiff(const GpuImage& src1, const GpuImage& src2,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::addScalar(const GpuImage& input, GpuImage& output,
+void ImageArithmetic::addScalar(const CudaImage& input, CudaImage& output,
                                 unsigned char value, cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -614,7 +614,7 @@ void ImageArithmetic::addScalar(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::multiplyScalar(const GpuImage& input, GpuImage& output,
+void ImageArithmetic::multiplyScalar(const CudaImage& input, CudaImage& output,
                                      float scale, cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -639,4 +639,4 @@ void ImageArithmetic::multiplyScalar(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

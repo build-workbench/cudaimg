@@ -1,197 +1,123 @@
-# Mini-OpenCV — GPU 图像处理库
+# cudaimg — CUDA 图像处理入门教程
 
-[![CI](https://github.com/AICL-Lab/mini-opencv/actions/workflows/ci.yml/badge.svg)](https://github.com/AICL-Lab/mini-opencv/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-blue?logo=github)](https://aicl-lab.github.io/mini-opencv/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
-![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
+![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
-![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)
-![Status](https://img.shields.io/badge/Status-Active%20Development-informational.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
-基于 CUDA 的高性能图像处理库，为计算机视觉应用提供 GPU 加速算子。
+通过图像处理算子学习 CUDA 编程。每个 GPU kernel 都有 CPU 参考实现做正确性验证，按概念难度递进组织。
 
-> **⚡ GPU 加速**：算子以 CUDA 内核实现（shared memory tiling、原子直方图、`uchar4` 向量化），并行处理图像。
->
-> *[benchmarks/](benchmarks/) 基准测试（以 `-DBUILD_BENCHMARKS=ON` 构建）测量 GPU 绝对延迟。本仓库目前不提供 CPU/OpenCV 对比，因此此处不声明任何跨库加速倍数。*
+> **教学项目，已归档。** 代码以可读性优先，不追求极致性能，不替代 OpenCV。
 
 ---
 
-## 📚 快速链接
+## 这是什么
 
-| 资源 | 描述 |
-|------|------|
-| [安装指南](https://aicl-lab.github.io/mini-opencv/zh/setup/installation) | 完整的安装配置指南 |
-| [快速入门](https://aicl-lab.github.io/mini-opencv/zh/setup/quickstart) | 5 分钟快速上手 |
-| [架构概览](https://aicl-lab.github.io/mini-opencv/zh/architecture/overview) | 三层架构与模块边界 |
-| [API 参考](https://aicl-lab.github.io/mini-opencv/zh/api/) | 完整 API 文档 |
-| [示例代码](https://aicl-lab.github.io/mini-opencv/zh/tutorials/examples) | 代码示例和教程 |
+- 一组用 CUDA 实现的图像处理算子（像素操作、卷积、直方图、几何变换、形态学等）
+- 每个 GPU kernel 配有 CPU 参考实现，通过逐像素比对验证正确性
+- 按 CUDA 概念难度从简单到复杂递进，适合从零开始学 GPU 编程
+- 三层架构（基础设施 → 算子 → 门面），代码可导航
 
-**完整文档：** https://aicl-lab.github.io/mini-opencv/
+## 这不是什么
 
----
-
-## ✨ 功能特性
-
-| 类别 | 算子 | 亮点 |
-|------|------|------|
-| **像素操作** | 反色、灰度化、亮度调整 | 逐像素并行 |
-| **卷积** | 高斯模糊、Sobel 边缘检测 | Shared Memory Tiling |
-| **直方图** | 计算、均衡化 | 原子操作 + 规约 |
-| **几何变换** | 旋转、缩放、翻转、仿射 | 双线性插值 |
-| **形态学** | 腐蚀、膨胀、开/闭运算 | 可自定义结构元素 |
-| **阈值** | 全局、自适应、Otsu | 直方图驱动 |
-| **色彩空间** | RGB/HSV/YUV 转换 | 批量转换 |
-| **滤波** | 中值、双边、锐化 | 保边去噪 |
-| **流水线** | 多步异步处理 | 多流并发 |
+- **不是 OpenCV 替代品** — `cv::cuda` 已覆盖全部功能且经过工业级优化
+- **不是高性能库** — kernel 实现为教学清晰度优先，未做 occupancy 调优
+- **不接受功能请求** — 项目已归档，作为学习参考保留
 
 ---
 
-## 🏗️ 架构
+## 学习路径
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      应用层                                   │
-│         图像处理器  ·  流水线处理器                            │
-├─────────────────────────────────────────────────────────────┤
-│                   算子层 (CUDA Kernels)                       │
-│  Pixel算子    │  卷积引擎        │  几何变换                  │
-│  形态学        │  色彩空间        │  滤波器                    │
-│  阈值处理      │  直方图计算      │  图像缩放                  │
-├─────────────────────────────────────────────────────────────┤
-│                      基础设施层                               │
-│  显存缓冲区  ·  GPU/Host 图像容器  ·  错误处理                 │
-│  图像 I/O    ·  内存池  ·  执行上下文                          │
-└─────────────────────────────────────────────────────────────┘
-```
+按以下顺序阅读源码，每个阶段引入一个新的 CUDA 概念：
+
+| 阶段 | 源文件 | 学到的 CUDA 概念 |
+|------|--------|-----------------|
+| **Lv1** | `src/operators/pixel_operator.cu` | 2D grid/block 配置、线程索引映射、边界检查 |
+| **Lv2** | `src/operators/pixel_operator.cu`（vec4 路径） | `uchar4` 向量化读写、1D vs 2D grid 选择、dispatch fallback 模式 |
+| **Lv3** | `src/operators/convolution_engine.cu` | shared memory tiling、halo 区域加载、`__syncthreads()`、三种边界策略 |
+| **Lv4** | `src/operators/convolution_engine.cu`（separable） | 算法优化：O(n²k²) → O(n²k)，两 pass + 中间缓冲 |
+| **Lv5** | `src/operators/histogram_calculator.cu` | block 级 shared memory 直方图、`atomicAdd` 规约到全局 |
+| **Lv6** | `src/operators/image_resizer.cu` | 浮点坐标映射、双线性插值的 GPU 实现 |
+| **Lv7** | `src/processing/pipeline_processor.cu` | 多 stream 创建/销毁、async 提交、batch 同步 |
+
+> 详见 [学习路径详解](docs/learning-path.md)
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ```bash
-# 克隆并构建
-git clone https://github.com/AICL-Lab/mini-opencv.git
-cd mini-opencv
-cmake -S . -B build -DBUILD_EXAMPLES=ON
+git clone https://github.com/AICL-Lab/cudaimg.git
+cd cudaimg
+cmake -S . -B build
 cmake --build build -j$(nproc)
 
-# 运行测试
+# 运行测试（需要 NVIDIA GPU）
 ctest --test-dir build --output-on-failure
 
 # 运行示例
 ./build/bin/basic_example
 ```
 
-### 基础用法
+> 完整构建选项见 [构建与测试](docs/build-and-test.md)
 
-```cpp
-#include "gpu_image/gpu_image_processing.hpp"
-using namespace gpu_image;
+---
 
-// 第1步：创建图像处理器
-ImageProcessor processor;
+## 项目结构
 
-// 第2步：创建/加载主机端图像
-HostImage hostImage = ImageUtils::createHostImage(1920, 1080, 3);
-// 填充 hostImage.data 数据（RGB，8位每通道）
+```
+include/cudaimg/
+├── cudaimg.hpp              # 统一头文件（include 这个就够了）
+├── core/
+│   ├── image.hpp            # CudaImage / HostImage 数据结构
+│   ├── device_buffer.hpp    # RAII 显存管理
+│   ├── memory_manager.hpp   # 可选内存池（默认关闭，有坑点）
+│   ├── execution_context.hpp # 执行策略（sync/async/batch）
+│   ├── device_kernels.cuh   # 设备端共享工具（clamp、索引等）
+│   └── kernel_helpers.hpp   # 主机端 kernel 启动辅助
+├── operators/               # CUDA kernel 实现（学习重点）
+│   ├── pixel_operator.cu    # Lv1-2：最简单的 kernel + 向量化
+│   ├── convolution_engine.cu # Lv3-4：shared memory + 可分离卷积
+│   ├── histogram_calculator.cu # Lv5：原子操作 + 规约
+│   ├── image_resizer.cu     # Lv6：插值与坐标映射
+│   ├── morphology.cu        # 形态学（min/max reduction）
+│   ├── threshold.cu         # 阈值处理
+│   ├── filters.cu           # 中值/双边/锐化滤波
+│   ├── geometric.cu         # 旋转/翻转/裁剪
+│   └── color_space.cu       # RGB/HSV/YUV 转换
+└── processing/
+    ├── image_processor.hpp  # 门面层：一行调用一个算子
+    └── pipeline_processor.cu # Lv7：多流流水线
 
-// 第3步：上传到GPU并处理
-GpuImage gpu = processor.loadFromHost(hostImage);
-GpuImage blurred = processor.gaussianBlur(gpu, 5, 1.5f);
-GpuImage edges = processor.sobelEdgeDetection(gpu);
-
-// 第4步：下载结果回主机
-HostImage result = processor.download(edges);
+tests/                       # 每个算子配 CPU 参考实现做逐像素验证
+examples/                    # 可运行的基础/流水线示例
+benchmarks/                  # 手写计时器基准（非 Google Benchmark）
 ```
 
 ---
 
-## 📋 系统要求
+## 详细文档
 
-### 硬件/软件要求
-
-| 组件 | 最低要求 | 推荐配置 |
-|------|----------|----------|
-| CUDA | 11.0 | 12.x |
-| CMake | 3.18 | 3.24+ |
-| C++ | C++17 | C++17 |
-| GPU | CC 7.5+ (Turing) | RTX 30/40 系列 |
-
-### 支持的图像格式
-
-| 格式 | 读取 | 写入 |
-|------|------|------|
-| JPEG/JPG | ✓ | ✓ |
-| PNG | ✓ | ✓ |
-| BMP | ✓ | ✓ |
-| TGA | ✓ | ✓ |
-
-**注意：** 所有格式均支持 8 位每通道（灰度、RGB、RGBA）
+| 文档 | 内容 |
+|------|------|
+| [学习路径详解](docs/learning-path.md) | 逐文件讲解每个 kernel 涉及的 CUDA 概念 |
+| [CUDA 概念速查](docs/cuda-concepts.md) | 概念 → 源码位置映射表 |
+| [坑点记录](docs/pitfalls.md) | 已知设计权衡和容易踩的坑 |
+| [构建与测试](docs/build-and-test.md) | 构建选项、运行测试、CI 说明 |
 
 ---
 
-## 📖 文档
+## 下一步学什么
 
-完整文档请访问 [GitHub Pages](https://aicl-lab.github.io/mini-opencv/)：
+学完本项目后，可以继续深入：
 
-- [安装指南](https://aicl-lab.github.io/mini-opencv/zh/setup/installation)
-- [快速入门](https://aicl-lab.github.io/mini-opencv/zh/setup/quickstart)
-- [架构概览](https://aicl-lab.github.io/mini-opencv/zh/architecture/overview)
-- [性能基准](https://aicl-lab.github.io/mini-opencv/zh/benchmarks/)
-- [API 参考](https://aicl-lab.github.io/mini-opencv/zh/api/)
-- [常见问题](https://aicl-lab.github.io/mini-opencv/zh/tutorials/faq)
+- **GPU 架构** — NVIDIA [CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/) 和 [CUDA C++ Best Practices Guide](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/)
+- **性能分析** — 用 Nsight Compute / Nsight Systems 分析本项目的 kernel，理解 occupancy、memory bandwidth、warp divergence
+- **高级 kernel** — [CUTLASS](https://github.com/NVIDIA/cutlass)（矩阵乘法）、[FlashAttention](https://github.com/Dao-AILab/flash-attention)（注意力机制）
+- **推理引擎** — vLLM PagedAttention、TensorRT-LLM、量化（INT8/FP8）
 
 ---
 
-## 🤝 贡献
+## 许可证
 
-请参阅 [CONTRIBUTING.md](CONTRIBUTING.md) 了解贡献指南。
-
----
-
-## 📝 更新日志
-
-请参阅 [CHANGELOG.md](CHANGELOG.md) 了解版本历史。
-
----
-
-## 🛠️ 常见问题
-
-**Q: CMake 找不到 CUDA / `nvcc` 未找到**
-```bash
-# 显式设置 CUDA 路径
-export CUDAToolkit_ROOT=/usr/local/cuda
-# 或在配置时指定：
-cmake -S . -B build -DCUDAToolkit_ROOT=/usr/local/cuda
-```
-
-**Q: 运行示例显示 "CUDA is not available"**
-- 确保你有计算能力 7.5+ 的 NVIDIA GPU
-- 从 [NVIDIA](https://developer.nvidia.com/cuda-downloads) 安装 CUDA Toolkit 11.0+
-- 验证：`nvidia-smi` 应显示你的 GPU
-
-**Q: 测试执行时失败或崩溃**
-- 检查 GPU 显存：大图像可能需要更多显存
-- 尝试较小的测试图像或减少 batch size
-- 使用详细输出运行：`ctest --test-dir build --output-on-failure -V`
-
-**Q: 如何验证安装成功？**
-```bash
-cd build && ctest --output-on-failure
-# 所有测试应该通过
-```
-
-更多问题请查看 [GitHub Discussions](https://github.com/AICL-Lab/mini-opencv/discussions)。
-
----
-
-## 📄 许可证
-
-MIT 许可证 — 详见 [LICENSE](LICENSE) 文件。
-
----
-
-**⭐ 如果本项目对你有帮助，请给个 Star！**
-
-如需支持，请提交 [Issue](https://github.com/AICL-Lab/mini-opencv/issues) 或发起 [讨论](https://github.com/AICL-Lab/mini-opencv/discussions)。
+MIT — 详见 [LICENSE](LICENSE)

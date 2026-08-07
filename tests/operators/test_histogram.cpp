@@ -5,11 +5,11 @@
  * Property 7: 直方图总和不变性
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <gtest/gtest.h>
 #include <numeric>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class HistogramTest : public ::testing::Test {
 protected:
@@ -40,7 +40,7 @@ TEST_F(HistogramTest, HistogramSumInvariant) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   auto histogram = HistogramCalculator::calculate(gpuInput);
 
@@ -66,7 +66,7 @@ TEST_F(HistogramTest, KnownDistribution) {
     input.data[i] = 200;
   }
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
   auto histogram = HistogramCalculator::calculate(gpuInput);
 
   EXPECT_EQ(histogram[100], 128);
@@ -89,7 +89,7 @@ TEST_F(HistogramTest, AllBlackImage) {
   HostImage input = ImageUtils::createHostImage(width, height, channels);
   std::fill(input.data.begin(), input.data.end(), 0);
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
   auto histogram = HistogramCalculator::calculate(gpuInput);
 
   EXPECT_EQ(histogram[0], width * height);
@@ -108,7 +108,7 @@ TEST_F(HistogramTest, AllWhiteImage) {
   HostImage input = ImageUtils::createHostImage(width, height, channels);
   std::fill(input.data.begin(), input.data.end(), 255);
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
   auto histogram = HistogramCalculator::calculate(gpuInput);
 
   EXPECT_EQ(histogram[255], width * height);
@@ -135,7 +135,7 @@ TEST_F(HistogramTest, RGBHistogram) {
     }
   }
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
   auto histograms = HistogramCalculator::calculateRGB(gpuInput);
 
   int totalPixels = width * height;
@@ -155,7 +155,7 @@ TEST_F(HistogramTest, SingleChannelHistogram) {
   const int channels = 3;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   for (int c = 0; c < channels; ++c) {
     auto histogram = HistogramCalculator::calculateChannel(gpuInput, c);
@@ -177,8 +177,8 @@ TEST_F(HistogramTest, HistogramEqualization) {
     input.data[i] = static_cast<unsigned char>(100 + (i % 50)); // 100-149
   }
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage equalized;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage equalized;
   HistogramCalculator::equalize(gpuInput, equalized);
   cudaDeviceSynchronize();
 
@@ -200,7 +200,7 @@ TEST_F(HistogramTest, HistogramEqualization) {
 
 // 测试无效输入
 TEST_F(HistogramTest, InvalidInput) {
-  GpuImage invalid;
+  CudaImage invalid;
 
   EXPECT_THROW(HistogramCalculator::calculate(invalid), std::invalid_argument);
   EXPECT_THROW(HistogramCalculator::calculateRGB(invalid),
@@ -214,7 +214,7 @@ TEST_F(HistogramTest, LargeImageHistogramSum) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   auto histogram = HistogramCalculator::calculate(gpuInput);
 
@@ -231,7 +231,7 @@ TEST_F(HistogramTest, RGBToGrayscaleHistogram) {
   const int channels = 3;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   auto histogram = HistogramCalculator::calculate(gpuInput);
 

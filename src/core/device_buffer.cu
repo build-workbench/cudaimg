@@ -1,8 +1,8 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/device_buffer.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/device_buffer.hpp"
 #include <utility>
 
-namespace gpu_image {
+namespace cudaimg {
 
 DeviceBuffer::DeviceBuffer(size_t size) : devicePtr_(nullptr), size_(size) {
   if (size > 0) {
@@ -108,4 +108,4 @@ std::pair<void*, size_t> DeviceBuffer::detach() noexcept {
   return result;
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

@@ -1,10 +1,10 @@
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/execution_context.hpp"
-#include "gpu_image/core/gpu_image.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/execution_context.hpp"
+#include "cudaimg/core/image.hpp"
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 // ===== Memory pooling configuration (delegates to ImageAllocator) =====
 
@@ -18,7 +18,7 @@ bool ImageUtils::isMemoryPoolingEnabled() {
 
 // ===== Image Creation =====
 
-GpuImage ImageUtils::createGpuImage(int width, int height, int channels) {
+CudaImage ImageUtils::createCudaImage(int width, int height, int channels) {
   return ImageAllocator::instance().allocate(width, height, channels);
 }
 
@@ -38,19 +38,19 @@ HostImage ImageUtils::createHostImage(int width, int height, int channels) {
 
 // ===== Host-Device Transfer =====
 
-GpuImage ImageUtils::uploadToGpu(const HostImage& hostImage) {
+CudaImage ImageUtils::uploadToGpu(const HostImage& hostImage) {
   if (!hostImage.isValid()) {
     throw std::invalid_argument("Invalid host image");
   }
 
-  GpuImage gpuImage =
-      createGpuImage(hostImage.width, hostImage.height, hostImage.channels);
+  CudaImage gpuImage =
+      createCudaImage(hostImage.width, hostImage.height, hostImage.channels);
   gpuImage.buffer.copyFromHost(hostImage.data.data(), hostImage.totalBytes());
 
   return gpuImage;
 }
 
-HostImage ImageUtils::downloadFromGpu(const GpuImage& gpuImage) {
+HostImage ImageUtils::downloadFromGpu(const CudaImage& gpuImage) {
   if (!gpuImage.isValid()) {
     throw std::invalid_argument("Invalid GPU image");
   }
@@ -62,20 +62,20 @@ HostImage ImageUtils::downloadFromGpu(const GpuImage& gpuImage) {
   return hostImage;
 }
 
-GpuImage ImageUtils::clone(const GpuImage& gpuImage) {
+CudaImage ImageUtils::clone(const CudaImage& gpuImage) {
   if (!gpuImage.isValid()) {
-    return GpuImage{};
+    return CudaImage{};
   }
 
-  GpuImage copy =
-      createGpuImage(gpuImage.width, gpuImage.height, gpuImage.channels);
+  CudaImage copy =
+      createCudaImage(gpuImage.width, gpuImage.height, gpuImage.channels);
   copy.buffer.copyFromDevice(gpuImage.buffer.data(), gpuImage.totalBytes());
 
   return copy;
 }
 
 void ImageUtils::uploadToGpuAsync(const HostImage& hostImage,
-                                  GpuImage& gpuImage, cudaStream_t stream) {
+                                  CudaImage& gpuImage, cudaStream_t stream) {
   if (!hostImage.isValid()) {
     throw std::invalid_argument("Invalid host image");
   }
@@ -87,7 +87,7 @@ void ImageUtils::uploadToGpuAsync(const HostImage& hostImage,
                                     hostImage.totalBytes(), stream);
 }
 
-void ImageUtils::downloadFromGpuAsync(const GpuImage& gpuImage,
+void ImageUtils::downloadFromGpuAsync(const CudaImage& gpuImage,
                                       HostImage& hostImage,
                                       cudaStream_t stream) {
   if (!gpuImage.isValid()) {
@@ -111,11 +111,11 @@ void ImageUtils::downloadFromGpuAsync(const GpuImage& gpuImage,
 
 // ===== Output Buffer Management =====
 
-void ImageUtils::ensureOutputSize(const GpuImage& input, GpuImage& output) {
+void ImageUtils::ensureOutputSize(const CudaImage& input, CudaImage& output) {
   ImageAllocator::instance().ensureSize(input, output);
 }
 
-void ImageUtils::ensureOutputSize(GpuImage& output, int width, int height,
+void ImageUtils::ensureOutputSize(CudaImage& output, int width, int height,
                                   int channels) {
   ImageAllocator::instance().ensureSize(output, width, height, channels);
 }
@@ -127,4 +127,4 @@ bool ImageUtils::validateImageParams(int width, int height, int channels) {
          (channels == 1 || channels == 3 || channels == 4);
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

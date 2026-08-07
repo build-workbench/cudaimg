@@ -2,10 +2,10 @@
  * Threshold 单元测试
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <gtest/gtest.h>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class ThresholdTest : public ::testing::Test {
 protected:
@@ -42,8 +42,8 @@ TEST_F(ThresholdTest, BinaryThreshold) {
     input.data[i] = static_cast<unsigned char>((i - 512) / 2);
   }
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage output;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage output;
 
   Threshold::threshold(gpuInput, output, 128, 255, ThresholdType::Binary);
   cudaDeviceSynchronize();
@@ -69,8 +69,8 @@ TEST_F(ThresholdTest, BinaryInvThreshold) {
     input.data[i] = static_cast<unsigned char>(i);
   }
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage binaryOutput, binaryInvOutput;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage binaryOutput, binaryInvOutput;
 
   Threshold::threshold(gpuInput, binaryOutput, 128, 255, ThresholdType::Binary);
   Threshold::threshold(gpuInput, binaryInvOutput, 128, 255,
@@ -98,8 +98,8 @@ TEST_F(ThresholdTest, TruncateThreshold) {
     input.data[i] = static_cast<unsigned char>(i);
   }
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage output;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage output;
 
   Threshold::threshold(gpuInput, output, thresh, 255, ThresholdType::Truncate);
   cudaDeviceSynchronize();
@@ -130,7 +130,7 @@ TEST_F(ThresholdTest, OtsuThreshold) {
     }
   }
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   unsigned char otsuThresh = Threshold::otsuThreshold(gpuInput);
 
@@ -146,9 +146,9 @@ TEST_F(ThresholdTest, OtsuBinarize) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage output;
+  CudaImage output;
   Threshold::otsuBinarize(gpuInput, output);
   cudaDeviceSynchronize();
 
@@ -167,9 +167,9 @@ TEST_F(ThresholdTest, AdaptiveThreshold) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage output;
+  CudaImage output;
   Threshold::adaptiveThreshold(gpuInput, output, 255, AdaptiveMethod::MeanC,
                                ThresholdType::Binary, 11, 2);
   cudaDeviceSynchronize();
@@ -184,14 +184,14 @@ TEST_F(ThresholdTest, AdaptiveThreshold) {
 
 // 测试无效参数
 TEST_F(ThresholdTest, InvalidParameters) {
-  GpuImage invalid;
-  GpuImage output;
+  CudaImage invalid;
+  CudaImage output;
 
   EXPECT_THROW(Threshold::threshold(invalid, output, 128),
                std::invalid_argument);
 
   HostImage input = createTestImage(32, 32, 1);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   // 偶数 blockSize
   EXPECT_THROW(Threshold::adaptiveThreshold(gpuInput, output, 255,

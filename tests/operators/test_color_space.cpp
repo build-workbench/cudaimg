@@ -2,11 +2,11 @@
  * ColorSpace 单元测试
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class ColorSpaceTest : public ::testing::Test {
 protected:
@@ -36,15 +36,15 @@ TEST_F(ColorSpaceTest, RgbHsvRoundTrip) {
   const int channels = 3;
 
   HostImage original = createTestImage(width, height, channels);
-  GpuImage gpuOriginal = ImageUtils::uploadToGpu(original);
+  CudaImage gpuOriginal = ImageUtils::uploadToGpu(original);
 
   // RGB -> HSV
-  GpuImage hsv;
+  CudaImage hsv;
   ColorSpace::rgbToHsv(gpuOriginal, hsv);
   cudaDeviceSynchronize();
 
   // HSV -> RGB
-  GpuImage restored;
+  CudaImage restored;
   ColorSpace::hsvToRgb(hsv, restored);
   cudaDeviceSynchronize();
 
@@ -69,15 +69,15 @@ TEST_F(ColorSpaceTest, RgbYuvRoundTrip) {
   const int channels = 3;
 
   HostImage original = createTestImage(width, height, channels);
-  GpuImage gpuOriginal = ImageUtils::uploadToGpu(original);
+  CudaImage gpuOriginal = ImageUtils::uploadToGpu(original);
 
   // RGB -> YUV
-  GpuImage yuv;
+  CudaImage yuv;
   ColorSpace::rgbToYuv(gpuOriginal, yuv);
   cudaDeviceSynchronize();
 
   // YUV -> RGB
-  GpuImage restored;
+  CudaImage restored;
   ColorSpace::yuvToRgb(yuv, restored);
   cudaDeviceSynchronize();
 
@@ -100,10 +100,10 @@ TEST_F(ColorSpaceTest, SplitMergeChannels) {
   const int channels = 3;
 
   HostImage original = createTestImage(width, height, channels);
-  GpuImage gpuOriginal = ImageUtils::uploadToGpu(original);
+  CudaImage gpuOriginal = ImageUtils::uploadToGpu(original);
 
   // 分离通道
-  GpuImage ch0, ch1, ch2;
+  CudaImage ch0, ch1, ch2;
   ColorSpace::splitChannels(gpuOriginal, ch0, ch1, ch2);
   cudaDeviceSynchronize();
 
@@ -113,7 +113,7 @@ TEST_F(ColorSpaceTest, SplitMergeChannels) {
   EXPECT_EQ(ch2.channels, 1);
 
   // 合并通道
-  GpuImage merged;
+  CudaImage merged;
   ColorSpace::mergeChannels(ch0, ch1, ch2, merged);
   cudaDeviceSynchronize();
 
@@ -135,8 +135,8 @@ TEST_F(ColorSpaceTest, KnownColorHsv) {
   red.data[1] = 0;   // G
   red.data[2] = 0;   // B
 
-  GpuImage gpuRed = ImageUtils::uploadToGpu(red);
-  GpuImage hsvRed;
+  CudaImage gpuRed = ImageUtils::uploadToGpu(red);
+  CudaImage hsvRed;
   ColorSpace::rgbToHsv(gpuRed, hsvRed);
   cudaDeviceSynchronize();
 
@@ -163,8 +163,8 @@ TEST_F(ColorSpaceTest, GrayYuv) {
     gray.data[i * 3 + 2] = val;
   }
 
-  GpuImage gpuGray = ImageUtils::uploadToGpu(gray);
-  GpuImage yuv;
+  CudaImage gpuGray = ImageUtils::uploadToGpu(gray);
+  CudaImage yuv;
   ColorSpace::rgbToYuv(gpuGray, yuv);
   cudaDeviceSynchronize();
 
@@ -179,15 +179,15 @@ TEST_F(ColorSpaceTest, GrayYuv) {
 
 // 测试无效输入
 TEST_F(ColorSpaceTest, InvalidInput) {
-  GpuImage invalid;
-  GpuImage output;
+  CudaImage invalid;
+  CudaImage output;
 
   EXPECT_THROW(ColorSpace::rgbToHsv(invalid, output), std::invalid_argument);
   EXPECT_THROW(ColorSpace::rgbToYuv(invalid, output), std::invalid_argument);
 
   // 单通道图像
   HostImage gray = ImageUtils::createHostImage(32, 32, 1);
-  GpuImage gpuGray = ImageUtils::uploadToGpu(gray);
+  CudaImage gpuGray = ImageUtils::uploadToGpu(gray);
 
   EXPECT_THROW(ColorSpace::rgbToHsv(gpuGray, output), std::invalid_argument);
 }

@@ -1,10 +1,10 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/convolution_engine.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/convolution_engine.hpp"
 #include <cmath>
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 namespace {
 struct KernelData {
@@ -12,7 +12,22 @@ struct KernelData {
 };
 } // namespace
 
-// 使用 Shared Memory 的卷积 Kernel
+// ── 教学重点：Shared Memory Tiling ─────────────────────────────
+//
+// 为什么用 shared memory？
+//   朴素卷积：每个线程从 global memory（~200 cycle）读 k² 个像素，
+//   相邻线程大量重复读取同一区域（比如 3×3 卷积中，相邻线程有 6/9 的重叠）。
+//
+//   tiling 后：一个 block 内的线程协作加载 tile + halo 到 shared memory
+//   （~20 cycle），之后每个线程从 shared memory 读取，全局内存访问大幅减少。
+//
+// halo 区域：
+//   tile 边缘的卷积窗口需要读取相邻 tile 的数据，这些"光环"区域是
+//   tiling 的关键难点。加载时需要处理越界（Zero/Mirror/Replicate）。
+//
+// 两个 __syncthreads() 的作用：
+//   第一个：确保所有线程完成 shared memory 加载后再读取
+//   第二个：确保所有线程读完当前通道后，再覆写下一个通道的数据
 template <int BLOCK_SIZE>
 __global__ void convolveKernelShared(const unsigned char* input,
                                      unsigned char* output, int width,
@@ -241,7 +256,7 @@ __global__ void sobelKernel(const unsigned char* input, unsigned char* output,
 }
 
 // ConvolutionEngine 实现
-void ConvolutionEngine::convolve(const GpuImage& input, GpuImage& output,
+void ConvolutionEngine::convolve(const CudaImage& input, CudaImage& output,
                                  const float* kernel, int kernelSize,
                                  BorderMode borderMode, cudaStream_t stream) {
   if (!input.isValid()) {
@@ -283,7 +298,7 @@ void ConvolutionEngine::convolve(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ConvolutionEngine::gaussianBlur(const GpuImage& input, GpuImage& output,
+void ConvolutionEngine::gaussianBlur(const CudaImage& input, CudaImage& output,
                                      int kernelSize, float sigma,
                                      cudaStream_t stream) {
   if (kernelSize < 1 || kernelSize > 7 || kernelSize % 2 == 0) {
@@ -297,8 +312,8 @@ void ConvolutionEngine::gaussianBlur(const GpuImage& input, GpuImage& output,
   convolve(input, output, kernel.data(), kernelSize, BorderMode::Zero, stream);
 }
 
-void ConvolutionEngine::sobelEdgeDetection(const GpuImage& input,
-                                           GpuImage& output,
+void ConvolutionEngine::sobelEdgeDetection(const CudaImage& input,
+                                           CudaImage& output,
                                            cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -375,8 +390,8 @@ std::vector<float> ConvolutionEngine::generateGaussianKernel1D(int size,
   return kernel;
 }
 
-void ConvolutionEngine::separableConvolve(const GpuImage& input,
-                                          GpuImage& output,
+void ConvolutionEngine::separableConvolve(const CudaImage& input,
+                                          CudaImage& output,
                                           const float* rowKernel,
                                           const float* colKernel,
                                           int kernelSize, cudaStream_t stream) {
@@ -391,8 +406,8 @@ void ConvolutionEngine::separableConvolve(const GpuImage& input,
   }
 
   // 第一步：水平方向卷积（使用 rowKernel）
-  GpuImage temp =
-      ImageUtils::createGpuImage(input.width, input.height, input.channels);
+  CudaImage temp =
+      ImageUtils::createCudaImage(input.width, input.height, input.channels);
 
   KernelData rowKernelData;
   for (int i = 0; i < kernelSize; ++i) {
@@ -425,4 +440,4 @@ void ConvolutionEngine::separableConvolve(const GpuImage& input,
   CUDA_CHECK(cudaGetLastError());
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

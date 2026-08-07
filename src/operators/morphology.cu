@@ -1,10 +1,10 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/morphology.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/morphology.hpp"
 #include <algorithm>
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 // 生成结构元素掩码
 __device__ bool isInStructuringElement(int dx, int dy, int halfSize,
@@ -117,7 +117,7 @@ __global__ void subtractKernel(const unsigned char* a, const unsigned char* b,
 static void
 launchMorphKernel(void (*kernel)(const unsigned char*, unsigned char*, int, int,
                                  int, int, int),
-                  const GpuImage& input, GpuImage& output, int kernelSize,
+                  const CudaImage& input, CudaImage& output, int kernelSize,
                   StructuringElement element, cudaStream_t stream) {
 
   if (!input.isValid()) {
@@ -145,34 +145,34 @@ launchMorphKernel(void (*kernel)(const unsigned char*, unsigned char*, int, int,
 }
 
 // Morphology 实现
-void Morphology::erode(const GpuImage& input, GpuImage& output, int kernelSize,
+void Morphology::erode(const CudaImage& input, CudaImage& output, int kernelSize,
                        StructuringElement element, cudaStream_t stream) {
   launchMorphKernel(erodeKernel, input, output, kernelSize, element, stream);
 }
 
-void Morphology::dilate(const GpuImage& input, GpuImage& output, int kernelSize,
+void Morphology::dilate(const CudaImage& input, CudaImage& output, int kernelSize,
                         StructuringElement element, cudaStream_t stream) {
   launchMorphKernel(dilateKernel, input, output, kernelSize, element, stream);
 }
 
-void Morphology::open(const GpuImage& input, GpuImage& output, int kernelSize,
+void Morphology::open(const CudaImage& input, CudaImage& output, int kernelSize,
                       StructuringElement element, cudaStream_t stream) {
-  GpuImage temp;
+  CudaImage temp;
   erode(input, temp, kernelSize, element, stream);
   dilate(temp, output, kernelSize, element, stream);
 }
 
-void Morphology::close(const GpuImage& input, GpuImage& output, int kernelSize,
+void Morphology::close(const CudaImage& input, CudaImage& output, int kernelSize,
                        StructuringElement element, cudaStream_t stream) {
-  GpuImage temp;
+  CudaImage temp;
   dilate(input, temp, kernelSize, element, stream);
   erode(temp, output, kernelSize, element, stream);
 }
 
-void Morphology::gradient(const GpuImage& input, GpuImage& output,
+void Morphology::gradient(const CudaImage& input, CudaImage& output,
                           int kernelSize, StructuringElement element,
                           cudaStream_t stream) {
-  GpuImage dilated, eroded;
+  CudaImage dilated, eroded;
   dilate(input, dilated, kernelSize, element, stream);
   erode(input, eroded, kernelSize, element, stream);
 
@@ -192,9 +192,9 @@ void Morphology::gradient(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Morphology::topHat(const GpuImage& input, GpuImage& output, int kernelSize,
+void Morphology::topHat(const CudaImage& input, CudaImage& output, int kernelSize,
                         StructuringElement element, cudaStream_t stream) {
-  GpuImage opened;
+  CudaImage opened;
   open(input, opened, kernelSize, element, stream);
 
   ImageUtils::ensureOutputSize(output, input.width, input.height,
@@ -213,10 +213,10 @@ void Morphology::topHat(const GpuImage& input, GpuImage& output, int kernelSize,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Morphology::blackHat(const GpuImage& input, GpuImage& output,
+void Morphology::blackHat(const CudaImage& input, CudaImage& output,
                           int kernelSize, StructuringElement element,
                           cudaStream_t stream) {
-  GpuImage closed;
+  CudaImage closed;
   close(input, closed, kernelSize, element, stream);
 
   ImageUtils::ensureOutputSize(output, input.width, input.height,
@@ -235,4 +235,4 @@ void Morphology::blackHat(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

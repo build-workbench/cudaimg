@@ -1,17 +1,17 @@
 /**
- * GPU Image Processing Library - 性能基准测试
+ * cudaimg - 性能基准测试
  *
  * 测试各种图像处理操作的性能
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 // 计时器类
 class Benchmark {
@@ -91,8 +91,8 @@ int main() {
     std::cout << std::string(42, '-') << std::endl;
 
     HostImage hostImage = createTestImage(width, height, 3);
-    GpuImage gpuImage = ImageUtils::uploadToGpu(hostImage);
-    GpuImage output;
+    CudaImage gpuImage = ImageUtils::uploadToGpu(hostImage);
+    CudaImage output;
 
     // 像素操作
     runBenchmark("Invert", [&]() { PixelOperator::invert(gpuImage, output); });
@@ -156,7 +156,7 @@ int main() {
 
     // 数据传输
     runBenchmark("Upload (H2D)",
-                 [&]() { GpuImage temp = ImageUtils::uploadToGpu(hostImage); });
+                 [&]() { CudaImage temp = ImageUtils::uploadToGpu(hostImage); });
 
     runBenchmark("Download (D2H)", [&]() {
       HostImage temp = ImageUtils::downloadFromGpu(gpuImage);
@@ -181,10 +181,10 @@ int main() {
 
   timer.start();
   for (const auto& img : batchImages) {
-    GpuImage gpu = processor.loadFromHost(img);
-    GpuImage step1 = processor.adjustBrightness(gpu, 20);
-    GpuImage step2 = processor.gaussianBlur(step1, 3, 1.0f);
-    GpuImage step3 = processor.invert(step2);
+    CudaImage gpu = processor.loadFromHost(img);
+    CudaImage step1 = processor.adjustBrightness(gpu, 20);
+    CudaImage step2 = processor.gaussianBlur(step1, 3, 1.0f);
+    CudaImage step3 = processor.invert(step2);
     HostImage result = processor.download(step3);
     (void)result;
   }
@@ -197,19 +197,19 @@ int main() {
   for (int numStreams : {1, 2, 4, 8}) {
     PipelineProcessor pipeline(numStreams);
 
-    pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
-      GpuImage temp;
+    pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
+      CudaImage temp;
       PixelOperator::adjustBrightness(img, temp, 20, stream);
       img = std::move(temp);
     });
 
-    pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
-      GpuImage temp;
+    pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
+      CudaImage temp;
       ConvolutionEngine::gaussianBlur(img, temp, 3, 1.0f, stream);
       img = std::move(temp);
     });
 
-    pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+    pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
       PixelOperator::invertInPlace(img, stream);
     });
 

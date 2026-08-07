@@ -1,5 +1,5 @@
 /**
- * GPU Image Processing Library - 基础使用示例
+ * cudaimg - 基础使用示例
  *
  * 本示例演示了库的基本功能：
  * 1. 创建和加载图像
@@ -9,12 +9,12 @@
  * 5. 图像缩放
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <cmath>
 #include <iostream>
 #include <vector>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 // 创建测试图像（渐变图案）
 HostImage createTestImage(int width, int height, int channels) {
@@ -67,7 +67,7 @@ void printImageStats(const HostImage& image, const std::string& name) {
 }
 
 int main() {
-  std::cout << "=== GPU Image Processing Library Demo ===" << std::endl;
+  std::cout << "=== cudaimg Demo ===" << std::endl;
   std::cout << "Version: " << getVersionString() << std::endl;
 
   // 检查 CUDA 可用性
@@ -93,44 +93,44 @@ int main() {
 
     // 上传到 GPU
     std::cout << "\nUploading to GPU..." << std::endl;
-    GpuImage gpuImage = processor.loadFromHost(testImage);
+    CudaImage gpuImage = processor.loadFromHost(testImage);
 
     // 1. 反色操作
     std::cout << "\n--- Invert Operation ---" << std::endl;
-    GpuImage inverted = processor.invert(gpuImage);
+    CudaImage inverted = processor.invert(gpuImage);
     HostImage invertedHost = processor.download(inverted);
     printImageStats(invertedHost, "Inverted");
 
     // 验证反色：再次反色应该恢复原图
-    GpuImage doubleInverted = processor.invert(inverted);
+    CudaImage doubleInverted = processor.invert(inverted);
     HostImage doubleInvertedHost = processor.download(doubleInverted);
     printImageStats(doubleInvertedHost, "Double Inverted");
 
     // 2. 灰度化
     std::cout << "\n--- Grayscale Conversion ---" << std::endl;
-    GpuImage grayscale = processor.toGrayscale(gpuImage);
+    CudaImage grayscale = processor.toGrayscale(gpuImage);
     HostImage grayscaleHost = processor.download(grayscale);
     printImageStats(grayscaleHost, "Grayscale");
 
     // 3. 亮度调整
     std::cout << "\n--- Brightness Adjustment ---" << std::endl;
-    GpuImage brighter = processor.adjustBrightness(gpuImage, 50);
+    CudaImage brighter = processor.adjustBrightness(gpuImage, 50);
     HostImage brighterHost = processor.download(brighter);
     printImageStats(brighterHost, "Brighter (+50)");
 
-    GpuImage darker = processor.adjustBrightness(gpuImage, -50);
+    CudaImage darker = processor.adjustBrightness(gpuImage, -50);
     HostImage darkerHost = processor.download(darker);
     printImageStats(darkerHost, "Darker (-50)");
 
     // 4. 高斯模糊
     std::cout << "\n--- Gaussian Blur ---" << std::endl;
-    GpuImage blurred = processor.gaussianBlur(gpuImage, 5, 1.5f);
+    CudaImage blurred = processor.gaussianBlur(gpuImage, 5, 1.5f);
     HostImage blurredHost = processor.download(blurred);
     printImageStats(blurredHost, "Blurred (5x5, sigma=1.5)");
 
     // 5. Sobel 边缘检测
     std::cout << "\n--- Sobel Edge Detection ---" << std::endl;
-    GpuImage edges = processor.sobelEdgeDetection(gpuImage);
+    CudaImage edges = processor.sobelEdgeDetection(gpuImage);
     HostImage edgesHost = processor.download(edges);
     printImageStats(edgesHost, "Edges");
 
@@ -151,17 +151,17 @@ int main() {
 
     // 7. 直方图均衡化
     std::cout << "\n--- Histogram Equalization ---" << std::endl;
-    GpuImage equalized = processor.histogramEqualize(grayscale);
+    CudaImage equalized = processor.histogramEqualize(grayscale);
     HostImage equalizedHost = processor.download(equalized);
     printImageStats(equalizedHost, "Equalized");
 
     // 8. 图像缩放
     std::cout << "\n--- Image Resize ---" << std::endl;
-    GpuImage resizedUp = processor.resize(gpuImage, 512, 512);
+    CudaImage resizedUp = processor.resize(gpuImage, 512, 512);
     HostImage resizedUpHost = processor.download(resizedUp);
     printImageStats(resizedUpHost, "Resized (512x512)");
 
-    GpuImage resizedDown = processor.resize(gpuImage, 128, 128);
+    CudaImage resizedDown = processor.resize(gpuImage, 128, 128);
     HostImage resizedDownHost = processor.download(resizedDown);
     printImageStats(resizedDownHost, "Resized (128x128)");
 

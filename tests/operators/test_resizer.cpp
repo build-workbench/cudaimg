@@ -5,12 +5,12 @@
  * Property 8: 缩放操作近似可逆性
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <algorithm>
 #include <cmath>
 #include <gtest/gtest.h>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class ResizerTest : public ::testing::Test {
 protected:
@@ -59,10 +59,10 @@ TEST_F(ResizerTest, BasicResize) {
   const int channels = 3;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   // 放大
-  GpuImage enlarged;
+  CudaImage enlarged;
   ImageResizer::resize(gpuInput, enlarged, 128, 128);
   cudaDeviceSynchronize();
 
@@ -72,7 +72,7 @@ TEST_F(ResizerTest, BasicResize) {
   EXPECT_EQ(enlargedHost.channels, channels);
 
   // 缩小
-  GpuImage shrunk;
+  CudaImage shrunk;
   ImageResizer::resize(gpuInput, shrunk, 32, 32);
   cudaDeviceSynchronize();
 
@@ -98,15 +98,15 @@ TEST_F(ResizerTest, ApproximateRoundTrip) {
           static_cast<unsigned char>((x + y) * 255 / (width + height - 2));
     }
   }
-  GpuImage gpuOriginal = ImageUtils::uploadToGpu(original);
+  CudaImage gpuOriginal = ImageUtils::uploadToGpu(original);
 
   // 放大 2x
-  GpuImage enlarged;
+  CudaImage enlarged;
   ImageResizer::resize(gpuOriginal, enlarged, width * 2, height * 2);
   cudaDeviceSynchronize();
 
   // 缩小回原尺寸
-  GpuImage restored;
+  CudaImage restored;
   ImageResizer::resize(enlarged, restored, width, height);
   cudaDeviceSynchronize();
 
@@ -126,9 +126,9 @@ TEST_F(ResizerTest, ResizeByScale) {
   const int channels = 3;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage scaled;
+  CudaImage scaled;
   ImageResizer::resizeByScale(gpuInput, scaled, 1.5f, 2.0f);
   cudaDeviceSynchronize();
 
@@ -145,9 +145,9 @@ TEST_F(ResizerTest, ResizeFit) {
   const int channels = 3;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage fitted;
+  CudaImage fitted;
   ImageResizer::resizeFit(gpuInput, fitted, 200, 200);
   cudaDeviceSynchronize();
 
@@ -166,9 +166,9 @@ TEST_F(ResizerTest, NearestNeighborInterpolation) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage resized;
+  CudaImage resized;
   ImageResizer::resize(gpuInput, resized, 64, 64,
                        InterpolationMode::NearestNeighbor);
   cudaDeviceSynchronize();
@@ -203,9 +203,9 @@ TEST_F(ResizerTest, SinglePixelResize) {
   input.data[1] = 150;
   input.data[2] = 200;
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage resized;
+  CudaImage resized;
   ImageResizer::resize(gpuInput, resized, 10, 10);
   cudaDeviceSynchronize();
 
@@ -224,8 +224,8 @@ TEST_F(ResizerTest, SinglePixelResize) {
 // 测试无效参数
 TEST_F(ResizerTest, InvalidParameters) {
   HostImage input = createTestImage(32, 32, 3);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage output;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage output;
 
   // 无效尺寸
   EXPECT_THROW(ImageResizer::resize(gpuInput, output, 0, 32),
@@ -242,7 +242,7 @@ TEST_F(ResizerTest, InvalidParameters) {
                std::invalid_argument);
 
   // 无效图像
-  GpuImage invalid;
+  CudaImage invalid;
   EXPECT_THROW(ImageResizer::resize(invalid, output, 32, 32),
                std::invalid_argument);
 }
@@ -254,9 +254,9 @@ TEST_F(ResizerTest, LargeImageResize) {
   const int channels = 3;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage resized;
+  CudaImage resized;
   ImageResizer::resize(gpuInput, resized, 1024, 1024);
   cudaDeviceSynchronize();
 
@@ -278,9 +278,9 @@ TEST_F(ResizerTest, NonIntegerScale) {
   const int channels = 3;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage resized;
+  CudaImage resized;
   ImageResizer::resize(gpuInput, resized, 73, 91); // 非整数比例
   cudaDeviceSynchronize();
 

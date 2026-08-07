@@ -1,11 +1,11 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/device_kernels.cuh"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/core/kernel_helpers.hpp"
-#include "gpu_image/operators/pixel_operator.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/device_kernels.cuh"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/core/kernel_helpers.hpp"
+#include "cudaimg/operators/pixel_operator.hpp"
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 // Vectorized kernels: process 4 bytes per thread (uchar4)
 
@@ -74,14 +74,23 @@ __global__ void toGrayscaleKernel(const unsigned char* input,
   }
 }
 
-// Host-side dispatch helpers
+// ── 教学重点：向量化 dispatch 模式 ─────────────────────────────
+//
+// 同一个反色操作有两条路径：
+//   快路径（invertKernelVec4）：总字节数能被 4 整除时，用 uchar4
+//     一次读写 4 字节，1D grid 遍历。内存事务数减少 4 倍。
+//   慢路径（invertKernelScalar）：不满足对齐时退回逐字节处理，
+//     2D grid 按 (x, y) 坐标遍历。
+//
+// 这是 CUDA 工程中的常见模式：有快路径时走快路径，不满足条件时
+// 退回到通用实现。canVectorize() 是 dispatch 的判据。
 
-static inline bool canVectorize(const GpuImage& img) {
+static inline bool canVectorize(const CudaImage& img) {
   return img.totalBytes() % 4 == 0;
 }
 
 static void launchInvert(const unsigned char* input, unsigned char* output,
-                         const GpuImage& img, cudaStream_t stream) {
+                         const CudaImage& img, cudaStream_t stream) {
   if (canVectorize(img)) {
     int n = static_cast<int>(img.totalBytes() / 4);
     int blockSize = kBlockSize1D;
@@ -98,7 +107,7 @@ static void launchInvert(const unsigned char* input, unsigned char* output,
 }
 
 static void launchBrightness(const unsigned char* input, unsigned char* output,
-                             const GpuImage& img, int offset,
+                             const CudaImage& img, int offset,
                              cudaStream_t stream) {
   if (canVectorize(img)) {
     int n = static_cast<int>(img.totalBytes() / 4);
@@ -117,7 +126,7 @@ static void launchBrightness(const unsigned char* input, unsigned char* output,
 
 // PixelOperator implementation
 
-void PixelOperator::invert(const GpuImage& input, GpuImage& output,
+void PixelOperator::invert(const CudaImage& input, CudaImage& output,
                            cudaStream_t stream) {
   validateInput(input);
   ImageUtils::ensureOutputSize(input, output);
@@ -128,7 +137,7 @@ void PixelOperator::invert(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void PixelOperator::invertInPlace(GpuImage& image, cudaStream_t stream) {
+void PixelOperator::invertInPlace(CudaImage& image, cudaStream_t stream) {
   validateInput(image);
 
   auto* ptr = image.buffer.dataAs<unsigned char>();
@@ -137,7 +146,7 @@ void PixelOperator::invertInPlace(GpuImage& image, cudaStream_t stream) {
   CUDA_CHECK(cudaGetLastError());
 }
 
-void PixelOperator::toGrayscale(const GpuImage& input, GpuImage& output,
+void PixelOperator::toGrayscale(const CudaImage& input, CudaImage& output,
                                 cudaStream_t stream) {
   validateInput(input);
   if (input.channels < 3) {
@@ -158,7 +167,7 @@ void PixelOperator::toGrayscale(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void PixelOperator::adjustBrightness(const GpuImage& input, GpuImage& output,
+void PixelOperator::adjustBrightness(const CudaImage& input, CudaImage& output,
                                      int offset, cudaStream_t stream) {
   validateInput(input);
   ImageUtils::ensureOutputSize(input, output);
@@ -170,7 +179,7 @@ void PixelOperator::adjustBrightness(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void PixelOperator::adjustBrightnessInPlace(GpuImage& image, int offset,
+void PixelOperator::adjustBrightnessInPlace(CudaImage& image, int offset,
                                             cudaStream_t stream) {
   validateInput(image);
 
@@ -180,4 +189,4 @@ void PixelOperator::adjustBrightnessInPlace(GpuImage& image, int offset,
   CUDA_CHECK(cudaGetLastError());
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

@@ -2,10 +2,10 @@
  * Morphology 单元测试
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <gtest/gtest.h>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class MorphologyTest : public ::testing::Test {
 protected:
@@ -35,9 +35,9 @@ TEST_F(MorphologyTest, Erode) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage output;
+  CudaImage output;
   Morphology::erode(gpuInput, output, 3);
   cudaDeviceSynchronize();
 
@@ -59,9 +59,9 @@ TEST_F(MorphologyTest, Dilate) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage output;
+  CudaImage output;
   Morphology::dilate(gpuInput, output, 3);
   cudaDeviceSynchronize();
 
@@ -80,9 +80,9 @@ TEST_F(MorphologyTest, Open) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage output;
+  CudaImage output;
   Morphology::open(gpuInput, output, 3);
   cudaDeviceSynchronize();
 
@@ -99,9 +99,9 @@ TEST_F(MorphologyTest, Close) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage output;
+  CudaImage output;
   Morphology::close(gpuInput, output, 3);
   cudaDeviceSynchronize();
 
@@ -118,9 +118,9 @@ TEST_F(MorphologyTest, Gradient) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage output;
+  CudaImage output;
   Morphology::gradient(gpuInput, output, 3);
   cudaDeviceSynchronize();
 
@@ -137,9 +137,9 @@ TEST_F(MorphologyTest, DifferentStructuringElements) {
   const int channels = 1;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage rectOutput, crossOutput, ellipseOutput;
+  CudaImage rectOutput, crossOutput, ellipseOutput;
 
   Morphology::erode(gpuInput, rectOutput, 3, StructuringElement::Rectangle);
   Morphology::erode(gpuInput, crossOutput, 3, StructuringElement::Cross);

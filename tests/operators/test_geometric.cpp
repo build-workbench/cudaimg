@@ -1,13 +1,13 @@
-#include "gpu_image/core/gpu_image.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/geometric.hpp"
+#include "cudaimg/core/image.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/geometric.hpp"
 #include <gtest/gtest.h>
 #include <vector>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 namespace {
-std::vector<unsigned char> downloadPixels(const GpuImage& image) {
+std::vector<unsigned char> downloadPixels(const CudaImage& image) {
   std::vector<unsigned char> pixels(image.totalBytes());
   cudaMemcpy(pixels.data(), image.buffer.data(), image.totalBytes(),
              cudaMemcpyDeviceToHost);
@@ -25,7 +25,7 @@ protected:
     }
 
     // 创建 8x8 测试图像
-    testImage = ImageUtils::createGpuImage(8, 8, 1);
+    testImage = ImageUtils::createCudaImage(8, 8, 1);
     std::vector<unsigned char> data(64);
     for (int i = 0; i < 64; ++i) {
       data[i] = static_cast<unsigned char>(i * 4);
@@ -34,11 +34,11 @@ protected:
                cudaMemcpyHostToDevice);
   }
 
-  GpuImage testImage;
+  CudaImage testImage;
 };
 
 TEST_F(GeometricTest, Rotate90_Once) {
-  GpuImage output;
+  CudaImage output;
   Geometric::rotate90(testImage, output, 1);
   cudaDeviceSynchronize();
 
@@ -55,7 +55,7 @@ TEST_F(GeometricTest, Rotate90_Once) {
 }
 
 TEST_F(GeometricTest, Rotate90_Twice) {
-  GpuImage output;
+  CudaImage output;
   Geometric::rotate90(testImage, output, 2);
   cudaDeviceSynchronize();
 
@@ -71,7 +71,7 @@ TEST_F(GeometricTest, Rotate90_Twice) {
 }
 
 TEST_F(GeometricTest, Rotate90_Thrice) {
-  GpuImage output;
+  CudaImage output;
   Geometric::rotate90(testImage, output, 3);
   cudaDeviceSynchronize();
 
@@ -87,7 +87,7 @@ TEST_F(GeometricTest, Rotate90_Thrice) {
 }
 
 TEST_F(GeometricTest, Rotate90_FourTimesIsIdentity) {
-  GpuImage output;
+  CudaImage output;
   Geometric::rotate90(testImage, output, 4);
   cudaDeviceSynchronize();
 
@@ -98,7 +98,7 @@ TEST_F(GeometricTest, Rotate90_FourTimesIsIdentity) {
 
 // 通用 rotate(90°) 修复中心偏移后应与 rotate90 在角点/中心一致
 TEST_F(GeometricTest, Rotate90_GenericMatchesRotate90) {
-  GpuImage genericOut;
+  CudaImage genericOut;
   Geometric::rotate(testImage, genericOut, 90.0f);
   cudaDeviceSynchronize();
 
@@ -114,7 +114,7 @@ TEST_F(GeometricTest, Rotate90_GenericMatchesRotate90) {
 }
 
 TEST_F(GeometricTest, FlipHorizontal) {
-  GpuImage output;
+  CudaImage output;
   Geometric::flip(testImage, output, FlipDirection::Horizontal);
   cudaDeviceSynchronize();
 
@@ -139,7 +139,7 @@ TEST_F(GeometricTest, FlipHorizontal) {
 }
 
 TEST_F(GeometricTest, FlipVertical) {
-  GpuImage output;
+  CudaImage output;
   Geometric::flip(testImage, output, FlipDirection::Vertical);
   cudaDeviceSynchronize();
 
@@ -157,7 +157,7 @@ TEST_F(GeometricTest, FlipVertical) {
 }
 
 TEST_F(GeometricTest, FlipBoth) {
-  GpuImage output;
+  CudaImage output;
   Geometric::flip(testImage, output, FlipDirection::Both);
   cudaDeviceSynchronize();
 
@@ -171,7 +171,7 @@ TEST_F(GeometricTest, FlipBoth) {
 }
 
 TEST_F(GeometricTest, Crop) {
-  GpuImage output;
+  CudaImage output;
   Geometric::crop(testImage, output, 2, 2, 4, 4);
   cudaDeviceSynchronize();
 
@@ -189,7 +189,7 @@ TEST_F(GeometricTest, Crop) {
 }
 
 TEST_F(GeometricTest, Pad) {
-  GpuImage output;
+  CudaImage output;
   Geometric::pad(testImage, output, 2, 2, 2, 2, 128);
   cudaDeviceSynchronize();
 
@@ -214,7 +214,7 @@ TEST_F(GeometricTest, Pad) {
 }
 
 TEST_F(GeometricTest, Rotate) {
-  GpuImage output;
+  CudaImage output;
   Geometric::rotate(testImage, output, 45.0f);
   cudaDeviceSynchronize();
 
@@ -224,7 +224,7 @@ TEST_F(GeometricTest, Rotate) {
 }
 
 TEST_F(GeometricTest, AffineTransform_Identity) {
-  GpuImage output;
+  CudaImage output;
   float matrix[6] = {1, 0, 0, 0, 1, 0}; // 单位矩阵
   Geometric::affineTransform(testImage, output, matrix, 8, 8);
   cudaDeviceSynchronize();
@@ -238,7 +238,7 @@ TEST_F(GeometricTest, AffineTransform_Identity) {
 }
 
 TEST_F(GeometricTest, PerspectiveTransform_Identity) {
-  GpuImage output;
+  CudaImage output;
   float matrix[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
   Geometric::perspectiveTransform(testImage, output, matrix, 8, 8);
   cudaDeviceSynchronize();
@@ -252,7 +252,7 @@ TEST_F(GeometricTest, PerspectiveTransform_Identity) {
 }
 
 TEST_F(GeometricTest, PerspectiveTransform_BoundaryPreserved) {
-  GpuImage output;
+  CudaImage output;
   float matrix[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
   Geometric::perspectiveTransform(testImage, output, matrix, 8, 8);
   cudaDeviceSynchronize();
@@ -264,7 +264,7 @@ TEST_F(GeometricTest, PerspectiveTransform_BoundaryPreserved) {
 }
 
 TEST_F(GeometricTest, AffineTransform_Scale) {
-  GpuImage output;
+  CudaImage output;
   float matrix[6] = {2, 0, 0, 0, 2, 0}; // 2x 缩放
   Geometric::affineTransform(testImage, output, matrix, 16, 16);
   cudaDeviceSynchronize();
@@ -274,8 +274,8 @@ TEST_F(GeometricTest, AffineTransform_Scale) {
 }
 
 TEST_F(GeometricTest, InvalidInput) {
-  GpuImage invalid;
-  GpuImage output;
+  CudaImage invalid;
+  CudaImage output;
 
   EXPECT_THROW(Geometric::rotate(invalid, output, 45.0f),
                std::invalid_argument);
@@ -286,7 +286,7 @@ TEST_F(GeometricTest, InvalidInput) {
 }
 
 TEST_F(GeometricTest, InvalidCropDimensions) {
-  GpuImage output;
+  CudaImage output;
   EXPECT_THROW(Geometric::crop(testImage, output, 0, 0, 0, 0),
                std::invalid_argument);
   EXPECT_THROW(Geometric::crop(testImage, output, 0, 0, -1, 4),
@@ -294,13 +294,13 @@ TEST_F(GeometricTest, InvalidCropDimensions) {
 }
 
 TEST_F(GeometricTest, InvalidPadding) {
-  GpuImage output;
+  CudaImage output;
   EXPECT_THROW(Geometric::pad(testImage, output, -1, 0, 0, 0),
                std::invalid_argument);
 }
 
 TEST_F(GeometricTest, NullMatrix) {
-  GpuImage output;
+  CudaImage output;
   EXPECT_THROW(Geometric::affineTransform(testImage, output, nullptr, 8, 8),
                std::invalid_argument);
 }

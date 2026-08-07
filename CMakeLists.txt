@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.18)
-project(gpu_image_processing
-    VERSION 3.0.0
-    DESCRIPTION "CUDA-based high-performance image processing library"
+project(cudaimg
+    VERSION 1.0.0
+    DESCRIPTION "CUDA 图像处理入门教学项目"
     LANGUAGES CXX
 )
 
 include(CheckLanguage)
 check_language(CUDA)
 if(NOT CMAKE_CUDA_COMPILER)
-    message(FATAL_ERROR "CUDA toolkit with nvcc is required to build mini-opencv. Set CUDAToolkit_ROOT or ensure nvcc is available on PATH.")
+    message(FATAL_ERROR "CUDA toolkit with nvcc is required to build cudaimg. Set CUDAToolkit_ROOT or ensure nvcc is available on PATH.")
 endif()
 enable_language(CUDA)
 
@@ -38,7 +38,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # ── 主库 ─────────────────────────────────────────────────────────
-add_library(gpu_image_processing STATIC
+add_library(cudaimg STATIC
     # Core infrastructure
     src/core/cuda_error.cpp
     src/core/device_buffer.cu
@@ -63,17 +63,17 @@ add_library(gpu_image_processing STATIC
     src/io/image_io.cpp
 )
 
-add_library(gpu_image::gpu_image_processing ALIAS gpu_image_processing)
+add_library(cudaimg::cudaimg ALIAS cudaimg)
 
-target_include_directories(gpu_image_processing
+target_include_directories(cudaimg
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(gpu_image_processing PUBLIC CUDA::cudart)
+target_link_libraries(cudaimg PUBLIC CUDA::cudart)
 
-target_compile_options(gpu_image_processing
+target_compile_options(cudaimg
     PRIVATE
         $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
         $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU,Clang>>:-Wall -Wextra -Wpedantic>
@@ -81,8 +81,8 @@ target_compile_options(gpu_image_processing
 )
 
 # ── 可选：stb 图像 I/O ──────────────────────────────────────────
-option(GPU_IMAGE_ENABLE_IO "Enable image file I/O via stb" ON)
-if(GPU_IMAGE_ENABLE_IO)
+option(CUDAIMG_ENABLE_IO "Enable image file I/O via stb" ON)
+if(CUDAIMG_ENABLE_IO)
     include(FetchContent)
     FetchContent_Declare(
         stb
@@ -94,15 +94,15 @@ if(GPU_IMAGE_ENABLE_IO)
         BUILD_COMMAND ""
     )
     FetchContent_MakeAvailable(stb)
-    target_include_directories(gpu_image_processing PRIVATE ${stb_SOURCE_DIR})
-    target_compile_definitions(gpu_image_processing PRIVATE GPU_IMAGE_HAS_STB)
+    target_include_directories(cudaimg PRIVATE ${stb_SOURCE_DIR})
+    target_compile_definitions(cudaimg PRIVATE CUDAIMG_HAS_STB)
 endif()
 
 # 版本宏注入
-target_compile_definitions(gpu_image_processing PUBLIC
-    GPU_IMAGE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-    GPU_IMAGE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-    GPU_IMAGE_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+target_compile_definitions(cudaimg PUBLIC
+    CUDAIMG_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    CUDAIMG_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    CUDAIMG_VERSION_PATCH=${PROJECT_VERSION_PATCH}
 )
 
 # ── 测试配置 ─────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ if(BUILD_TESTS)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
     
-    add_executable(gpu_image_tests
+    add_executable(cudaimg_tests
         tests/core/test_main.cpp
         tests/core/test_device_buffer.cpp
         tests/core/test_execution_context.cpp
@@ -139,75 +139,75 @@ if(BUILD_TESTS)
     
     # 注意：不要链接 GTest::gtest_main —— tests/core/test_main.cpp 已提供 main，
     # 同时链接会导致 main 重复定义、链接失败。
-    target_link_libraries(gpu_image_tests
+    target_link_libraries(cudaimg_tests
         PRIVATE
-            gpu_image_processing
+            cudaimg
             GTest::gtest
     )
     
     include(GoogleTest)
-    gtest_discover_tests(gpu_image_tests)
+    gtest_discover_tests(cudaimg_tests)
 endif()
 
 # ── 示例程序 ─────────────────────────────────────────────────────
 option(BUILD_EXAMPLES "Build examples" ON)
 if(BUILD_EXAMPLES)
     add_executable(basic_example examples/basic_example.cpp)
-    target_link_libraries(basic_example PRIVATE gpu_image_processing)
+    target_link_libraries(basic_example PRIVATE cudaimg)
     
     add_executable(pipeline_example examples/pipeline_example.cpp)
-    target_link_libraries(pipeline_example PRIVATE gpu_image_processing)
+    target_link_libraries(pipeline_example PRIVATE cudaimg)
 endif()
 
 # ── 基准测试 ─────────────────────────────────────────────────────
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 if(BUILD_BENCHMARKS)
     # 基准测试为自包含的手写计时框架，无需外部 benchmark 依赖
-    add_executable(gpu_image_benchmark benchmarks/benchmark_main.cpp)
-    target_link_libraries(gpu_image_benchmark PRIVATE gpu_image_processing)
+    add_executable(cudaimg_benchmark benchmarks/benchmark_main.cpp)
+    target_link_libraries(cudaimg_benchmark PRIVATE cudaimg)
 endif()
 
 # ── Install ──────────────────────────────────────────────────────
 # 默认关闭：业余项目多数不需要 `cmake --install` 生成下游可 find_package 的配置。
-# 需要 `find_package(gpu_image_processing)` 的下游，请以
-# `-DGPU_IMAGE_ENABLE_INSTALL=ON` 配置，再 `cmake --install build`。
-option(GPU_IMAGE_ENABLE_INSTALL "Generate install targets and package config" OFF)
-if(GPU_IMAGE_ENABLE_INSTALL)
+# 需要 `find_package(cudaimg)` 的下游，请以
+# `-DCUDAIMG_ENABLE_INSTALL=ON` 配置，再 `cmake --install build`。
+option(CUDAIMG_ENABLE_INSTALL "Generate install targets and package config" OFF)
+if(CUDAIMG_ENABLE_INSTALL)
     include(GNUInstallDirs)
     include(CMakePackageConfigHelpers)
 
-    install(TARGETS gpu_image_processing
-        EXPORT gpu_image_processing-targets
+    install(TARGETS cudaimg
+        EXPORT cudaimg-targets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     )
-    install(DIRECTORY include/gpu_image
+    install(DIRECTORY include/cudaimg
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
     # 包配置文件：声明对 CUDAToolkit 的依赖（库 PUBLIC 链接 CUDA::cudart），
-    # 否则下游 find_package(gpu_image_processing) 会因找不到 CUDA::cudart 失败。
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config.cmake
+    # 否则下游 find_package(cudaimg) 会因找不到 CUDA::cudart 失败。
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cudaimg-config.cmake
         "include(CMakeFindDependencyMacro)\n"
         "find_dependency(CUDAToolkit)\n"
-        "include(\"\${CMAKE_CURRENT_LIST_DIR}/gpu_image_processing-targets.cmake\")\n"
+        "include(\"\${CMAKE_CURRENT_LIST_DIR}/cudaimg-targets.cmake\")\n"
     )
 
     write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config-version.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/cudaimg-config-version.cmake
         VERSION ${PROJECT_VERSION}
         COMPATIBILITY SameMajorVersion
     )
 
     install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/gpu_image_processing-config-version.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gpu_image_processing
+        ${CMAKE_CURRENT_BINARY_DIR}/cudaimg-config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/cudaimg-config-version.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cudaimg
     )
 
-    install(EXPORT gpu_image_processing-targets
-        FILE gpu_image_processing-targets.cmake
-        NAMESPACE gpu_image::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gpu_image_processing
+    install(EXPORT cudaimg-targets
+        FILE cudaimg-targets.cmake
+        NAMESPACE cudaimg::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cudaimg
     )
 endif()

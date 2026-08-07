@@ -1,9 +1,9 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/processing/pipeline_processor.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/processing/pipeline_processor.hpp"
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 PipelineProcessor::PipelineProcessor(int numStreams) : numStreams_(numStreams) {
   if (numStreams < 1) {
@@ -40,14 +40,14 @@ void PipelineProcessor::addStep(ProcessingStep step) {
 
 void PipelineProcessor::clearSteps() { steps_.clear(); }
 
-GpuImage PipelineProcessor::process(const GpuImage& input) {
+CudaImage PipelineProcessor::process(const CudaImage& input) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
   }
   if (steps_.empty()) {
     // 没有处理步骤，返回输入的副本
-    GpuImage output =
-        ImageUtils::createGpuImage(input.width, input.height, input.channels);
+    CudaImage output =
+        ImageUtils::createCudaImage(input.width, input.height, input.channels);
     CUDA_CHECK(cudaMemcpy(output.buffer.data(), input.buffer.data(),
                           input.totalBytes(), cudaMemcpyDeviceToDevice));
     return output;
@@ -56,8 +56,8 @@ GpuImage PipelineProcessor::process(const GpuImage& input) {
   cudaStream_t stream = streams_[0];
 
   // 创建工作图像
-  GpuImage current =
-      ImageUtils::createGpuImage(input.width, input.height, input.channels);
+  CudaImage current =
+      ImageUtils::createCudaImage(input.width, input.height, input.channels);
   CUDA_CHECK(cudaMemcpyAsync(current.buffer.data(), input.buffer.data(),
                              input.totalBytes(), cudaMemcpyDeviceToDevice,
                              stream));
@@ -80,8 +80,8 @@ HostImage PipelineProcessor::processHost(const HostImage& input) {
   cudaStream_t stream = streams_[0];
 
   // 上传到 GPU
-  GpuImage gpuImage =
-      ImageUtils::createGpuImage(input.width, input.height, input.channels);
+  CudaImage gpuImage =
+      ImageUtils::createCudaImage(input.width, input.height, input.channels);
   gpuImage.buffer.copyFromHostAsync(input.data.data(), input.totalBytes(),
                                     stream);
 
@@ -101,8 +101,8 @@ HostImage PipelineProcessor::processHost(const HostImage& input) {
   return output;
 }
 
-std::vector<GpuImage>
-PipelineProcessor::processBatch(const std::vector<GpuImage>& inputs) {
+std::vector<CudaImage>
+PipelineProcessor::processBatch(const std::vector<CudaImage>& inputs) {
   if (inputs.empty()) {
     return {};
   }
@@ -116,7 +116,7 @@ PipelineProcessor::processBatch(const std::vector<GpuImage>& inputs) {
     }
   }
 
-  std::vector<GpuImage> outputs;
+  std::vector<CudaImage> outputs;
   outputs.reserve(inputs.size());
 
   // 使用多个 stream 并行处理
@@ -124,7 +124,7 @@ PipelineProcessor::processBatch(const std::vector<GpuImage>& inputs) {
     cudaStream_t stream = streams_[i % numStreams_];
 
     // 创建输出图像
-    GpuImage output = ImageUtils::createGpuImage(
+    CudaImage output = ImageUtils::createCudaImage(
         inputs[i].width, inputs[i].height, inputs[i].channels);
 
     // 复制输入
@@ -164,7 +164,7 @@ PipelineProcessor::processBatchHost(const std::vector<HostImage>& inputs) {
   }
 
   // 为每个输入创建 GPU 图像
-  std::vector<GpuImage> gpuImages;
+  std::vector<CudaImage> gpuImages;
   gpuImages.reserve(inputs.size());
 
   // 流水线处理：上传 -> 处理 -> 下载
@@ -172,7 +172,7 @@ PipelineProcessor::processBatchHost(const std::vector<HostImage>& inputs) {
     cudaStream_t stream = streams_[i % numStreams_];
 
     // 创建 GPU 图像并上传
-    GpuImage gpuImage = ImageUtils::createGpuImage(
+    CudaImage gpuImage = ImageUtils::createCudaImage(
         inputs[i].width, inputs[i].height, inputs[i].channels);
     gpuImage.buffer.copyFromHostAsync(inputs[i].data.data(),
                                       inputs[i].totalBytes(), stream);
@@ -205,4 +205,4 @@ void PipelineProcessor::synchronize() {
   }
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

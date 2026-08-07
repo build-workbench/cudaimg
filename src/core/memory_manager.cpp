@@ -1,8 +1,8 @@
-#include "gpu_image/core/memory_manager.hpp"
-#include "gpu_image/core/cuda_error.hpp"
+#include "cudaimg/core/memory_manager.hpp"
+#include "cudaimg/core/cuda_error.hpp"
 #include <cuda_runtime.h>
 
-namespace gpu_image {
+namespace cudaimg {
 
 MemoryManager& MemoryManager::instance() {
   static MemoryManager instance;
@@ -97,4 +97,4 @@ MemoryStats MemoryManager::getStats() const {
   return MemoryStats{totalAllocated_, poolSize_, peakUsage_};
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

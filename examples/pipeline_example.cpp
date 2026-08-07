@@ -1,5 +1,5 @@
 /**
- * GPU Image Processing Library - 流水线处理示例
+ * cudaimg - 流水线处理示例
  *
  * 本示例演示了流水线处理功能：
  * 1. 创建处理流水线
@@ -8,13 +8,13 @@
  * 4. 利用 CUDA Streams 实现并行处理
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 // 创建随机测试图像
 HostImage createRandomImage(int width, int height, int channels,
@@ -93,12 +93,12 @@ int main() {
 
     for (const auto& hostImage : testImages) {
       // 上传
-      GpuImage gpuImage = processor.loadFromHost(hostImage);
+      CudaImage gpuImage = processor.loadFromHost(hostImage);
 
       // 处理步骤
-      GpuImage result = processor.adjustBrightness(gpuImage, 20);
-      GpuImage blurred = processor.gaussianBlur(result, 3, 1.0f);
-      GpuImage final_result = processor.invert(blurred);
+      CudaImage result = processor.adjustBrightness(gpuImage, 20);
+      CudaImage blurred = processor.gaussianBlur(result, 3, 1.0f);
+      CudaImage final_result = processor.invert(blurred);
 
       // 下载
       sequentialResults.push_back(processor.download(final_result));
@@ -117,19 +117,19 @@ int main() {
     PipelineProcessor pipeline(4);
 
     // 添加处理步骤
-    pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
-      GpuImage temp;
+    pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
+      CudaImage temp;
       PixelOperator::adjustBrightness(img, temp, 20, stream);
       img = std::move(temp);
     });
 
-    pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
-      GpuImage temp;
+    pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
+      CudaImage temp;
       ConvolutionEngine::gaussianBlur(img, temp, 3, 1.0f, stream);
       img = std::move(temp);
     });
 
-    pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+    pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
       PixelOperator::invertInPlace(img, stream);
     });
 
@@ -194,19 +194,19 @@ int main() {
     for (int numStreams : {1, 2, 4, 8}) {
       PipelineProcessor testPipeline(numStreams);
 
-      testPipeline.addStep([](GpuImage& img, cudaStream_t stream) {
-        GpuImage temp;
+      testPipeline.addStep([](CudaImage& img, cudaStream_t stream) {
+        CudaImage temp;
         PixelOperator::adjustBrightness(img, temp, 20, stream);
         img = std::move(temp);
       });
 
-      testPipeline.addStep([](GpuImage& img, cudaStream_t stream) {
-        GpuImage temp;
+      testPipeline.addStep([](CudaImage& img, cudaStream_t stream) {
+        CudaImage temp;
         ConvolutionEngine::gaussianBlur(img, temp, 3, 1.0f, stream);
         img = std::move(temp);
       });
 
-      testPipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+      testPipeline.addStep([](CudaImage& img, cudaStream_t stream) {
         PixelOperator::invertInPlace(img, stream);
       });
 

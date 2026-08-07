@@ -1,9 +1,9 @@
-#include "gpu_image/core/gpu_image.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/filters.hpp"
+#include "cudaimg/core/image.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/filters.hpp"
 #include <gtest/gtest.h>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class FiltersTest : public ::testing::Test {
 protected:
@@ -14,7 +14,7 @@ protected:
       GTEST_SKIP() << "CUDA not available";
     }
 
-    testImage = ImageUtils::createGpuImage(16, 16, 1);
+    testImage = ImageUtils::createCudaImage(16, 16, 1);
     std::vector<unsigned char> data(256);
     for (int i = 0; i < 256; ++i) {
       data[i] = static_cast<unsigned char>(i);
@@ -23,7 +23,7 @@ protected:
                cudaMemcpyHostToDevice);
   }
 
-  GpuImage testImage;
+  CudaImage testImage;
 };
 
 class ArithmeticTest : public ::testing::Test {
@@ -35,8 +35,8 @@ protected:
       GTEST_SKIP() << "CUDA not available";
     }
 
-    image1 = ImageUtils::createGpuImage(8, 8, 1);
-    image2 = ImageUtils::createGpuImage(8, 8, 1);
+    image1 = ImageUtils::createCudaImage(8, 8, 1);
+    image2 = ImageUtils::createCudaImage(8, 8, 1);
 
     std::vector<unsigned char> data1(64, 100);
     std::vector<unsigned char> data2(64, 50);
@@ -45,11 +45,11 @@ protected:
     cudaMemcpy(image2.buffer.data(), data2.data(), 64, cudaMemcpyHostToDevice);
   }
 
-  GpuImage image1, image2;
+  CudaImage image1, image2;
 };
 
 TEST_F(FiltersTest, MedianFilter) {
-  GpuImage output;
+  CudaImage output;
   Filters::medianFilter(testImage, output, 3);
   cudaDeviceSynchronize();
 
@@ -59,7 +59,7 @@ TEST_F(FiltersTest, MedianFilter) {
 }
 
 TEST_F(FiltersTest, MedianFilter_5x5) {
-  GpuImage output;
+  CudaImage output;
   Filters::medianFilter(testImage, output, 5);
   cudaDeviceSynchronize();
 
@@ -67,7 +67,7 @@ TEST_F(FiltersTest, MedianFilter_5x5) {
 }
 
 TEST_F(FiltersTest, BilateralFilter) {
-  GpuImage output;
+  CudaImage output;
   Filters::bilateralFilter(testImage, output, 5, 10.0f, 50.0f);
   cudaDeviceSynchronize();
 
@@ -76,7 +76,7 @@ TEST_F(FiltersTest, BilateralFilter) {
 }
 
 TEST_F(FiltersTest, BoxFilter) {
-  GpuImage output;
+  CudaImage output;
   Filters::boxFilter(testImage, output, 3);
   cudaDeviceSynchronize();
 
@@ -84,7 +84,7 @@ TEST_F(FiltersTest, BoxFilter) {
 }
 
 TEST_F(FiltersTest, Sharpen) {
-  GpuImage output;
+  CudaImage output;
   Filters::sharpen(testImage, output, 1.0f);
   cudaDeviceSynchronize();
 
@@ -92,7 +92,7 @@ TEST_F(FiltersTest, Sharpen) {
 }
 
 TEST_F(FiltersTest, Laplacian) {
-  GpuImage output;
+  CudaImage output;
   Filters::laplacian(testImage, output);
   cudaDeviceSynchronize();
 
@@ -100,7 +100,7 @@ TEST_F(FiltersTest, Laplacian) {
 }
 
 TEST_F(FiltersTest, InvalidKernelSize) {
-  GpuImage output;
+  CudaImage output;
   EXPECT_THROW(Filters::medianFilter(testImage, output, 2),
                std::invalid_argument);
   EXPECT_THROW(Filters::medianFilter(testImage, output, 8),
@@ -108,7 +108,7 @@ TEST_F(FiltersTest, InvalidKernelSize) {
 }
 
 TEST_F(FiltersTest, BilateralFilterRejectsInvalidSigma) {
-  GpuImage output;
+  CudaImage output;
   EXPECT_THROW(Filters::bilateralFilter(testImage, output, 5, 0.0f, 50.0f),
                std::invalid_argument);
   EXPECT_THROW(Filters::bilateralFilter(testImage, output, 5, -1.0f, 50.0f),
@@ -120,7 +120,7 @@ TEST_F(FiltersTest, BilateralFilterRejectsInvalidSigma) {
 }
 
 TEST_F(ArithmeticTest, Add) {
-  GpuImage output;
+  CudaImage output;
   ImageArithmetic::add(image1, image2, output);
   cudaDeviceSynchronize();
 
@@ -131,7 +131,7 @@ TEST_F(ArithmeticTest, Add) {
 }
 
 TEST_F(ArithmeticTest, Subtract) {
-  GpuImage output;
+  CudaImage output;
   ImageArithmetic::subtract(image1, image2, output);
   cudaDeviceSynchronize();
 
@@ -142,7 +142,7 @@ TEST_F(ArithmeticTest, Subtract) {
 }
 
 TEST_F(ArithmeticTest, Blend) {
-  GpuImage output;
+  CudaImage output;
   ImageArithmetic::blend(image1, image2, output, 0.5f);
   cudaDeviceSynchronize();
 
@@ -153,7 +153,7 @@ TEST_F(ArithmeticTest, Blend) {
 }
 
 TEST_F(ArithmeticTest, AbsDiff) {
-  GpuImage output;
+  CudaImage output;
   ImageArithmetic::absDiff(image1, image2, output);
   cudaDeviceSynchronize();
 
@@ -164,7 +164,7 @@ TEST_F(ArithmeticTest, AbsDiff) {
 }
 
 TEST_F(ArithmeticTest, AddScalar) {
-  GpuImage output;
+  CudaImage output;
   ImageArithmetic::addScalar(image1, output, 20);
   cudaDeviceSynchronize();
 
@@ -175,7 +175,7 @@ TEST_F(ArithmeticTest, AddScalar) {
 }
 
 TEST_F(ArithmeticTest, MultiplyScalar) {
-  GpuImage output;
+  CudaImage output;
   ImageArithmetic::multiplyScalar(image1, output, 2.0f);
   cudaDeviceSynchronize();
 
@@ -186,7 +186,7 @@ TEST_F(ArithmeticTest, MultiplyScalar) {
 }
 
 TEST_F(ArithmeticTest, AddWeighted) {
-  GpuImage output;
+  CudaImage output;
   ImageArithmetic::addWeighted(image1, 0.7f, image2, 0.3f, output, 10.0f);
   cudaDeviceSynchronize();
 
@@ -198,8 +198,8 @@ TEST_F(ArithmeticTest, AddWeighted) {
 }
 
 TEST_F(ArithmeticTest, DimensionMismatch) {
-  GpuImage small = ImageUtils::createGpuImage(4, 4, 1);
-  GpuImage output;
+  CudaImage small = ImageUtils::createCudaImage(4, 4, 1);
+  CudaImage output;
 
   EXPECT_THROW(ImageArithmetic::add(image1, small, output),
                std::invalid_argument);

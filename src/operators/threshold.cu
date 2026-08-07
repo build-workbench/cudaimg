@@ -1,10 +1,10 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/histogram_calculator.hpp"
-#include "gpu_image/operators/threshold.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/histogram_calculator.hpp"
+#include "cudaimg/operators/threshold.hpp"
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 // 全局阈值 Kernel
 __global__ void thresholdKernel(const unsigned char* input,
@@ -145,7 +145,7 @@ adaptiveThresholdGaussianKernel(const unsigned char* input,
 }
 
 // Threshold 实现
-void Threshold::threshold(const GpuImage& input, GpuImage& output,
+void Threshold::threshold(const CudaImage& input, CudaImage& output,
                           unsigned char thresh, unsigned char maxVal,
                           ThresholdType type, cudaStream_t stream) {
   if (!input.isValid()) {
@@ -167,7 +167,7 @@ void Threshold::threshold(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Threshold::adaptiveThreshold(const GpuImage& input, GpuImage& output,
+void Threshold::adaptiveThreshold(const CudaImage& input, CudaImage& output,
                                   unsigned char maxVal, AdaptiveMethod method,
                                   ThresholdType type, int blockSize, int C,
                                   cudaStream_t stream) {
@@ -207,7 +207,7 @@ void Threshold::adaptiveThreshold(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-unsigned char Threshold::otsuThreshold(const GpuImage& input,
+unsigned char Threshold::otsuThreshold(const CudaImage& input,
                                        cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -259,10 +259,10 @@ unsigned char Threshold::otsuThreshold(const GpuImage& input,
   return threshold;
 }
 
-void Threshold::otsuBinarize(const GpuImage& input, GpuImage& output,
+void Threshold::otsuBinarize(const CudaImage& input, CudaImage& output,
                              unsigned char maxVal, cudaStream_t stream) {
   unsigned char thresh = otsuThreshold(input, stream);
   threshold(input, output, thresh, maxVal, ThresholdType::Binary, stream);
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

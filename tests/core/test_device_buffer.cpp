@@ -5,13 +5,13 @@
  * Validates: Requirements 1.1, 1.2
  */
 
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/device_buffer.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/device_buffer.hpp"
 #include <gtest/gtest.h>
 #include <numeric>
 #include <vector>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class DeviceBufferTest : public ::testing::Test {
 protected:

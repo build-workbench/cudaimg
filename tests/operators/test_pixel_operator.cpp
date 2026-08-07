@@ -7,13 +7,13 @@
  * Property 4: 亮度调整范围不变性
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <algorithm>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <vector>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class PixelOperatorTest : public ::testing::Test {
 protected:
@@ -45,15 +45,15 @@ TEST_F(PixelOperatorTest, InvertInvolution) {
   const int channels = 3;
 
   HostImage original = createTestImage(width, height, channels);
-  GpuImage gpuOriginal = ImageUtils::uploadToGpu(original);
+  CudaImage gpuOriginal = ImageUtils::uploadToGpu(original);
 
   // 第一次反色
-  GpuImage inverted;
+  CudaImage inverted;
   PixelOperator::invert(gpuOriginal, inverted);
   cudaDeviceSynchronize();
 
   // 第二次反色
-  GpuImage doubleInverted;
+  CudaImage doubleInverted;
   PixelOperator::invert(inverted, doubleInverted);
   cudaDeviceSynchronize();
 
@@ -78,8 +78,8 @@ TEST_F(PixelOperatorTest, InvertValues) {
     original.data[i] = static_cast<unsigned char>(i * 16); // 0, 16, 32, ...
   }
 
-  GpuImage gpuOriginal = ImageUtils::uploadToGpu(original);
-  GpuImage inverted;
+  CudaImage gpuOriginal = ImageUtils::uploadToGpu(original);
+  CudaImage inverted;
   PixelOperator::invert(gpuOriginal, inverted);
   cudaDeviceSynchronize();
 
@@ -107,8 +107,8 @@ TEST_F(PixelOperatorTest, GrayscaleFormula) {
     }
   }
 
-  GpuImage gpuOriginal = ImageUtils::uploadToGpu(original);
-  GpuImage grayscale;
+  CudaImage gpuOriginal = ImageUtils::uploadToGpu(original);
+  CudaImage grayscale;
   PixelOperator::toGrayscale(gpuOriginal, grayscale);
   cudaDeviceSynchronize();
 
@@ -132,13 +132,13 @@ TEST_F(PixelOperatorTest, BrightnessRangeInvariant) {
   const int channels = 3;
 
   HostImage original = createTestImage(width, height, channels);
-  GpuImage gpuOriginal = ImageUtils::uploadToGpu(original);
+  CudaImage gpuOriginal = ImageUtils::uploadToGpu(original);
 
   // 测试各种偏移量
   std::vector<int> offsets = {-300, -100, -50, 0, 50, 100, 300};
 
   for (int offset : offsets) {
-    GpuImage adjusted;
+    CudaImage adjusted;
     PixelOperator::adjustBrightness(gpuOriginal, adjusted, offset);
     cudaDeviceSynchronize();
 
@@ -169,10 +169,10 @@ TEST_F(PixelOperatorTest, BrightnessValues) {
   original.data[2] = 50;
   original.data[3] = 250;
 
-  GpuImage gpuOriginal = ImageUtils::uploadToGpu(original);
+  CudaImage gpuOriginal = ImageUtils::uploadToGpu(original);
 
   // 测试正偏移
-  GpuImage brighter;
+  CudaImage brighter;
   PixelOperator::adjustBrightness(gpuOriginal, brighter, 30);
   cudaDeviceSynchronize();
   HostImage brighterResult = ImageUtils::downloadFromGpu(brighter);
@@ -183,7 +183,7 @@ TEST_F(PixelOperatorTest, BrightnessValues) {
   EXPECT_EQ(brighterResult.data[3], 255); // 250 + 30 = 280, clamped to 255
 
   // 测试负偏移
-  GpuImage darker;
+  CudaImage darker;
   PixelOperator::adjustBrightness(gpuOriginal, darker, -60);
   cudaDeviceSynchronize();
   HostImage darkerResult = ImageUtils::downloadFromGpu(darker);
@@ -201,7 +201,7 @@ TEST_F(PixelOperatorTest, InPlaceOperations) {
   const int channels = 3;
 
   HostImage original = createTestImage(width, height, channels);
-  GpuImage gpuImage = ImageUtils::uploadToGpu(original);
+  CudaImage gpuImage = ImageUtils::uploadToGpu(original);
 
   // 原地反色
   PixelOperator::invertInPlace(gpuImage);
@@ -216,8 +216,8 @@ TEST_F(PixelOperatorTest, InPlaceOperations) {
 
 // 测试无效输入
 TEST_F(PixelOperatorTest, InvalidInput) {
-  GpuImage invalid; // 无效图像
-  GpuImage output;
+  CudaImage invalid; // 无效图像
+  CudaImage output;
 
   EXPECT_THROW(PixelOperator::invert(invalid, output), std::invalid_argument);
   EXPECT_THROW(PixelOperator::toGrayscale(invalid, output),
@@ -229,8 +229,8 @@ TEST_F(PixelOperatorTest, InvalidInput) {
 // 测试灰度图像的灰度化（应该失败）
 TEST_F(PixelOperatorTest, GrayscaleOnGrayscale) {
   HostImage grayscale = ImageUtils::createHostImage(32, 32, 1);
-  GpuImage gpuGrayscale = ImageUtils::uploadToGpu(grayscale);
-  GpuImage output;
+  CudaImage gpuGrayscale = ImageUtils::uploadToGpu(grayscale);
+  CudaImage output;
 
   EXPECT_THROW(PixelOperator::toGrayscale(gpuGrayscale, output),
                std::invalid_argument);

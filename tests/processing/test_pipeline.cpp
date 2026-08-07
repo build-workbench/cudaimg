@@ -5,11 +5,11 @@
  * Property 9: 流水线处理结果一致性
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <gtest/gtest.h>
 #include <vector>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class PipelineTest : public ::testing::Test {
 protected:
@@ -37,7 +37,7 @@ TEST_F(PipelineTest, BasicPipeline) {
   PipelineProcessor pipeline(2);
 
   // 添加反色步骤
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
     PixelOperator::invertInPlace(img, stream);
   });
 
@@ -63,21 +63,21 @@ TEST_F(PipelineTest, PipelineConsistency) {
 
   // 顺序处理
   ImageProcessor processor;
-  GpuImage gpuInput = processor.loadFromHost(input);
-  GpuImage step1 = processor.adjustBrightness(gpuInput, 30);
-  GpuImage step2 = processor.invert(step1);
+  CudaImage gpuInput = processor.loadFromHost(input);
+  CudaImage step1 = processor.adjustBrightness(gpuInput, 30);
+  CudaImage step2 = processor.invert(step1);
   HostImage sequentialResult = processor.download(step2);
 
   // 流水线处理
   PipelineProcessor pipeline(2);
 
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
-    GpuImage temp;
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
+    CudaImage temp;
     PixelOperator::adjustBrightness(img, temp, 30, stream);
     img = std::move(temp);
   });
 
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
     PixelOperator::invertInPlace(img, stream);
   });
 
@@ -114,7 +114,7 @@ TEST_F(PipelineTest, BatchProcessing) {
   }
 
   PipelineProcessor pipeline(3);
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
     PixelOperator::invertInPlace(img, stream);
   });
 
@@ -153,7 +153,7 @@ TEST_F(PipelineTest, EmptyPipeline) {
 TEST_F(PipelineTest, ClearSteps) {
   PipelineProcessor pipeline(2);
 
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
     PixelOperator::invertInPlace(img, stream);
   });
 
@@ -169,20 +169,20 @@ TEST_F(PipelineTest, MultiStepPipeline) {
   PipelineProcessor pipeline(2);
 
   // 步骤 1: 亮度 +50
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
-    GpuImage temp;
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
+    CudaImage temp;
     PixelOperator::adjustBrightness(img, temp, 50, stream);
     img = std::move(temp);
   });
 
   // 步骤 2: 反色
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
     PixelOperator::invertInPlace(img, stream);
   });
 
   // 步骤 3: 亮度 -30
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
-    GpuImage temp;
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
+    CudaImage temp;
     PixelOperator::adjustBrightness(img, temp, -30, stream);
     img = std::move(temp);
   });
@@ -221,7 +221,7 @@ TEST_F(PipelineTest, InvalidParameters) {
 TEST_F(PipelineTest, Synchronization) {
   PipelineProcessor pipeline(4);
 
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
     PixelOperator::invertInPlace(img, stream);
   });
 
@@ -243,13 +243,13 @@ TEST_F(PipelineTest, Synchronization) {
 }
 
 // 测试 GPU 图像批处理
-TEST_F(PipelineTest, GpuImageBatchProcessing) {
+TEST_F(PipelineTest, CudaImageBatchProcessing) {
   const int numImages = 3;
   const int width = 32;
   const int height = 32;
   const int channels = 3;
 
-  std::vector<GpuImage> gpuInputs;
+  std::vector<CudaImage> gpuInputs;
   std::vector<HostImage> hostInputs;
 
   for (int i = 0; i < numImages; ++i) {
@@ -259,7 +259,7 @@ TEST_F(PipelineTest, GpuImageBatchProcessing) {
   }
 
   PipelineProcessor pipeline(2);
-  pipeline.addStep([](GpuImage& img, cudaStream_t stream) {
+  pipeline.addStep([](CudaImage& img, cudaStream_t stream) {
     PixelOperator::invertInPlace(img, stream);
   });
 

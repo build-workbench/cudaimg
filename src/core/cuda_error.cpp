@@ -1,7 +1,7 @@
-#include "gpu_image/core/cuda_error.hpp"
+#include "cudaimg/core/cuda_error.hpp"
 #include <sstream>
 
-namespace gpu_image {
+namespace cudaimg {
 
 namespace {
 std::string buildCudaErrorMessage(cudaError_t error, const char* file,
@@ -17,4 +17,4 @@ CudaException::CudaException(cudaError_t error, const char* file, int line)
     : std::runtime_error(buildCudaErrorMessage(error, file, line)),
       error_(error) {}
 
-} // namespace gpu_image
+} // namespace cudaimg

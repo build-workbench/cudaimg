@@ -1,10 +1,10 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/color_space.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/color_space.hpp"
 #include <cmath>
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 // RGB to HSV Kernel
 __global__ void rgbToHsvKernel(const unsigned char* input,
@@ -318,7 +318,7 @@ __global__ void mergeChannelsKernel(const unsigned char* ch0,
 }
 
 // ColorSpace 实现
-void ColorSpace::rgbToHsv(const GpuImage& input, GpuImage& output,
+void ColorSpace::rgbToHsv(const CudaImage& input, CudaImage& output,
                           cudaStream_t stream) {
   if (!input.isValid() || input.channels != 3) {
     throw std::invalid_argument("Input must be a valid 3-channel image");
@@ -337,7 +337,7 @@ void ColorSpace::rgbToHsv(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ColorSpace::hsvToRgb(const GpuImage& input, GpuImage& output,
+void ColorSpace::hsvToRgb(const CudaImage& input, CudaImage& output,
                           cudaStream_t stream) {
   if (!input.isValid() || input.channels != 3) {
     throw std::invalid_argument("Input must be a valid 3-channel image");
@@ -356,7 +356,7 @@ void ColorSpace::hsvToRgb(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ColorSpace::rgbToYuv(const GpuImage& input, GpuImage& output,
+void ColorSpace::rgbToYuv(const CudaImage& input, CudaImage& output,
                           cudaStream_t stream) {
   if (!input.isValid() || input.channels != 3) {
     throw std::invalid_argument("Input must be a valid 3-channel image");
@@ -375,7 +375,7 @@ void ColorSpace::rgbToYuv(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ColorSpace::yuvToRgb(const GpuImage& input, GpuImage& output,
+void ColorSpace::yuvToRgb(const CudaImage& input, CudaImage& output,
                           cudaStream_t stream) {
   if (!input.isValid() || input.channels != 3) {
     throw std::invalid_argument("Input must be a valid 3-channel image");
@@ -394,7 +394,7 @@ void ColorSpace::yuvToRgb(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ColorSpace::rgbToLab(const GpuImage& input, GpuImage& output,
+void ColorSpace::rgbToLab(const CudaImage& input, CudaImage& output,
                           cudaStream_t stream) {
   if (!input.isValid() || input.channels != 3) {
     throw std::invalid_argument("Input must be a valid 3-channel image");
@@ -413,7 +413,7 @@ void ColorSpace::rgbToLab(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ColorSpace::labToRgb(const GpuImage& input, GpuImage& output,
+void ColorSpace::labToRgb(const CudaImage& input, CudaImage& output,
                           cudaStream_t stream) {
   if (!input.isValid() || input.channels != 3) {
     throw std::invalid_argument("Input must be a valid 3-channel image");
@@ -432,8 +432,8 @@ void ColorSpace::labToRgb(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ColorSpace::splitChannels(const GpuImage& input, GpuImage& channel0,
-                               GpuImage& channel1, GpuImage& channel2,
+void ColorSpace::splitChannels(const CudaImage& input, CudaImage& channel0,
+                               CudaImage& channel1, CudaImage& channel2,
                                cudaStream_t stream) {
   if (!input.isValid() || input.channels < 3) {
     throw std::invalid_argument(
@@ -459,9 +459,9 @@ void ColorSpace::splitChannels(const GpuImage& input, GpuImage& channel0,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ColorSpace::mergeChannels(const GpuImage& channel0,
-                               const GpuImage& channel1,
-                               const GpuImage& channel2, GpuImage& output,
+void ColorSpace::mergeChannels(const CudaImage& channel0,
+                               const CudaImage& channel1,
+                               const CudaImage& channel2, CudaImage& output,
                                cudaStream_t stream) {
   if (!channel0.isValid() || !channel1.isValid() || !channel2.isValid()) {
     throw std::invalid_argument("All channels must be valid");
@@ -491,4 +491,4 @@ void ColorSpace::mergeChannels(const GpuImage& channel0,
   CUDA_CHECK(cudaGetLastError());
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

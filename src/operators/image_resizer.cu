@@ -1,12 +1,20 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/image_resizer.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/image_resizer.hpp"
 #include <algorithm>
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
-// 双线性插值 device 函数
+// ── 教学重点：坐标映射与插值 ───────────────────────────────────
+//
+// 图像缩放的核心是「目标像素 -> 源坐标 -> 插值」两步：
+//   1. 坐标映射：srcX = (dstX + 0.5) * srcW / dstW - 0.5
+//      半像素中心对齐（+0.5/-0.5）避免缩放后的整体偏移
+//   2. 双线性插值：取源坐标周围 4 个像素，按小数部分加权混合
+//
+// 注意：本项目手动实现插值，未使用 CUDA 纹理内存。
+// 纹理硬件可以自动处理插值和边界，是下一步优化方向。
 __device__ float bilinearInterpolate(const unsigned char* src, int srcWidth,
                                      int srcHeight, int channels, float srcX,
                                      float srcY, int channel) {
@@ -158,7 +166,7 @@ __global__ void resizeBicubicKernel(const unsigned char* input,
 }
 
 // ImageResizer 实现
-void ImageResizer::resize(const GpuImage& input, GpuImage& output, int newWidth,
+void ImageResizer::resize(const CudaImage& input, CudaImage& output, int newWidth,
                           int newHeight, InterpolationMode mode,
                           cudaStream_t stream) {
   if (!input.isValid()) {
@@ -202,7 +210,7 @@ void ImageResizer::resize(const GpuImage& input, GpuImage& output, int newWidth,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageResizer::resizeByScale(const GpuImage& input, GpuImage& output,
+void ImageResizer::resizeByScale(const CudaImage& input, CudaImage& output,
                                  float scaleX, float scaleY,
                                  InterpolationMode mode, cudaStream_t stream) {
   if (!input.isValid()) {
@@ -221,7 +229,7 @@ void ImageResizer::resizeByScale(const GpuImage& input, GpuImage& output,
   resize(input, output, newWidth, newHeight, mode, stream);
 }
 
-void ImageResizer::resizeFit(const GpuImage& input, GpuImage& output,
+void ImageResizer::resizeFit(const CudaImage& input, CudaImage& output,
                              int maxWidth, int maxHeight,
                              InterpolationMode mode, cudaStream_t stream) {
   if (!input.isValid()) {
@@ -244,4 +252,4 @@ void ImageResizer::resizeFit(const GpuImage& input, GpuImage& output,
   resize(input, output, newWidth, newHeight, mode, stream);
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

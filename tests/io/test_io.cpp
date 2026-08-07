@@ -5,14 +5,14 @@
  * 为构建提供真实的数值信号（encode→decode 往返、错误输入、格式查询）。
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 namespace {
 

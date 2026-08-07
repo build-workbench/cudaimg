@@ -6,10 +6,10 @@
  * Property: Architectural depth verification
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <gtest/gtest.h>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class ExecutionContextTest : public ::testing::Test {
 protected:
@@ -75,7 +75,7 @@ TEST_F(ExecutionContextTest, ContextCreation) {
 TEST_F(ExecutionContextTest, ContextAllocation) {
   ExecutionContext ctx(ExecutionPolicy::sync());
 
-  GpuImage output = ctx.allocateOutput(64, 64, 3);
+  CudaImage output = ctx.allocateOutput(64, 64, 3);
 
   EXPECT_EQ(output.width, 64);
   EXPECT_EQ(output.height, 64);
@@ -87,8 +87,8 @@ TEST_F(ExecutionContextTest, ContextAllocation) {
 TEST_F(ExecutionContextTest, EnsureOutputSize) {
   ExecutionContext ctx(ExecutionPolicy::sync());
 
-  GpuImage input = ctx.allocateOutput(64, 64, 3);
-  GpuImage output;
+  CudaImage input = ctx.allocateOutput(64, 64, 3);
+  CudaImage output;
 
   bool reallocated = ctx.ensureOutputSize(input, output);
 
@@ -157,8 +157,8 @@ TEST_F(ExecutionContextTest, ImageProcessorIsComplete) {
   ImageProcessor asyncProcessor(ImageProcessor::Mode::Async);
 
   HostImage input = createTestImage(32, 32, 3);
-  GpuImage gpuInput = asyncProcessor.loadFromHost(input);
-  GpuImage output = asyncProcessor.invert(gpuInput);
+  CudaImage gpuInput = asyncProcessor.loadFromHost(input);
+  CudaImage output = asyncProcessor.invert(gpuInput);
 
   // After async operation, may or may not be complete
   // Just verify the method doesn't throw
@@ -208,13 +208,13 @@ TEST_F(OperatorPipelineTest, PipelineWithOperators) {
 // Test OperatorPipeline execution
 TEST_F(OperatorPipelineTest, PipelineExecution) {
   HostImage input = createTestImage(32, 32, 3);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   OperatorPipeline pipeline;
   pipeline.then<InvertOperator>();
 
   ExecutionContext ctx(ExecutionPolicy::sync());
-  GpuImage output = pipeline.apply(gpuInput, ctx);
+  CudaImage output = pipeline.apply(gpuInput, ctx);
 
   EXPECT_TRUE(output.isValid());
   EXPECT_EQ(output.width, input.width);
@@ -231,13 +231,13 @@ TEST_F(OperatorPipelineTest, PipelineExecution) {
 // Test OperatorPipeline with grayscale (changes channels)
 TEST_F(OperatorPipelineTest, PipelineGrayscale) {
   HostImage input = createTestImage(32, 32, 3);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   OperatorPipeline pipeline;
   pipeline.then<GrayscaleOperator>();
 
   ExecutionContext ctx(ExecutionPolicy::sync());
-  GpuImage output = pipeline.apply(gpuInput, ctx);
+  CudaImage output = pipeline.apply(gpuInput, ctx);
 
   EXPECT_EQ(output.channels, 1); // Grayscale output
 }
@@ -245,7 +245,7 @@ TEST_F(OperatorPipelineTest, PipelineGrayscale) {
 // Test OperatorPipeline chaining
 TEST_F(OperatorPipelineTest, PipelineChaining) {
   HostImage input = createTestImage(32, 32, 3);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   // Grayscale -> Blur -> Sobel (edge detection pipeline)
   OperatorPipeline pipeline;
@@ -254,7 +254,7 @@ TEST_F(OperatorPipelineTest, PipelineChaining) {
       .then<SobelOperator>();
 
   ExecutionContext ctx(ExecutionPolicy::sync());
-  GpuImage output = pipeline.apply(gpuInput, ctx);
+  CudaImage output = pipeline.apply(gpuInput, ctx);
 
   EXPECT_TRUE(output.isValid());
   EXPECT_EQ(output.channels, 1); // Sobel outputs single channel
@@ -278,7 +278,7 @@ TEST_F(OperatorPipelineTest, PipelineClone) {
 // Test OperatorPipeline as edge detection chain (replaces PipelineBuilder test)
 TEST_F(OperatorPipelineTest, PipelineEdgeDetection) {
   HostImage input = createTestImage(64, 64, 3);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   OperatorPipeline pipeline;
   pipeline.then<GrayscaleOperator>()
@@ -286,7 +286,7 @@ TEST_F(OperatorPipelineTest, PipelineEdgeDetection) {
       .then<SobelOperator>();
 
   ExecutionContext ctx(ExecutionPolicy::sync());
-  GpuImage result = pipeline.apply(gpuInput, ctx);
+  CudaImage result = pipeline.apply(gpuInput, ctx);
 
   EXPECT_TRUE(result.isValid());
   EXPECT_EQ(result.channels, 1);
@@ -296,13 +296,13 @@ TEST_F(OperatorPipelineTest, PipelineEdgeDetection) {
 // PipelineBuilderWithDownload)
 TEST_F(OperatorPipelineTest, PipelineInvertWithDownload) {
   HostImage input = createTestImage(32, 32, 3);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
   OperatorPipeline pipeline;
   pipeline.then<InvertOperator>();
 
   ExecutionContext ctx(ExecutionPolicy::sync());
-  GpuImage result = pipeline.apply(gpuInput, ctx);
+  CudaImage result = pipeline.apply(gpuInput, ctx);
   HostImage downloaded = ImageUtils::downloadFromGpu(result);
 
   EXPECT_TRUE(downloaded.isValid());
@@ -380,8 +380,8 @@ TEST_F(OperatorPipelineTest, PipelineWithInvalidInput) {
 
   ExecutionContext ctx(ExecutionPolicy::sync());
 
-  GpuImage invalidInput;
-  GpuImage output = pipeline.apply(invalidInput, ctx);
+  CudaImage invalidInput;
+  CudaImage output = pipeline.apply(invalidInput, ctx);
 
   EXPECT_FALSE(output.isValid());
 }
@@ -390,7 +390,7 @@ TEST_F(OperatorPipelineTest, PipelineWithInvalidInput) {
 TEST_F(ExecutionContextTest, RecycleToPoolMethod) {
   ExecutionContext ctx(ExecutionPolicy::sync());
 
-  GpuImage image = ctx.allocateOutput(64, 64, 3);
+  CudaImage image = ctx.allocateOutput(64, 64, 3);
   EXPECT_TRUE(image.isValid());
 
   ctx.recycleToPool(std::move(image));

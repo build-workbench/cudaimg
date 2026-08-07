@@ -1,4 +1,4 @@
-#include "gpu_image/io/image_io.hpp"
+#include "cudaimg/io/image_io.hpp"
 #include <algorithm>
 #include <cctype>
 #include <climits>
@@ -8,7 +8,7 @@
 #include <stdexcept>
 
 // stb_image 由 CMake FetchContent 提供
-#ifdef GPU_IMAGE_HAS_STB
+#ifdef CUDAIMG_HAS_STB
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -16,7 +16,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-namespace gpu_image {
+namespace cudaimg {
 
 namespace {
 
@@ -242,38 +242,38 @@ bool ImageIO::isFormatSupported(const std::string& filepath) {
   return std::find(formats.begin(), formats.end(), ext) != formats.end();
 }
 
-} // namespace gpu_image
+} // namespace cudaimg
 
-#else // !GPU_IMAGE_HAS_STB
+#else // !CUDAIMG_HAS_STB
 
 // 无 stb 时的空实现，所有函数抛出异常
-namespace gpu_image {
+namespace cudaimg {
 
 HostImage ImageIO::loadFromFile(const std::string&) {
   throw std::runtime_error(
-      "ImageIO requires stb_image. Build with -DGPU_IMAGE_ENABLE_IO=ON");
+      "ImageIO requires stb_image. Build with -DCUDAIMG_ENABLE_IO=ON");
 }
 
 bool ImageIO::saveToFile(const HostImage&, const std::string&) {
   throw std::runtime_error(
-      "ImageIO requires stb_image_write. Build with -DGPU_IMAGE_ENABLE_IO=ON");
+      "ImageIO requires stb_image_write. Build with -DCUDAIMG_ENABLE_IO=ON");
 }
 
 HostImage ImageIO::loadFromMemory(const unsigned char*, size_t) {
   throw std::runtime_error(
-      "ImageIO requires stb_image. Build with -DGPU_IMAGE_ENABLE_IO=ON");
+      "ImageIO requires stb_image. Build with -DCUDAIMG_ENABLE_IO=ON");
 }
 
 std::vector<unsigned char> ImageIO::encodeToMemory(const HostImage&,
                                                    const std::string&) {
   throw std::runtime_error(
-      "ImageIO requires stb_image_write. Build with -DGPU_IMAGE_ENABLE_IO=ON");
+      "ImageIO requires stb_image_write. Build with -DCUDAIMG_ENABLE_IO=ON");
 }
 
 std::vector<std::string> ImageIO::getSupportedFormats() { return {}; }
 std::vector<std::string> ImageIO::getWritableFormats() { return {}; }
 bool ImageIO::isFormatSupported(const std::string&) { return false; }
 
-} // namespace gpu_image
+} // namespace cudaimg
 
-#endif // GPU_IMAGE_HAS_STB
+#endif // CUDAIMG_HAS_STB

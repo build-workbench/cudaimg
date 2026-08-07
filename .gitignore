@@ -1,7 +1,6 @@
 # Build directories
 build/
 build-*/
-cmake-build-*/
 
 # IDE
 .idea/
@@ -18,10 +17,6 @@ cmake-build-*/
 *.so
 *.dylib
 
-# Executables
-*.exe
-*.out
-
 # CMake
 CMakeCache.txt
 CMakeFiles/
@@ -34,15 +29,13 @@ CMakeUserPresets.json
 Testing/
 *.log
 
-# VitePress
-docs/node_modules/
-docs/.vitepress/dist/
-docs/.vitepress/cache/
-docs/package-lock.json
-
 # Cache
 .cache/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# VitePress artifacts (已移除，防止残留被误提交)
+docs/node_modules/
+docs/.vitepress/

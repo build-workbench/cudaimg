@@ -1,10 +1,10 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/geometric.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/geometric.hpp"
 #include <cmath>
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -289,7 +289,7 @@ __global__ void padKernel(const unsigned char* input, unsigned char* output,
 }
 
 // Geometric 实现
-void Geometric::rotate(const GpuImage& input, GpuImage& output,
+void Geometric::rotate(const CudaImage& input, CudaImage& output,
                        float angleDegrees, cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -325,7 +325,7 @@ void Geometric::rotate(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Geometric::rotate90(const GpuImage& input, GpuImage& output, int times,
+void Geometric::rotate90(const CudaImage& input, CudaImage& output, int times,
                          cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -350,7 +350,7 @@ void Geometric::rotate90(const GpuImage& input, GpuImage& output, int times,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Geometric::flip(const GpuImage& input, GpuImage& output,
+void Geometric::flip(const CudaImage& input, CudaImage& output,
                      FlipDirection direction, cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -371,7 +371,7 @@ void Geometric::flip(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Geometric::affineTransform(const GpuImage& input, GpuImage& output,
+void Geometric::affineTransform(const CudaImage& input, CudaImage& output,
                                 const float* matrix, int outputWidth,
                                 int outputHeight, cudaStream_t stream) {
   if (!input.isValid()) {
@@ -400,7 +400,7 @@ void Geometric::affineTransform(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Geometric::perspectiveTransform(const GpuImage& input, GpuImage& output,
+void Geometric::perspectiveTransform(const CudaImage& input, CudaImage& output,
                                      const float* matrix, int outputWidth,
                                      int outputHeight, cudaStream_t stream) {
   if (!input.isValid()) {
@@ -430,7 +430,7 @@ void Geometric::perspectiveTransform(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Geometric::crop(const GpuImage& input, GpuImage& output, int x, int y,
+void Geometric::crop(const CudaImage& input, CudaImage& output, int x, int y,
                      int width, int height, cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -452,7 +452,7 @@ void Geometric::crop(const GpuImage& input, GpuImage& output, int x, int y,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Geometric::pad(const GpuImage& input, GpuImage& output, int top,
+void Geometric::pad(const CudaImage& input, CudaImage& output, int top,
                     int bottom, int left, int right, unsigned char padValue,
                     cudaStream_t stream) {
   if (!input.isValid()) {
@@ -479,4 +479,4 @@ void Geometric::pad(const GpuImage& input, GpuImage& output, int top,
   CUDA_CHECK(cudaGetLastError());
 }
 
-} // namespace gpu_image
+} // namespace cudaimg

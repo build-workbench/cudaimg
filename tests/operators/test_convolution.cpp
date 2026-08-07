@@ -6,14 +6,14 @@
  * Property 6: 边界处理正确性
  */
 
-#include "gpu_image/gpu_image_processing.hpp"
+#include "cudaimg/cudaimg.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cuda_runtime.h>
 #include <gtest/gtest.h>
 #include <vector>
 
-using namespace gpu_image;
+using namespace cudaimg;
 
 class ConvolutionTest : public ::testing::Test {
 protected:
@@ -108,8 +108,8 @@ TEST_F(ConvolutionTest, ConvolveMatchesCPU) {
   cpuConvolve(input, cpuOutput, kernel, kernelSize);
 
   // GPU 实现
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage gpuOutput;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuOutput;
   ConvolutionEngine::convolve(gpuInput, gpuOutput, kernel.data(), kernelSize);
   cudaDeviceSynchronize();
   HostImage gpuResult = ImageUtils::downloadFromGpu(gpuOutput);
@@ -132,9 +132,9 @@ TEST_F(ConvolutionTest, GaussianBlur) {
   const int channels = 3;
 
   HostImage input = createTestImage(width, height, channels);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
 
-  GpuImage blurred;
+  CudaImage blurred;
   ConvolutionEngine::gaussianBlur(gpuInput, blurred, 5, 1.5f);
   cudaDeviceSynchronize();
 
@@ -168,8 +168,8 @@ TEST_F(ConvolutionTest, SobelEdgeDetection) {
     }
   }
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage edges;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage edges;
   ConvolutionEngine::sobelEdgeDetection(gpuInput, edges);
   cudaDeviceSynchronize();
 
@@ -213,8 +213,8 @@ TEST_F(ConvolutionTest, ZeroPaddingBoundary) {
   // 使用 3x3 均值滤波
   std::vector<float> kernel(9, 1.0f / 9.0f);
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage output;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage output;
   ConvolutionEngine::convolve(gpuInput, output, kernel.data(), 3,
                               BorderMode::Zero);
   cudaDeviceSynchronize();
@@ -232,8 +232,8 @@ TEST_F(ConvolutionTest, ZeroPaddingBoundary) {
 // 测试无效参数
 TEST_F(ConvolutionTest, InvalidParameters) {
   HostImage input = createTestImage(32, 32, 3);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage output;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage output;
 
   std::vector<float> kernel(9, 1.0f / 9.0f);
 
@@ -250,7 +250,7 @@ TEST_F(ConvolutionTest, InvalidParameters) {
                std::invalid_argument);
 
   // 无效图像
-  GpuImage invalid;
+  CudaImage invalid;
   EXPECT_THROW(ConvolutionEngine::convolve(invalid, output, kernel.data(), 3),
                std::invalid_argument);
 }
@@ -266,8 +266,8 @@ TEST_F(ConvolutionTest, IdentityConvolution) {
   // 恒等核
   std::vector<float> kernel = {0, 0, 0, 0, 1, 0, 0, 0, 0};
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage output;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage output;
   ConvolutionEngine::convolve(gpuInput, output, kernel.data(), 3);
   cudaDeviceSynchronize();
 
@@ -284,8 +284,8 @@ TEST_F(ConvolutionTest, IdentityConvolution) {
 
 TEST_F(ConvolutionTest, InvalidGaussianSigma) {
   HostImage input = createTestImage(32, 32, 1);
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage output;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage output;
 
   EXPECT_THROW(ConvolutionEngine::gaussianBlur(gpuInput, output, 3, 0.0f),
                std::invalid_argument);
@@ -302,9 +302,9 @@ TEST_F(ConvolutionTest, ConcurrentDifferentKernelsDoNotInterfere) {
   std::fill(input.data.begin(), input.data.end(), 0);
   input.at(16, 16, 0) = 255;
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage identityOutput;
-  GpuImage blurOutput;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage identityOutput;
+  CudaImage blurOutput;
 
   std::vector<float> identityKernel = {0, 0, 0, 0, 1, 0, 0, 0, 0};
   std::vector<float> blurKernel(9, 1.0f / 9.0f);
@@ -338,9 +338,9 @@ TEST_F(ConvolutionTest, ConcurrentSeparableConvolutionsDoNotInterfere) {
   std::fill(input.data.begin(), input.data.end(), 0);
   input.at(16, 16, 0) = 255;
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage horizontalOutput;
-  GpuImage verticalOutput;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage horizontalOutput;
+  CudaImage verticalOutput;
 
   std::vector<float> horizontal = {0.25f, 0.5f, 0.25f};
   std::vector<float> identity = {0.0f, 1.0f, 0.0f};
@@ -382,8 +382,8 @@ TEST_F(ConvolutionTest, ConvolutionSimpleKernelMatchesReference) {
   HostImage cpuOutput = ImageUtils::createHostImage(16, 16, 1);
   cpuConvolve(input, cpuOutput, kernel, 3);
 
-  GpuImage gpuInput = ImageUtils::uploadToGpu(input);
-  GpuImage gpuOutput;
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+  CudaImage gpuOutput;
   ConvolutionEngine::convolve(gpuInput, gpuOutput, kernel.data(), 3);
   cudaDeviceSynchronize();
 

@@ -1,11 +1,25 @@
-#include "gpu_image/core/cuda_error.hpp"
-#include "gpu_image/core/image_utils.hpp"
-#include "gpu_image/operators/histogram_calculator.hpp"
+#include "cudaimg/core/cuda_error.hpp"
+#include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/operators/histogram_calculator.hpp"
 #include <stdexcept>
 
-namespace gpu_image {
+namespace cudaimg {
 
-// 使用 Shared Memory 和原子操作的直方图 Kernel
+// ── 教学重点：两级原子规约 ─────────────────────────────────────
+//
+// 为什么不能直接对全局 histogram[256] 做 atomicAdd？
+//   100 万个线程争抢 256 个 bin，竞争极其严重，性能灾难。
+//
+// 两级规约策略：
+//   1. 每个 block 在 shared memory 上建局部直方图（localHist[256]）
+//      block 内线程数远少于全局，竞争范围小
+//   2. 每个线程对自己的像素做 atomicAdd 到 localHist（block 级原子）
+//   3. block 级直方图完成后，合并到全局直方图（仅 gridSize 个 block
+//      做合并，竞争大幅减少）
+//
+// 关键同步点：
+//   __syncthreads() #1：确保 localHist 初始化完成
+//   __syncthreads() #2：确保所有线程完成 atomicAdd 后再合并
 __global__ void histogramKernelShared(const unsigned char* input,
                                       int* histogram, int width, int height,
                                       int channels, int targetChannel) {
@@ -82,7 +96,7 @@ __global__ void equalizeKernel(const unsigned char* input,
 
 // HistogramCalculator 实现
 std::array<int, HistogramCalculator::NUM_BINS>
-HistogramCalculator::calculate(const GpuImage& input, cudaStream_t stream) {
+HistogramCalculator::calculate(const CudaImage& input, cudaStream_t stream) {
 
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -118,7 +132,7 @@ HistogramCalculator::calculate(const GpuImage& input, cudaStream_t stream) {
 }
 
 std::array<std::array<int, HistogramCalculator::NUM_BINS>, 3>
-HistogramCalculator::calculateRGB(const GpuImage& input, cudaStream_t stream) {
+HistogramCalculator::calculateRGB(const CudaImage& input, cudaStream_t stream) {
 
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -137,7 +151,7 @@ HistogramCalculator::calculateRGB(const GpuImage& input, cudaStream_t stream) {
 }
 
 std::array<int, HistogramCalculator::NUM_BINS>
-HistogramCalculator::calculateChannel(const GpuImage& input, int channel,
+HistogramCalculator::calculateChannel(const CudaImage& input, int channel,
                                       cudaStream_t stream) {
 
   if (!input.isValid()) {
@@ -173,7 +187,7 @@ HistogramCalculator::calculateChannel(const GpuImage& input, int channel,
   return histogram;
 }
 
-void HistogramCalculator::equalize(const GpuImage& input, GpuImage& output,
+void HistogramCalculator::equalize(const CudaImage& input, CudaImage& output,
                                    cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
@@ -232,4 +246,4 @@ void HistogramCalculator::equalize(const GpuImage& input, GpuImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-} // namespace gpu_image
+} // namespace cudaimg
