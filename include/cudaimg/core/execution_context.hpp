@@ -78,13 +78,8 @@ private:
 /// ImageAllocator: Unified image buffer management
 /// 图像分配器：统一的图像缓冲区管理
 ///
-/// Provides centralized allocation with optional memory pooling.
+/// Provides centralized allocation for image buffers.
 /// All operators should use this for output buffer management.
-///
-/// Interface contract:
-/// - Output buffers are automatically sized
-/// - Memory pooling is optional (configure per-context)
-/// - Thread-safe allocation/deallocation
 class ImageAllocator {
 public:
   /// Get the global allocator instance
@@ -100,30 +95,13 @@ public:
   /// Ensure output image matches input dimensions
   /// 确保输出图像与输入尺寸匹配
   /// @return true if reallocation occurred
-  [[nodiscard]] bool ensureSize(const CudaImage& input, CudaImage& output,
-                                bool usePool = true);
+  [[nodiscard]] bool ensureSize(const CudaImage& input, CudaImage& output);
 
   /// Ensure output image has specified dimensions
   /// 确保输出图像具有指定尺寸
   /// @return true if reallocation occurred
   [[nodiscard]] bool ensureSize(CudaImage& output, int width, int height,
-                                int channels, bool usePool = true);
-
-  /// Recycle a buffer back to the memory pool for reuse
-  /// 将缓冲区回收至内存池以便复用
-  ///
-  /// @param image The image to recycle (moved-from state after call)
-  ///
-  /// Note: If pooling is disabled, the buffer is simply destroyed.
-  /// This method takes ownership of the image's buffer.
-  void recycleToPool(CudaImage&& image);
-
-  /// Enable or disable memory pooling globally
-  /// 全局启用或禁用内存池
-  /// @note Thread-safe: uses atomic operations
-  void setPoolingEnabled(bool enabled) {
-    poolingEnabled_.store(enabled, std::memory_order_relaxed);
-  }
+                                int channels);
 
   /// Check if pooling is enabled
   /// 检查内存池是否启用
@@ -134,7 +112,6 @@ public:
 
 private:
   ImageAllocator() = default;
-  std::atomic<bool> poolingEnabled_{false};
 };
 
 /// ExecutionContext: Combined allocation and execution strategy
@@ -189,19 +166,6 @@ public:
   /// Synchronize (for async/batch modes)
   /// 同步（用于异步/批处理模式）
   void synchronize() const { policy_.synchronize(); }
-
-  /// Recycle a buffer back to the memory pool for reuse
-  /// 将缓冲区回收至内存池以便复用
-  ///
-  /// @param image The image to recycle (moved-from state after call)
-  ///
-  /// Example:
-  /// @code
-  /// CudaImage intermediate = ctx.allocateOutput(input);
-  /// // ... use intermediate ...
-  /// ctx.recycleToPool(std::move(intermediate));  // Return to pool
-  /// @endcode
-  void recycleToPool(CudaImage&& image);
 
 private:
   ExecutionPolicy policy_;

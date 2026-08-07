@@ -34,13 +34,6 @@ public:
                               const float* matrix, int outputWidth,
                               int outputHeight, cudaStream_t stream = nullptr);
 
-  // 透视变换
-  // matrix: 3x3 变换矩阵
-  static void perspectiveTransform(const CudaImage& input, CudaImage& output,
-                                   const float* matrix, int outputWidth,
-                                   int outputHeight,
-                                   cudaStream_t stream = nullptr);
-
   // 图像裁剪
   static void crop(const CudaImage& input, CudaImage& output, int x, int y,
                    int width, int height, cudaStream_t stream = nullptr);

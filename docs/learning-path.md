@@ -47,6 +47,11 @@ for (size_t i = 0; i < image.data.size(); ++i) {
 
 GPU 结果与 CPU 参考逐像素比对。这就是验证 CUDA 程序正确性的基本方法。
 
+### 动手练习
+
+1. 修改 `invertKernelScalar`，让它只反转 R 通道（channels == 3 时），G/B 保持不变
+2. 把 block 大小从 16×16 改为 32×32，观察是否能正常工作（提示：shared memory 限制）
+
 ---
 
 ## Lv2：向量化优化与 dispatch
@@ -78,6 +83,11 @@ static inline bool canVectorize(const CudaImage& img) {
 ```
 
 这是真实 CUDA 工程中常见的模式：有快路径时走快路径，不满足条件时退回到通用实现。
+
+### 动手练习
+
+1. 查看 `canVectorize()` 的逻辑，思考：为什么 3 通道 RGB 图像（width=100）可以向量化？
+2. 尝试写一个 `toGrayscaleVec4` 版本，用 `uchar4` 同时处理 RGBA 图像的灰度转换
 
 ---
 
@@ -132,6 +142,12 @@ __global__ void convolveKernelShared(...) {
 - 教学简洁性：覆盖 3×3、5×5、7×7 已足够演示概念
 - 超过 7×7 时应改用可分离卷积（见 Lv4）
 
+### 动手练习
+
+1. 用 Nsight Compute 对比朴素卷积（`convolveKernelSimple`）和 shared memory 卷积的 L2 cache hit rate
+2. 把 `BLOCK_SIZE` 从 16 改为 32，计算 shared memory 用量变化，思考是否会超出限制
+3. 实现 `BorderMode::Mirror` 的边界处理逻辑（当前代码已有，尝试理解 mirrorX 的计算）
+
 ---
 
 ## Lv4：可分离卷积
@@ -152,6 +168,11 @@ __global__ void convolveKernelShared(...) {
 1. **算法层面的优化** - 不是所有优化都在 kernel 内部，算法选择本身就是优化
 2. **两 pass 模式** - 中间缓冲区的分配和回收，`ImageUtils::createCudaImage` 分配临时图像
 3. **`KernelData` 复用** - 行核和列核共用同一个结构体，只是填入不同的 1D 数据
+
+### 动手练习
+
+1. 用 `separableConvolve` 实现一个 9×9 高斯模糊，对比直接卷积（会超出 7×7 限制）和可分离卷积
+2. 思考：为什么可分离卷积需要中间缓冲？能否原地操作？
 
 ---
 
@@ -198,6 +219,11 @@ __global__ void histogramKernelShared(...) {
 
 如果 100 万个线程直接对全局 `histogram[256]` 做 `atomicAdd`，竞争会极其严重（256 个 bin 被百万线程争抢）。改为每个 block 先在 shared memory 上做局部直方图（竞争范围小，速度快），最后只有 `gridSize` 个 block 对全局做合并，竞争大幅减少。
 
+### 动手练习
+
+1. 尝试去掉 block 级 shared memory 直方图，直接对全局 `histogram[256]` 做 `atomicAdd`，测量性能下降
+2. 思考：如果灰度级不是 256 而是 65536（16-bit 图像），shared memory 还够用吗？
+
 ---
 
 ## Lv6：双线性插值与坐标映射
@@ -226,6 +252,11 @@ return v0 * (1.0f - dy) + v1 * dy;          // 垂直插值
 ### 教学说明
 
 本项目未使用 CUDA 纹理内存（`cudaTextureObject_t`），纹理硬件可以自动处理插值和边界。这里手动实现插值是为了让初学者理解原理。纹理内存是可选的下一步优化方向。
+
+### 动手练习
+
+1. 实现最近邻插值版本（`resizeNearestKernel` 已有），对比双线性与最近邻的视觉差异
+2. 思考：纹理内存如何自动处理插值和边界？手动实现的优势是什么？
 
 ---
 

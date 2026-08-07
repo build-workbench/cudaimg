@@ -50,7 +50,6 @@
 | H2D / D2H 拷贝 | `device_buffer.hpp` `copyFromHost` / `copyToHost` | 主机-设备数据传输 |
 | D2D 拷贝 | `device_buffer.hpp` `copyFromDevice` | 设备间拷贝 |
 | 异步拷贝 | `device_buffer.hpp` `copyFromHostAsync` | stream 异步传输 |
-| 内存池 | `memory_manager.hpp` | 可选的缓冲区复用（默认关闭） |
 | 移动语义 | `device_buffer.hpp` move constructor/assignment | 独占所有权转移 |
 
 ## Kernel 启动
@@ -78,6 +77,4 @@
 |------|------|------|
 | 门面模式 | `image_processor.hpp` `ImageProcessor` | 统一入口，隐藏 stream/buffer 细节 |
 | 策略模式 | `execution_context.hpp` `ExecutionPolicy` | sync/async/batch 可切换 |
-| 模板方法 | `image_operator.hpp` `UnaryOperator<T>` | CRTP 消除虚函数开销 |
-| 管道模式 | `operator_pipeline.hpp` `OperatorPipeline` | 链式组合多个算子 |
 | dispatch fallback | `pixel_operator.cu` `launchInvert` | 快路径 + 通用 fallback |

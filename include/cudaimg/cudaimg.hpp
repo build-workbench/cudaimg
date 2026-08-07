@@ -14,19 +14,15 @@
 #include "cudaimg/core/image.hpp"
 #include "cudaimg/core/image_utils.hpp"
 #include "cudaimg/core/kernel_helpers.hpp"
-#include "cudaimg/core/memory_manager.hpp"
 
 // Operators
 #include "cudaimg/operators/color_space.hpp"
-#include "cudaimg/operators/concrete_operators.hpp"
 #include "cudaimg/operators/convolution_engine.hpp"
 #include "cudaimg/operators/filters.hpp"
 #include "cudaimg/operators/geometric.hpp"
 #include "cudaimg/operators/histogram_calculator.hpp"
-#include "cudaimg/operators/image_operator.hpp"
 #include "cudaimg/operators/image_resizer.hpp"
 #include "cudaimg/operators/morphology.hpp"
-#include "cudaimg/operators/operator_pipeline.hpp"
 #include "cudaimg/operators/pixel_operator.hpp"
 #include "cudaimg/operators/threshold.hpp"
 

@@ -5,20 +5,17 @@
 
 ---
 
-## 1. 内存池多 stream 并发数据竞争
+## 1. 内存池多 stream 并发数据竞争（已移除）
 
-**位置**：`include/cudaimg/core/memory_manager.hpp`
+**历史背景**：项目曾包含一个可选内存池（`MemoryManager`），回收缓冲区
+时不检查所属 stream 是否已完成。多 stream 并发场景下可能导致数据竞争。
 
-内存池回收缓冲区时不检查该缓冲区所属 stream 是否已完成。如果多个线程
-各自持有不同 stream 并并发 allocate/deallocate，某条 stream 上仍在读
-的缓冲可能被另一条 stream 当作输出复用，导致数据竞争。
-
-**当前处理**：内存池默认关闭（`poolEnabled_` 默认 `false`）。安全用法
-是单 stream，或在回收前由调用方自行同步所属 stream。
+**当前状态**：内存池已删除。所有显存分配通过 `DeviceBuffer` 的 RAII
+直接 `cudaMalloc`/`cudaFree`，简单可靠。
 
 **教学价值**：这是 CUDA 内存池设计的经典难题。生产级实现（如 CUDA
 Stream-Ordered Memory Allocator `cudaMallocAsync`）通过 stream 亲和性
-解决此问题。
+解决此问题。初学者应先理解 RAII 模式，再进阶到池化优化。
 
 ---
 

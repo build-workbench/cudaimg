@@ -6,7 +6,7 @@
 
 namespace cudaimg {
 
-// 中值滤波 Kernel（使用排序网络）
+// 中值滤波 Kernel（冒泡排序找中值，教学用简单实现）
 __global__ void medianFilterKernel(const unsigned char* input,
                                    unsigned char* output, int width, int height,
                                    int channels, int kernelSize) {
@@ -199,30 +199,8 @@ __global__ void addKernel(const unsigned char* src1, const unsigned char* src2,
 }
 
 // 图像减法 Kernel
-__global__ void subtractKernel(const unsigned char* src1,
-                               const unsigned char* src2, unsigned char* output,
-                               int size) {
-
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx >= size)
-    return;
-
-  int diff = src1[idx] - src2[idx];
-  output[idx] = static_cast<unsigned char>(max(diff, 0));
-}
 
 // 图像乘法 Kernel
-__global__ void multiplyKernel(const unsigned char* src1,
-                               const unsigned char* src2, unsigned char* output,
-                               int size, float scale) {
-
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx >= size)
-    return;
-
-  float result = (src1[idx] * src2[idx] / 255.0f) * scale;
-  output[idx] = static_cast<unsigned char>(fminf(fmaxf(result, 0.0f), 255.0f));
-}
 
 // 图像混合 Kernel
 __global__ void blendKernel(const unsigned char* src1,
@@ -238,30 +216,8 @@ __global__ void blendKernel(const unsigned char* src1,
 }
 
 // 加权和 Kernel
-__global__ void addWeightedKernel(const unsigned char* src1,
-                                  const unsigned char* src2,
-                                  unsigned char* output, int size, float alpha,
-                                  float beta, float gamma) {
-
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx >= size)
-    return;
-
-  float result = alpha * src1[idx] + beta * src2[idx] + gamma;
-  output[idx] = static_cast<unsigned char>(fminf(fmaxf(result, 0.0f), 255.0f));
-}
 
 // 绝对差 Kernel
-__global__ void absDiffKernel(const unsigned char* src1,
-                              const unsigned char* src2, unsigned char* output,
-                              int size) {
-
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx >= size)
-    return;
-
-  output[idx] = static_cast<unsigned char>(abs(src1[idx] - src2[idx]));
-}
 
 // 标量加法 Kernel
 __global__ void addScalarKernel(const unsigned char* input,
@@ -276,17 +232,6 @@ __global__ void addScalarKernel(const unsigned char* input,
 }
 
 // 标量乘法 Kernel
-__global__ void multiplyScalarKernel(const unsigned char* input,
-                                     unsigned char* output, int size,
-                                     float scale) {
-
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx >= size)
-    return;
-
-  float result = input[idx] * scale;
-  output[idx] = static_cast<unsigned char>(fminf(fmaxf(result, 0.0f), 255.0f));
-}
 
 // Filters 实现
 void Filters::medianFilter(const CudaImage& input, CudaImage& output,
@@ -442,62 +387,6 @@ void ImageArithmetic::add(const CudaImage& src1, const CudaImage& src2,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::subtract(const CudaImage& src1, const CudaImage& src2,
-                               CudaImage& output, cudaStream_t stream) {
-  if (!src1.isValid() || !src2.isValid()) {
-    throw std::invalid_argument("Invalid input images");
-  }
-  if (src1.width != src2.width || src1.height != src2.height ||
-      src1.channels != src2.channels) {
-    throw std::invalid_argument("Image dimensions must match");
-  }
-
-  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
-
-  size_t totalSize =
-      static_cast<size_t>(src1.width) * src1.height * src1.channels;
-  if (totalSize > static_cast<size_t>(INT_MAX)) {
-    throw std::invalid_argument("Image size too large for processing");
-  }
-  int size = static_cast<int>(totalSize);
-  int blockSize = 256;
-  int gridSize = (size + blockSize - 1) / blockSize;
-
-  subtractKernel<<<gridSize, blockSize, 0, stream>>>(
-      src1.buffer.dataAs<unsigned char>(), src2.buffer.dataAs<unsigned char>(),
-      output.buffer.dataAs<unsigned char>(), size);
-
-  CUDA_CHECK(cudaGetLastError());
-}
-
-void ImageArithmetic::multiply(const CudaImage& src1, const CudaImage& src2,
-                               CudaImage& output, float scale,
-                               cudaStream_t stream) {
-  if (!src1.isValid() || !src2.isValid()) {
-    throw std::invalid_argument("Invalid input images");
-  }
-  if (src1.width != src2.width || src1.height != src2.height ||
-      src1.channels != src2.channels) {
-    throw std::invalid_argument("Image dimensions must match");
-  }
-
-  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
-
-  size_t totalSize =
-      static_cast<size_t>(src1.width) * src1.height * src1.channels;
-  if (totalSize > static_cast<size_t>(INT_MAX)) {
-    throw std::invalid_argument("Image size too large for processing");
-  }
-  int size = static_cast<int>(totalSize);
-  int blockSize = 256;
-  int gridSize = (size + blockSize - 1) / blockSize;
-
-  multiplyKernel<<<gridSize, blockSize, 0, stream>>>(
-      src1.buffer.dataAs<unsigned char>(), src2.buffer.dataAs<unsigned char>(),
-      output.buffer.dataAs<unsigned char>(), size, scale);
-
-  CUDA_CHECK(cudaGetLastError());
-}
 
 void ImageArithmetic::blend(const CudaImage& src1, const CudaImage& src2,
                             CudaImage& output, float alpha,
@@ -531,63 +420,6 @@ void ImageArithmetic::blend(const CudaImage& src1, const CudaImage& src2,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::addWeighted(const CudaImage& src1, float alpha,
-                                  const CudaImage& src2, float beta,
-                                  CudaImage& output, float gamma,
-                                  cudaStream_t stream) {
-  if (!src1.isValid() || !src2.isValid()) {
-    throw std::invalid_argument("Invalid input images");
-  }
-  if (src1.width != src2.width || src1.height != src2.height ||
-      src1.channels != src2.channels) {
-    throw std::invalid_argument("Image dimensions must match");
-  }
-
-  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
-
-  size_t totalSize =
-      static_cast<size_t>(src1.width) * src1.height * src1.channels;
-  if (totalSize > static_cast<size_t>(INT_MAX)) {
-    throw std::invalid_argument("Image size too large for processing");
-  }
-  int size = static_cast<int>(totalSize);
-  int blockSize = 256;
-  int gridSize = (size + blockSize - 1) / blockSize;
-
-  addWeightedKernel<<<gridSize, blockSize, 0, stream>>>(
-      src1.buffer.dataAs<unsigned char>(), src2.buffer.dataAs<unsigned char>(),
-      output.buffer.dataAs<unsigned char>(), size, alpha, beta, gamma);
-
-  CUDA_CHECK(cudaGetLastError());
-}
-
-void ImageArithmetic::absDiff(const CudaImage& src1, const CudaImage& src2,
-                              CudaImage& output, cudaStream_t stream) {
-  if (!src1.isValid() || !src2.isValid()) {
-    throw std::invalid_argument("Invalid input images");
-  }
-  if (src1.width != src2.width || src1.height != src2.height ||
-      src1.channels != src2.channels) {
-    throw std::invalid_argument("Image dimensions must match");
-  }
-
-  ImageUtils::ensureOutputSize(output, src1.width, src1.height, src1.channels);
-
-  size_t totalSize =
-      static_cast<size_t>(src1.width) * src1.height * src1.channels;
-  if (totalSize > static_cast<size_t>(INT_MAX)) {
-    throw std::invalid_argument("Image size too large for processing");
-  }
-  int size = static_cast<int>(totalSize);
-  int blockSize = 256;
-  int gridSize = (size + blockSize - 1) / blockSize;
-
-  absDiffKernel<<<gridSize, blockSize, 0, stream>>>(
-      src1.buffer.dataAs<unsigned char>(), src2.buffer.dataAs<unsigned char>(),
-      output.buffer.dataAs<unsigned char>(), size);
-
-  CUDA_CHECK(cudaGetLastError());
-}
 
 void ImageArithmetic::addScalar(const CudaImage& input, CudaImage& output,
                                 unsigned char value, cudaStream_t stream) {
@@ -614,29 +446,5 @@ void ImageArithmetic::addScalar(const CudaImage& input, CudaImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void ImageArithmetic::multiplyScalar(const CudaImage& input, CudaImage& output,
-                                     float scale, cudaStream_t stream) {
-  if (!input.isValid()) {
-    throw std::invalid_argument("Invalid input image");
-  }
-
-  ImageUtils::ensureOutputSize(output, input.width, input.height,
-                               input.channels);
-
-  size_t totalSize =
-      static_cast<size_t>(input.width) * input.height * input.channels;
-  if (totalSize > static_cast<size_t>(INT_MAX)) {
-    throw std::invalid_argument("Image size too large for processing");
-  }
-  int size = static_cast<int>(totalSize);
-  int blockSize = 256;
-  int gridSize = (size + blockSize - 1) / blockSize;
-
-  multiplyScalarKernel<<<gridSize, blockSize, 0, stream>>>(
-      input.buffer.dataAs<unsigned char>(),
-      output.buffer.dataAs<unsigned char>(), size, scale);
-
-  CUDA_CHECK(cudaGetLastError());
-}
 
 } // namespace cudaimg

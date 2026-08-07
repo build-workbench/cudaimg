@@ -163,3 +163,102 @@ TEST_F(MorphologyTest, DifferentStructuringElements) {
   // 矩形和十字形结果应该不同
   EXPECT_FALSE(allSame);
 }
+
+// ===== CPU 参考实现测试 =====
+
+class MorphologyCpuRefTest : public ::testing::Test {
+protected:
+  void SetUp() override {
+    int deviceCount;
+    cudaError_t err = cudaGetDeviceCount(&deviceCount);
+    if (err != cudaSuccess || deviceCount == 0) {
+      GTEST_SKIP() << "CUDA not available";
+    }
+  }
+
+  HostImage createRandomImage(int width, int height, int channels) {
+    HostImage image = ImageUtils::createHostImage(width, height, channels);
+    unsigned int seed = 42;
+    for (size_t i = 0; i < image.data.size(); ++i) {
+      seed = seed * 1103515245 + 12345;
+      image.data[i] = static_cast<unsigned char>((seed >> 16) & 0xFF);
+    }
+    return image;
+  }
+
+  // CPU 腐蚀参考（矩形结构元素）
+  void cpuErode(const HostImage& input, HostImage& output, int kernelSize) {
+    int half = kernelSize / 2;
+    for (int y = 0; y < input.height; ++y) {
+      for (int x = 0; x < input.width; ++x) {
+        for (int c = 0; c < input.channels; ++c) {
+          unsigned char minVal = 255;
+          for (int ky = -half; ky <= half; ++ky) {
+            for (int kx = -half; kx <= half; ++kx) {
+              int nx = std::max(0, std::min(x + kx, input.width - 1));
+              int ny = std::max(0, std::min(y + ky, input.height - 1));
+              minVal = std::min(minVal, input.at(nx, ny, c));
+            }
+          }
+          output.at(x, y, c) = minVal;
+        }
+      }
+    }
+  }
+
+  // CPU 膨胀参考（矩形结构元素）
+  void cpuDilate(const HostImage& input, HostImage& output, int kernelSize) {
+    int half = kernelSize / 2;
+    for (int y = 0; y < input.height; ++y) {
+      for (int x = 0; x < input.width; ++x) {
+        for (int c = 0; c < input.channels; ++c) {
+          unsigned char maxVal = 0;
+          for (int ky = -half; ky <= half; ++ky) {
+            for (int kx = -half; kx <= half; ++kx) {
+              int nx = std::max(0, std::min(x + kx, input.width - 1));
+              int ny = std::max(0, std::min(y + ky, input.height - 1));
+              maxVal = std::max(maxVal, input.at(nx, ny, c));
+            }
+          }
+          output.at(x, y, c) = maxVal;
+        }
+      }
+    }
+  }
+};
+
+TEST_F(MorphologyCpuRefTest, ErodeMatchesCpu) {
+  HostImage input = createRandomImage(32, 32, 1);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+
+  CudaImage gpuOutput;
+  Morphology::erode(gpuInput, gpuOutput, 3, StructuringElement::Rectangle);
+  cudaDeviceSynchronize();
+
+  HostImage gpuResult = ImageUtils::downloadFromGpu(gpuOutput);
+  HostImage cpuResult = ImageUtils::createHostImage(32, 32, 1);
+  cpuErode(input, cpuResult, 3);
+
+  for (size_t i = 0; i < gpuResult.data.size(); ++i) {
+    EXPECT_EQ(gpuResult.data[i], cpuResult.data[i])
+        << "Mismatch at index " << i;
+  }
+}
+
+TEST_F(MorphologyCpuRefTest, DilateMatchesCpu) {
+  HostImage input = createRandomImage(32, 32, 1);
+  CudaImage gpuInput = ImageUtils::uploadToGpu(input);
+
+  CudaImage gpuOutput;
+  Morphology::dilate(gpuInput, gpuOutput, 3, StructuringElement::Rectangle);
+  cudaDeviceSynchronize();
+
+  HostImage gpuResult = ImageUtils::downloadFromGpu(gpuOutput);
+  HostImage cpuResult = ImageUtils::createHostImage(32, 32, 1);
+  cpuDilate(input, cpuResult, 3);
+
+  for (size_t i = 0; i < gpuResult.data.size(); ++i) {
+    EXPECT_EQ(gpuResult.data[i], cpuResult.data[i])
+        << "Mismatch at index " << i;
+  }
+}

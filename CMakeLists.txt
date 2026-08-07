@@ -42,7 +42,6 @@ add_library(cudaimg STATIC
     # Core infrastructure
     src/core/cuda_error.cpp
     src/core/device_buffer.cu
-    src/core/memory_manager.cpp
     src/core/image_utils.cpp
     src/core/execution_context.cpp
     # Operators
@@ -152,9 +151,15 @@ endif()
 # ── 示例程序 ─────────────────────────────────────────────────────
 option(BUILD_EXAMPLES "Build examples" ON)
 if(BUILD_EXAMPLES)
-    add_executable(basic_example examples/basic_example.cpp)
-    target_link_libraries(basic_example PRIVATE cudaimg)
-    
+    add_executable(example_01_pixel examples/01_pixel.cu)
+    target_link_libraries(example_01_pixel PRIVATE cudaimg)
+
+    add_executable(example_02_convolution examples/02_convolution.cu)
+    target_link_libraries(example_02_convolution PRIVATE cudaimg)
+
+    add_executable(example_03_histogram examples/03_histogram.cu)
+    target_link_libraries(example_03_histogram PRIVATE cudaimg)
+
     add_executable(pipeline_example examples/pipeline_example.cpp)
     target_link_libraries(pipeline_example PRIVATE cudaimg)
 endif()
@@ -165,49 +170,4 @@ if(BUILD_BENCHMARKS)
     # 基准测试为自包含的手写计时框架，无需外部 benchmark 依赖
     add_executable(cudaimg_benchmark benchmarks/benchmark_main.cpp)
     target_link_libraries(cudaimg_benchmark PRIVATE cudaimg)
-endif()
-
-# ── Install ──────────────────────────────────────────────────────
-# 默认关闭：业余项目多数不需要 `cmake --install` 生成下游可 find_package 的配置。
-# 需要 `find_package(cudaimg)` 的下游，请以
-# `-DCUDAIMG_ENABLE_INSTALL=ON` 配置，再 `cmake --install build`。
-option(CUDAIMG_ENABLE_INSTALL "Generate install targets and package config" OFF)
-if(CUDAIMG_ENABLE_INSTALL)
-    include(GNUInstallDirs)
-    include(CMakePackageConfigHelpers)
-
-    install(TARGETS cudaimg
-        EXPORT cudaimg-targets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    )
-    install(DIRECTORY include/cudaimg
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-
-    # 包配置文件：声明对 CUDAToolkit 的依赖（库 PUBLIC 链接 CUDA::cudart），
-    # 否则下游 find_package(cudaimg) 会因找不到 CUDA::cudart 失败。
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cudaimg-config.cmake
-        "include(CMakeFindDependencyMacro)\n"
-        "find_dependency(CUDAToolkit)\n"
-        "include(\"\${CMAKE_CURRENT_LIST_DIR}/cudaimg-targets.cmake\")\n"
-    )
-
-    write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/cudaimg-config-version.cmake
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY SameMajorVersion
-    )
-
-    install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/cudaimg-config.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/cudaimg-config-version.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cudaimg
-    )
-
-    install(EXPORT cudaimg-targets
-        FILE cudaimg-targets.cmake
-        NAMESPACE cudaimg::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cudaimg
-    )
 endif()

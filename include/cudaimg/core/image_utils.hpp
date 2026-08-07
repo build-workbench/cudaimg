@@ -21,7 +21,6 @@ struct HostImage;
 // Interface contract:
 // - All returned CudaImages have valid, properly-sized buffers
 // - Parameters are validated before allocation
-// - Memory can optionally be pooled via MemoryManager integration
 namespace ImageUtils {
 
 // ===== Image Creation =====
@@ -86,12 +85,9 @@ bool validateImageParams(int width, int height, int channels);
 
 /// Enable or disable memory pooling for subsequent allocations
 /// 为后续分配启用或禁用内存池
-/// When enabled, CudaImage allocations use MemoryManager pool
-void setMemoryPoolingEnabled(bool enabled);
 
 /// Check if memory pooling is currently enabled
 /// 检查内存池当前是否启用
-bool isMemoryPoolingEnabled();
 
 } // namespace ImageUtils
 

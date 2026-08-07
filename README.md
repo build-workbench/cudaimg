@@ -55,8 +55,11 @@ cmake --build build -j$(nproc)
 # 运行测试（需要 NVIDIA GPU）
 ctest --test-dir build --output-on-failure
 
-# 运行示例
-./build/bin/basic_example
+# 运行示例（按学习级别）
+./build/bin/example_01_pixel
+./build/bin/example_02_convolution
+./build/bin/example_03_histogram
+./build/bin/pipeline_example
 ```
 
 > 完整构建选项见 [构建与测试](docs/build-and-test.md)
@@ -71,7 +74,6 @@ include/cudaimg/
 ├── core/
 │   ├── image.hpp            # CudaImage / HostImage 数据结构
 │   ├── device_buffer.hpp    # RAII 显存管理
-│   ├── memory_manager.hpp   # 可选内存池（默认关闭，有坑点）
 │   ├── execution_context.hpp # 执行策略（sync/async/batch）
 │   ├── device_kernels.cuh   # 设备端共享工具（clamp、索引等）
 │   └── kernel_helpers.hpp   # 主机端 kernel 启动辅助
@@ -82,15 +84,15 @@ include/cudaimg/
 │   ├── image_resizer.cu     # Lv6：插值与坐标映射
 │   ├── morphology.cu        # 形态学（min/max reduction）
 │   ├── threshold.cu         # 阈值处理
-│   ├── filters.cu           # 中值/双边/锐化滤波
-│   ├── geometric.cu         # 旋转/翻转/裁剪
+│   ├── filters.cu           # 中值/双边/锐化滤波 + 图像算术
+│   ├── geometric.cu         # 旋转/翻转/裁剪/仿射
 │   └── color_space.cu       # RGB/HSV/YUV 转换
 └── processing/
     ├── image_processor.hpp  # 门面层：一行调用一个算子
     └── pipeline_processor.cu # Lv7：多流流水线
 
 tests/                       # 每个算子配 CPU 参考实现做逐像素验证
-examples/                    # 可运行的基础/流水线示例
+examples/                    # 按学习级别的渐进示例 + 流水线示例
 benchmarks/                  # 手写计时器基准（非 Google Benchmark）
 ```
 

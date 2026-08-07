@@ -1,6 +1,5 @@
 #include "cudaimg/core/execution_context.hpp"
 #include "cudaimg/core/cuda_error.hpp"
-#include "cudaimg/core/memory_manager.hpp"
 #include <stdexcept>
 
 namespace cudaimg {
@@ -75,8 +74,7 @@ ImageAllocator& ImageAllocator::instance() {
   return instance;
 }
 
-CudaImage ImageAllocator::allocate(int width, int height, int channels,
-                                  bool usePool) {
+CudaImage ImageAllocator::allocate(int width, int height, int channels) {
   if (width <= 0 || height <= 0 ||
       (channels != 1 && channels != 3 && channels != 4)) {
     throw std::invalid_argument("Invalid image parameters");
@@ -86,44 +84,29 @@ CudaImage ImageAllocator::allocate(int width, int height, int channels,
   image.width = width;
   image.height = height;
   image.channels = channels;
-
-  size_t size = image.totalBytes();
-
-  if (usePool && poolingEnabled_) {
-    image.buffer = MemoryManager::instance().allocate(size);
-  } else {
-    image.buffer = DeviceBuffer(size);
-  }
-
+  image.buffer = DeviceBuffer(image.totalBytes());
   return image;
 }
 
-bool ImageAllocator::ensureSize(const CudaImage& input, CudaImage& output,
-                                bool usePool) {
+bool ImageAllocator::ensureSize(const CudaImage& input, CudaImage& output) {
   if (output.width != input.width || output.height != input.height ||
       output.channels != input.channels || !output.isValid()) {
-    output = allocate(input.width, input.height, input.channels, usePool);
+    output = allocate(input.width, input.height, input.channels);
     return true;
   }
   return false;
 }
 
 bool ImageAllocator::ensureSize(CudaImage& output, int width, int height,
-                                int channels, bool usePool) {
+                                int channels) {
   if (output.width != width || output.height != height ||
       output.channels != channels || !output.isValid()) {
-    output = allocate(width, height, channels, usePool);
+    output = allocate(width, height, channels);
     return true;
   }
   return false;
 }
 
-void ImageAllocator::recycleToPool(CudaImage&& image) {
-  if (poolingEnabled_.load(std::memory_order_relaxed) && image.isValid()) {
-    MemoryManager::instance().deallocate(std::move(image.buffer));
-  }
-  // If pooling disabled, just let the CudaImage destructor handle it
-}
 
 // ===== ExecutionContext Implementation =====
 
@@ -155,8 +138,5 @@ bool ExecutionContext::ensureOutputSize(CudaImage& output, int width, int height
   return ImageAllocator::instance().ensureSize(output, width, height, channels);
 }
 
-void ExecutionContext::recycleToPool(CudaImage&& image) {
-  ImageAllocator::instance().recycleToPool(std::move(image));
-}
 
 } // namespace cudaimg

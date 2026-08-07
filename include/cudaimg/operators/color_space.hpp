@@ -20,12 +20,6 @@ public:
   static void yuvToRgb(const CudaImage& input, CudaImage& output,
                        cudaStream_t stream = nullptr);
 
-  // RGB <-> Lab (CIE L*a*b*)
-  static void rgbToLab(const CudaImage& input, CudaImage& output,
-                       cudaStream_t stream = nullptr);
-  static void labToRgb(const CudaImage& input, CudaImage& output,
-                       cudaStream_t stream = nullptr);
-
   // 通道分离
   static void splitChannels(const CudaImage& input, CudaImage& channel0,
                             CudaImage& channel1, CudaImage& channel2,

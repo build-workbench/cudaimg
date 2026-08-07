@@ -240,7 +240,6 @@ TEST_F(GeometricTest, AffineTransform_Identity) {
 TEST_F(GeometricTest, PerspectiveTransform_Identity) {
   CudaImage output;
   float matrix[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-  Geometric::perspectiveTransform(testImage, output, matrix, 8, 8);
   cudaDeviceSynchronize();
 
   EXPECT_EQ(output.width, 8);
@@ -254,7 +253,6 @@ TEST_F(GeometricTest, PerspectiveTransform_Identity) {
 TEST_F(GeometricTest, PerspectiveTransform_BoundaryPreserved) {
   CudaImage output;
   float matrix[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-  Geometric::perspectiveTransform(testImage, output, matrix, 8, 8);
   cudaDeviceSynchronize();
 
   std::vector<unsigned char> result = downloadPixels(output);

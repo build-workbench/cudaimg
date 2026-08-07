@@ -47,13 +47,6 @@ ImageProcessor::ImageProcessor(ExecutionPolicy policy)
 
 // ===== Configuration =====
 
-void ImageProcessor::setMemoryPooling(bool enabled) {
-  ImageAllocator::instance().setPoolingEnabled(enabled);
-}
-
-bool ImageProcessor::isMemoryPoolingEnabled() const {
-  return ImageAllocator::instance().isPoolingEnabled();
-}
 
 void ImageProcessor::setMode(Mode mode) {
   context_ = ExecutionContext(makePolicy(mode));
@@ -352,15 +345,6 @@ CudaImage ImageProcessor::yuvToRgb(const CudaImage& input) {
       [&](CudaImage& o, cudaStream_t s) { ColorSpace::yuvToRgb(input, o, s); });
 }
 
-CudaImage ImageProcessor::rgbToLab(const CudaImage& input) {
-  return invoke(
-      [&](CudaImage& o, cudaStream_t s) { ColorSpace::rgbToLab(input, o, s); });
-}
-
-CudaImage ImageProcessor::labToRgb(const CudaImage& input) {
-  return invoke(
-      [&](CudaImage& o, cudaStream_t s) { ColorSpace::labToRgb(input, o, s); });
-}
 
 // ===== Image Arithmetic =====
 
@@ -370,18 +354,6 @@ CudaImage ImageProcessor::add(const CudaImage& src1, const CudaImage& src2) {
   });
 }
 
-CudaImage ImageProcessor::subtract(const CudaImage& src1, const CudaImage& src2) {
-  return invoke([&](CudaImage& o, cudaStream_t s) {
-    ImageArithmetic::subtract(src1, src2, o, s);
-  });
-}
-
-CudaImage ImageProcessor::multiply(const CudaImage& src1, const CudaImage& src2,
-                                  float scale) {
-  return invoke([&](CudaImage& o, cudaStream_t s) {
-    ImageArithmetic::multiply(src1, src2, o, scale, s);
-  });
-}
 
 CudaImage ImageProcessor::blend(const CudaImage& src1, const CudaImage& src2,
                                float alpha) {
@@ -390,19 +362,6 @@ CudaImage ImageProcessor::blend(const CudaImage& src1, const CudaImage& src2,
   });
 }
 
-CudaImage ImageProcessor::addWeighted(const CudaImage& src1, float alpha,
-                                     const CudaImage& src2, float beta,
-                                     float gamma) {
-  return invoke([&](CudaImage& o, cudaStream_t s) {
-    ImageArithmetic::addWeighted(src1, alpha, src2, beta, o, gamma, s);
-  });
-}
-
-CudaImage ImageProcessor::absDiff(const CudaImage& src1, const CudaImage& src2) {
-  return invoke([&](CudaImage& o, cudaStream_t s) {
-    ImageArithmetic::absDiff(src1, src2, o, s);
-  });
-}
 
 CudaImage ImageProcessor::addScalar(const CudaImage& input, unsigned char value) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
@@ -410,11 +369,6 @@ CudaImage ImageProcessor::addScalar(const CudaImage& input, unsigned char value)
   });
 }
 
-CudaImage ImageProcessor::multiplyScalar(const CudaImage& input, float scale) {
-  return invoke([&](CudaImage& o, cudaStream_t s) {
-    ImageArithmetic::multiplyScalar(input, o, scale, s);
-  });
-}
 
 // ===== Synchronization =====
 

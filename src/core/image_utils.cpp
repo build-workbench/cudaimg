@@ -6,15 +6,8 @@
 
 namespace cudaimg {
 
-// ===== Memory pooling configuration (delegates to ImageAllocator) =====
 
-void ImageUtils::setMemoryPoolingEnabled(bool enabled) {
-  ImageAllocator::instance().setPoolingEnabled(enabled);
-}
 
-bool ImageUtils::isMemoryPoolingEnabled() {
-  return ImageAllocator::instance().isPoolingEnabled();
-}
 
 // ===== Image Creation =====
 
