@@ -1,5 +1,6 @@
 #include "cudaimg/core/cuda_error.hpp"
 #include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/core/kernel_helpers.hpp"
 #include "cudaimg/operators/convolution_engine.hpp"
 #include <cmath>
 #include <stdexcept>
@@ -262,9 +263,7 @@ void ConvolutionEngine::convolve(const CudaImage& input, CudaImage& output,
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
   }
-  if (kernelSize < 1 || kernelSize > 7 || kernelSize % 2 == 0) {
-    throw std::invalid_argument("Kernel size must be odd and between 1 and 7");
-  }
+  validateKernelSize(kernelSize);
   if (kernel == nullptr) {
     throw std::invalid_argument("Kernel is null");
   }
@@ -301,9 +300,7 @@ void ConvolutionEngine::convolve(const CudaImage& input, CudaImage& output,
 void ConvolutionEngine::gaussianBlur(const CudaImage& input, CudaImage& output,
                                      int kernelSize, float sigma,
                                      cudaStream_t stream) {
-  if (kernelSize < 1 || kernelSize > 7 || kernelSize % 2 == 0) {
-    throw std::invalid_argument("Kernel size must be odd and between 1 and 7");
-  }
+  validateKernelSize(kernelSize);
   if (sigma <= 0.0f) {
     throw std::invalid_argument("Sigma must be positive");
   }
@@ -398,9 +395,7 @@ void ConvolutionEngine::separableConvolve(const CudaImage& input,
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
   }
-  if (kernelSize < 1 || kernelSize > 7 || kernelSize % 2 == 0) {
-    throw std::invalid_argument("Kernel size must be odd and between 1 and 7");
-  }
+  validateKernelSize(kernelSize);
   if (rowKernel == nullptr || colKernel == nullptr) {
     throw std::invalid_argument("Kernel is null");
   }

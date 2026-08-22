@@ -110,22 +110,6 @@ TEST_F(ExecutionContextTest, AllocatorSingleton) {
   EXPECT_EQ(&alloc1, &alloc2);
 }
 
-// Test memory pooling toggle
-TEST_F(ExecutionContextTest, MemoryPoolingToggle) {
-  auto& allocator = ImageAllocator::instance();
-
-  bool originalState = allocator.isPoolingEnabled();
-
-  allocator.setPoolingEnabled(true);
-  EXPECT_TRUE(allocator.isPoolingEnabled());
-
-  allocator.setPoolingEnabled(false);
-  EXPECT_FALSE(allocator.isPoolingEnabled());
-
-  // Restore original state
-  allocator.setPoolingEnabled(originalState);
-}
-
 // Test ImageProcessor modes
 TEST_F(ExecutionContextTest, ImageProcessorModes) {
   ImageProcessor syncProcessor(ImageProcessor::Mode::Sync);

@@ -1,7 +1,7 @@
 #pragma once
 
-// cudaimg - CUDA 图像处理入门教学项目
-// 通过图像处理算子学习 CUDA 编程
+// cudaimg - CUDA 图像处理练手项目
+// 通过图像处理算子练习 CUDA 编程
 
 #include <cuda_runtime.h>
 #include <string>
@@ -9,7 +9,6 @@
 // Core components
 #include "cudaimg/core/cuda_error.hpp"
 #include "cudaimg/core/device_buffer.hpp"
-#include "cudaimg/core/device_kernels.cuh"
 #include "cudaimg/core/execution_context.hpp"
 #include "cudaimg/core/image.hpp"
 #include "cudaimg/core/image_utils.hpp"

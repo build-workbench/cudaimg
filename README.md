@@ -1,4 +1,4 @@
-# cudaimg — CUDA 图像处理入门教程
+# cudaimg — CUDA 图像处理练手项目
 
 ![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
@@ -7,7 +7,7 @@
 
 通过图像处理算子学习 CUDA 编程。每个 GPU kernel 都有 CPU 参考实现做正确性验证，按概念难度递进组织。
 
-> **教学项目，已归档。** 代码以可读性优先，不追求极致性能，不替代 OpenCV。
+> **个人练手项目，接近完结。** 代码以可读性优先，不追求极致性能，不替代 OpenCV。
 
 ---
 
@@ -15,20 +15,20 @@
 
 - 一组用 CUDA 实现的图像处理算子（像素操作、卷积、直方图、几何变换、形态学等）
 - 每个 GPU kernel 配有 CPU 参考实现，通过逐像素比对验证正确性
-- 按 CUDA 概念难度从简单到复杂递进，适合从零开始学 GPU 编程
+- 按 CUDA 概念难度递进组织，核心路径（Lv1-Lv7）覆盖线程模型到多流流水线
 - 三层架构（基础设施 → 算子 → 门面），代码可导航
 
 ## 这不是什么
 
 - **不是 OpenCV 替代品** — `cv::cuda` 已覆盖全部功能且经过工业级优化
-- **不是高性能库** — kernel 实现为教学清晰度优先，未做 occupancy 调优
-- **不接受功能请求** — 项目已归档，作为学习参考保留
+- **不是高性能库** — kernel 实现为可读性优先，未做 occupancy 调优
+- **不是教程项目** — 学习路径是源码阅读地图，不提供手把手讲解；配套示例只覆盖核心算子
 
 ---
 
 ## 学习路径
 
-按以下顺序阅读源码，每个阶段引入一个新的 CUDA 概念：
+按以下顺序阅读源码，每个阶段引入一个新的 CUDA 概念。这是项目的**核心主线**：
 
 | 阶段 | 源文件 | 学到的 CUDA 概念 |
 |------|--------|-----------------|
@@ -39,6 +39,20 @@
 | **Lv5** | `src/operators/histogram_calculator.cu` | block 级 shared memory 直方图、`atomicAdd` 规约到全局 |
 | **Lv6** | `src/operators/image_resizer.cu` | 浮点坐标映射、双线性插值的 GPU 实现 |
 | **Lv7** | `src/processing/pipeline_processor.cu` | 多 stream 创建/销毁、async 提交、batch 同步 |
+
+## 自学模块
+
+以下模块不在核心学习路径中，是路径完成后的自学练习材料——每个都复用了
+主线的概念，但引入了新的工程问题（分支发散、原子竞争、浮点精度等），
+适合作为独立阅读或练手改造的素材：
+
+| 模块 | 源文件 | 复用的概念 | 新的挑战 |
+|------|--------|-----------|---------|
+| 形态学 | `src/operators/morphology.cu` | Lv1 邻域遍历、结构元素掩码 | min/max 规约替代加权和 |
+| 阈值处理 | `src/operators/threshold.cu` | Lv5 直方图（Otsu 复用直方图计算） | 局部窗口均值、数值溢出防护 |
+| 中值/双边滤波 | `src/operators/filters.cu` | Lv3 邻域遍历 | 排序找中值的分支开销、双边权重计算 |
+| 几何变换 | `src/operators/geometric.cu` | Lv6 坐标逆映射 | 仿射矩阵、输出尺寸计算 |
+| 色彩空间 | `src/operators/color_space.cu` | Lv1 逐像素操作 | 浮点精度、通道拆分合并 |
 
 > 详见 [学习路径详解](docs/learning-path.md)
 

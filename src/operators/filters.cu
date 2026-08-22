@@ -1,5 +1,6 @@
 #include "cudaimg/core/cuda_error.hpp"
 #include "cudaimg/core/image_utils.hpp"
+#include "cudaimg/core/kernel_helpers.hpp"
 #include "cudaimg/operators/filters.hpp"
 #include <cmath>
 #include <stdexcept>
@@ -239,9 +240,7 @@ void Filters::medianFilter(const CudaImage& input, CudaImage& output,
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
   }
-  if (kernelSize < 1 || kernelSize > 7 || kernelSize % 2 == 0) {
-    throw std::invalid_argument("Kernel size must be odd and between 1-7");
-  }
+  validateKernelSize(kernelSize);
 
   ImageUtils::ensureOutputSize(output, input.width, input.height,
                                input.channels);
@@ -264,9 +263,8 @@ void Filters::bilateralFilter(const CudaImage& input, CudaImage& output,
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
   }
-  if (kernelSize < 1 || kernelSize > 31 || kernelSize % 2 == 0) {
-    throw std::invalid_argument("Kernel size must be odd and between 1-31");
-  }
+  validateKernelSize(kernelSize, 1, 31,
+                     "Kernel size must be odd and between 1-31");
   if (sigmaSpace <= 0.0f) {
     throw std::invalid_argument("sigmaSpace must be positive");
   }
@@ -294,9 +292,8 @@ void Filters::boxFilter(const CudaImage& input, CudaImage& output, int kernelSiz
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
   }
-  if (kernelSize < 1 || kernelSize > 31 || kernelSize % 2 == 0) {
-    throw std::invalid_argument("Kernel size must be odd and between 1-31");
-  }
+  validateKernelSize(kernelSize, 1, 31,
+                     "Kernel size must be odd and between 1-31");
 
   ImageUtils::ensureOutputSize(output, input.width, input.height,
                                input.channels);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "cudaimg/core/image.hpp"
-#include <atomic>
 #include <cuda_runtime.h>
 #include <functional>
 #include <memory>
@@ -17,7 +16,7 @@ namespace cudaimg {
 /// Interface contract:
 /// - Sync: Blocks until operation completes
 /// - Async: Returns immediately, operation may still be in flight
-/// - Batch: Operations queued to internal stream, syncAll() waits for all
+/// - Batch: Operations queued to an internal stream, synchronize() waits
 class ExecutionPolicy {
 public:
   /// Predefined execution strategies
@@ -25,7 +24,7 @@ public:
   enum class Mode {
     Sync,  ///< Synchronous execution (cudaDeviceSynchronize)
     Async, ///< Asynchronous execution (caller manages stream)
-    Batch  ///< Batch execution (internal stream pool)
+    Batch  ///< Batch execution (single internal stream)
   };
 
   /// Create a synchronous policy (default)
@@ -88,9 +87,7 @@ public:
 
   /// Allocate a CudaImage with specified dimensions
   /// 分配指定尺寸的 CudaImage
-  /// @param usePool If true, use memory pool when available
-  [[nodiscard]] CudaImage allocate(int width, int height, int channels,
-                                  bool usePool = true);
+  [[nodiscard]] CudaImage allocate(int width, int height, int channels);
 
   /// Ensure output image matches input dimensions
   /// 确保输出图像与输入尺寸匹配
@@ -102,13 +99,6 @@ public:
   /// @return true if reallocation occurred
   [[nodiscard]] bool ensureSize(CudaImage& output, int width, int height,
                                 int channels);
-
-  /// Check if pooling is enabled
-  /// 检查内存池是否启用
-  /// @note Thread-safe: uses atomic operations
-  [[nodiscard]] bool isPoolingEnabled() const {
-    return poolingEnabled_.load(std::memory_order_relaxed);
-  }
 
 private:
   ImageAllocator() = default;

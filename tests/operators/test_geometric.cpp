@@ -237,30 +237,6 @@ TEST_F(GeometricTest, AffineTransform_Identity) {
   EXPECT_EQ(result, original);
 }
 
-TEST_F(GeometricTest, PerspectiveTransform_Identity) {
-  CudaImage output;
-  float matrix[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-  cudaDeviceSynchronize();
-
-  EXPECT_EQ(output.width, 8);
-  EXPECT_EQ(output.height, 8);
-
-  std::vector<unsigned char> original = downloadPixels(testImage);
-  std::vector<unsigned char> result = downloadPixels(output);
-  EXPECT_EQ(result, original);
-}
-
-TEST_F(GeometricTest, PerspectiveTransform_BoundaryPreserved) {
-  CudaImage output;
-  float matrix[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-  cudaDeviceSynchronize();
-
-  std::vector<unsigned char> result = downloadPixels(output);
-  EXPECT_EQ(result[7], 28);
-  EXPECT_EQ(result[56], 224);
-  EXPECT_EQ(result[63], 252);
-}
-
 TEST_F(GeometricTest, AffineTransform_Scale) {
   CudaImage output;
   float matrix[6] = {2, 0, 0, 0, 2, 0}; // 2x 缩放

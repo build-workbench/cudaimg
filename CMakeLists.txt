@@ -86,8 +86,8 @@ if(CUDAIMG_ENABLE_IO)
     FetchContent_Declare(
         stb
         GIT_REPOSITORY https://github.com/nothings/stb.git
-        # stb master HEAD（2026-07 核实存在；旧 tag ae721c54 在上游不存在，导致配置失败）
-        GIT_TAG 31c1ad37456438565541f4919958214b6e762fb4
+        # stb master HEAD（2026-08 经 git ls-remote 核实；旧 commit 在上游不存在会导致配置失败）
+        GIT_TAG 2c980bb59875b0d32144a71867fbdebb2f77cd20
         GIT_SHALLOW ON
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""

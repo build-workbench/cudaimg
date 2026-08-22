@@ -1,7 +1,10 @@
 # 学习路径详解
 
-本文按 CUDA 概念难度递进顺序，逐文件讲解每个 kernel 涉及的技术点。
-建议按顺序阅读源码，每个阶段先理解概念，再读代码，最后看测试。
+本文按 CUDA 概念难度递进顺序，逐文件讲解每个 kernel 涉及的技术点，
+是项目的核心主线阅读地图。建议按顺序阅读源码，每个阶段先理解概念，
+再读代码，最后看测试。
+
+> 核心路径（Lv1-Lv7）之外的模块见 README 的"自学模块"一节。
 
 ---
 
@@ -95,7 +98,7 @@ static inline bool canVectorize(const CudaImage& img) {
 
 **文件**：`src/operators/convolution_engine.cu` — `convolveKernelShared`
 
-这是本项目的核心教学 kernel。卷积是 memory-bound 操作，朴素实现每个线程读 k² 个全局内存像素，相邻线程大量重复读取。Shared memory tiling 是标准优化手段。
+这是本项目的核心 kernel。卷积是 memory-bound 操作，朴素实现每个线程读 k² 个全局内存像素，相邻线程大量重复读取。Shared memory tiling 是标准优化手段。
 
 ```cpp
 template <int BLOCK_SIZE>
@@ -139,7 +142,7 @@ __global__ void convolveKernelShared(...) {
 
 `KernelData` 结构体硬编码了 `float values[49]`（7×7=49）。原因：
 - shared memory 预算有限（每个 block 通常 48KB）
-- 教学简洁性：覆盖 3×3、5×5、7×7 已足够演示概念
+- 可读性优先：覆盖 3×3、5×5、7×7 已足够演示概念
 - 超过 7×7 时应改用可分离卷积（见 Lv4）
 
 ### 动手练习
@@ -180,7 +183,7 @@ __global__ void convolveKernelShared(...) {
 
 **文件**：`src/operators/histogram_calculator.cu` — `histogramKernelShared`
 
-直方图是原子操作的经典教学案例。每个线程要将像素值对应的 bin 计数 +1，但多个线程可能同时写同一个 bin。
+直方图是原子操作的经典应用案例。每个线程要将像素值对应的 bin 计数 +1，但多个线程可能同时写同一个 bin。
 
 ```cpp
 __global__ void histogramKernelShared(...) {
@@ -249,7 +252,7 @@ return v0 * (1.0f - dy) + v1 * dy;          // 垂直插值
 2. **`__device__` 函数** - 可被 kernel 调用的设备端函数（`bilinearInterpolate`）
 3. **浮点运算在 GPU 上** - `floorf`、`roundf`、`fmaxf`、`fminf` 等 CUDA 数学函数
 
-### 教学说明
+### 实现说明
 
 本项目未使用 CUDA 纹理内存（`cudaTextureObject_t`），纹理硬件可以自动处理插值和边界。这里手动实现插值是为了让初学者理解原理。纹理内存是可选的下一步优化方向。
 
@@ -282,7 +285,7 @@ PipelineProcessor::PipelineProcessor(int numStreams) {
 3. **执行策略** - `ExecutionPolicy` 封装了 Sync / Async / Batch 三种模式：
    - Sync：`cudaDeviceSynchronize()` 阻塞等待
    - Async：调用方管理 stream 生命周期
-   - Batch：内部 stream pool，`syncAll()` 统一等待
+   - Batch：单个内部 stream 排队执行，`synchronize()` 统一等待
 
 ### 坑点
 

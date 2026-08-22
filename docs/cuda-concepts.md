@@ -21,8 +21,8 @@
 | Shared memory 静态数组 | `histogram_calculator.cu` `__shared__ int localHist[256]` | 编译时已知大小 |
 | Shared memory 动态分配 | `convolution_engine.cu` `extern __shared__ float sharedMem[]` | 运行时指定大小 |
 | `uchar4` 向量化 | `pixel_operator.cu` `invertKernelVec4` | 4 字节/线程 |
-| `__constant__` 内存 | （未使用） | 教学扩展方向 |
-| 纹理内存 | （未使用） | 教学扩展方向，见 `image_resizer.cu` 注释 |
+| `__constant__` 内存 | （未使用） | 进阶扩展方向 |
+| 纹理内存 | （未使用） | 进阶扩展方向，见 `image_resizer.cu` 注释 |
 
 ## 同步
 

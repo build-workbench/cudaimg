@@ -24,7 +24,6 @@ nvidia-smi           # GPU 驱动和设备
 | `BUILD_EXAMPLES` | ON | 构建示例程序 |
 | `BUILD_BENCHMARKS` | OFF | 构建基准测试（手写计时器，无外部依赖） |
 | `CUDAIMG_ENABLE_IO` | ON | 启用图像文件 I/O（通过 stb，自动 FetchContent） |
-| `CUDAIMG_ENABLE_INSTALL` | OFF | 生成 install target 和包配置 |
 
 ## 基本构建
 
@@ -44,8 +43,10 @@ ctest --test-dir build --output-on-failure
 ## 运行示例
 
 ```bash
-./build/bin/basic_example       # 基础算子演示
-./build/bin/pipeline_example    # 多步流水线演示
+./build/bin/example_01_pixel       # Lv1-2：像素操作 + 向量化
+./build/bin/example_02_convolution # Lv3-4：卷积 + 可分离卷积
+./build/bin/example_03_histogram   # Lv5：直方图
+./build/bin/pipeline_example       # Lv7：多步流水线对比
 ```
 
 ## 运行基准测试
