@@ -1,28 +1,45 @@
-# cudaimg — CUDA 图像处理练手项目
+# cudaimg — CUDA 图像处理教学代码库
 
 ![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
-通过图像处理算子学习 CUDA 编程。每个 GPU kernel 都有 CPU 参考实现做正确性验证，按概念难度递进组织。
+以图像处理算子为载体、按 CUDA 概念难度递进组织的**教学代码库**。每个 GPU kernel
+都配有 CPU 参考实现做逐像素验证——核心价值不是"能处理图像"，而是**一条可验证、
+可对照源码自学的 CUDA 学习主线**。
 
-> **个人练手项目，接近完结。** 代码以可读性优先，不追求极致性能，不替代 OpenCV。
+> **定位边界**：这是学 CUDA 的代码库，不是图像处理产品库——代码以可读性优先，
+> 不追求极致性能，也不替代 OpenCV。
 
 ---
 
+## 适合谁，读完能得到什么
+
+**适合谁**：有 C++ 基础（指针、模板、编译链接都没问题）、想系统学习 CUDA 的
+自学者、转行者或工程师。**不需要任何 CUDA 经验**——主线从最简单的 kernel 起步。
+
+**读完核心主线（Lv1–Lv7）后**，你可以：
+
+- 写出正确的 2D grid/block kernel，理解线程索引映射与边界检查
+- 用 shared memory + `__syncthreads()` 写 tiling 卷积，清楚 halo 区域的加载方式
+- 用 `atomicAdd` 做 block 级直方图规约
+- 实现双线性插值等浮点坐标映射的 kernel
+- 用多 stream + async 提交组织多步流水线
+- 用 CPU 参考实现做逐像素比对，独立验证 GPU kernel 的正确性
+
 ## 这是什么
 
-- 一组用 CUDA 实现的图像处理算子（像素操作、卷积、直方图、几何变换、形态学等）
-- 每个 GPU kernel 配有 CPU 参考实现，通过逐像素比对验证正确性
-- 按 CUDA 概念难度递进组织，核心路径（Lv1-Lv7）覆盖线程模型到多流流水线
-- 三层架构（基础设施 → 算子 → 门面），代码可导航
+- **渐进式学习主线** — 核心路径（Lv1–Lv7）按 CUDA 概念难度递进，每阶段引入一个新概念，覆盖线程模型到多流流水线
+- **可验证** — 每个 GPU kernel 都配有 CPU 参考实现，测试做逐像素比对，不是"能跑就行"
+- **可导航** — 三层架构（基础设施 → 算子 → 门面）+ 学习路径表格，源码本身就是阅读地图
+- **可扩展自学** — 5 个自学模块（形态学、阈值、滤波、几何、色彩空间）复用主线概念，适合练手改造
 
 ## 这不是什么
 
 - **不是 OpenCV 替代品** — `cv::cuda` 已覆盖全部功能且经过工业级优化
 - **不是高性能库** — kernel 实现为可读性优先，未做 occupancy 调优
-- **不是教程项目** — 学习路径是源码阅读地图，不提供手把手讲解；配套示例只覆盖核心算子
+- **不是手把手教程** — 学习路径是源码阅读地图，按"概念 → 源码 → 测试"自学，不提供逐行讲解
 
 ---
 
@@ -61,7 +78,7 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/AICL-Lab/cudaimg.git
+git clone https://github.com/build-workbench/cudaimg.git
 cd cudaimg
 cmake -S . -B build
 cmake --build build -j$(nproc)
