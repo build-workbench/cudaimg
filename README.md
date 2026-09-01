@@ -77,7 +77,7 @@ cmake --build build -j$(nproc)
 ctest --test-dir build --output-on-failure
 
 # 示例（按学习级别）
-./build/bin/example_01_pixel        # Lv1-2 像素操作
+./build/bin/example_01_pixel        # Lv1 像素操作（内含 Lv2 向量化 dispatch）
 ./build/bin/example_02_convolution  # Lv3-4 卷积
 ./build/bin/example_03_histogram    # Lv5 直方图
 ./build/bin/pipeline_example        # Lv7 多流流水线
@@ -100,7 +100,7 @@ int main() {
     ImageProcessor proc;                          // 默认同步模式
     CudaImage gpu = proc.loadFromHost(host);      // H2D
     CudaImage blurred = proc.gaussianBlur(gpu, 5, 1.5f);
-    CudaImage edges = proc.sobelEdgeDetection(blurred);
+    CudaImage edges = proc.sobelEdgeDetection(blurred); // 单通道梯度幅值图（1ch）
     HostImage result = proc.download(edges);      // D2H
 }
 ```
@@ -123,10 +123,11 @@ proc.synchronize();                      // 统一等待
 ```
 include/cudaimg/
 ├── cudaimg.hpp              # 统一入口
-├── core/                    # 基础设施：Image / DeviceBuffer / ExecutionContext
-├── operators/               # 算子实现（学习重点，Lv1–Lv6）
-└── processing/              # 门面层 ImageProcessor + PipelineProcessor（Lv7）
-src/                         # 对应 .cu/.cpp 实现
+├── core/                    # 基础设施：Image / DeviceBuffer / ExecutionContext (+ kernel_helpers 等)
+├── operators/               # 算子实现（Lv1–Lv6 核心 + 5个自学模块）
+├── processing/              # 门面层 ImageProcessor + PipelineProcessor（Lv7）
+└── io/                      # 图像文件 I/O（stb，可选）
+src/{core,operators,processing,io}/  # 对应 .cu/.cpp 实现
 tests/                       # CPU 参考实现逐像素验证
 examples/                    # 01_pixel / 02_convolution / 03_histogram / pipeline
 benchmarks/                  # 手写计时基准（无外部依赖）
