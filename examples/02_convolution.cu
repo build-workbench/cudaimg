@@ -19,9 +19,9 @@ int main() {
   HostImage host = ImageUtils::createHostImage(64, 64, 3);
   for (int y = 0; y < 64; ++y)
     for (int x = 0; x < 64; ++x) {
-      host.at(x, y, 0) = x * 4;  // R
-      host.at(x, y, 1) = y * 4;  // G
-      host.at(x, y, 2) = 128;    // B
+      host.at(x, y, 0) = x * 4; // R
+      host.at(x, y, 1) = y * 4; // G
+      host.at(x, y, 2) = 128;   // B
     }
 
   ImageProcessor proc;

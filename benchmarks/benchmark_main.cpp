@@ -155,8 +155,9 @@ int main() {
                  [&]() { ColorSpace::rgbToYuv(gpuImage, output); });
 
     // 数据传输
-    runBenchmark("Upload (H2D)",
-                 [&]() { CudaImage temp = ImageUtils::uploadToGpu(hostImage); });
+    runBenchmark("Upload (H2D)", [&]() {
+      CudaImage temp = ImageUtils::uploadToGpu(hostImage);
+    });
 
     runBenchmark("Download (D2H)", [&]() {
       HostImage temp = ImageUtils::downloadFromGpu(gpuImage);

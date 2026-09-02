@@ -146,7 +146,8 @@ public:
 
   /// Ensure output matches input (reallocate if needed)
   /// 确保输出与输入匹配（需要时重新分配）
-  [[nodiscard]] bool ensureOutputSize(const CudaImage& input, CudaImage& output);
+  [[nodiscard]] bool ensureOutputSize(const CudaImage& input,
+                                      CudaImage& output);
 
   /// Ensure output has specified dimensions
   /// 确保输出具有指定尺寸

@@ -107,7 +107,6 @@ bool ImageAllocator::ensureSize(CudaImage& output, int width, int height,
   return false;
 }
 
-
 // ===== ExecutionContext Implementation =====
 
 ExecutionContext::ExecutionContext(ExecutionPolicy policy)
@@ -124,7 +123,8 @@ CudaImage ExecutionContext::allocateOutput(const CudaImage& input) {
                                              input.channels);
 }
 
-CudaImage ExecutionContext::allocateOutput(int width, int height, int channels) {
+CudaImage ExecutionContext::allocateOutput(int width, int height,
+                                           int channels) {
   return ImageAllocator::instance().allocate(width, height, channels);
 }
 
@@ -133,10 +133,9 @@ bool ExecutionContext::ensureOutputSize(const CudaImage& input,
   return ImageAllocator::instance().ensureSize(input, output);
 }
 
-bool ExecutionContext::ensureOutputSize(CudaImage& output, int width, int height,
-                                        int channels) {
+bool ExecutionContext::ensureOutputSize(CudaImage& output, int width,
+                                        int height, int channels) {
   return ImageAllocator::instance().ensureSize(output, width, height, channels);
 }
-
 
 } // namespace cudaimg

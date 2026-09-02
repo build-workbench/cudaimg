@@ -145,13 +145,15 @@ launchMorphKernel(void (*kernel)(const unsigned char*, unsigned char*, int, int,
 }
 
 // Morphology 实现
-void Morphology::erode(const CudaImage& input, CudaImage& output, int kernelSize,
-                       StructuringElement element, cudaStream_t stream) {
+void Morphology::erode(const CudaImage& input, CudaImage& output,
+                       int kernelSize, StructuringElement element,
+                       cudaStream_t stream) {
   launchMorphKernel(erodeKernel, input, output, kernelSize, element, stream);
 }
 
-void Morphology::dilate(const CudaImage& input, CudaImage& output, int kernelSize,
-                        StructuringElement element, cudaStream_t stream) {
+void Morphology::dilate(const CudaImage& input, CudaImage& output,
+                        int kernelSize, StructuringElement element,
+                        cudaStream_t stream) {
   launchMorphKernel(dilateKernel, input, output, kernelSize, element, stream);
 }
 
@@ -162,8 +164,9 @@ void Morphology::open(const CudaImage& input, CudaImage& output, int kernelSize,
   dilate(temp, output, kernelSize, element, stream);
 }
 
-void Morphology::close(const CudaImage& input, CudaImage& output, int kernelSize,
-                       StructuringElement element, cudaStream_t stream) {
+void Morphology::close(const CudaImage& input, CudaImage& output,
+                       int kernelSize, StructuringElement element,
+                       cudaStream_t stream) {
   CudaImage temp;
   dilate(input, temp, kernelSize, element, stream);
   erode(temp, output, kernelSize, element, stream);
@@ -192,8 +195,9 @@ void Morphology::gradient(const CudaImage& input, CudaImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Morphology::topHat(const CudaImage& input, CudaImage& output, int kernelSize,
-                        StructuringElement element, cudaStream_t stream) {
+void Morphology::topHat(const CudaImage& input, CudaImage& output,
+                        int kernelSize, StructuringElement element,
+                        cudaStream_t stream) {
   CudaImage opened;
   open(input, opened, kernelSize, element, stream);
 

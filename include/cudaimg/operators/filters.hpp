@@ -35,8 +35,8 @@ public:
 class ImageArithmetic {
 public:
   // 图像加法
-  static void add(const CudaImage& src1, const CudaImage& src2, CudaImage& output,
-                  cudaStream_t stream = nullptr);
+  static void add(const CudaImage& src1, const CudaImage& src2,
+                  CudaImage& output, cudaStream_t stream = nullptr);
 
   // 图像混合 (alpha blending)
   static void blend(const CudaImage& src1, const CudaImage& src2,

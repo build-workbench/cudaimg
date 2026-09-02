@@ -47,7 +47,6 @@ ImageProcessor::ImageProcessor(ExecutionPolicy policy)
 
 // ===== Configuration =====
 
-
 void ImageProcessor::setMode(Mode mode) {
   context_ = ExecutionContext(makePolicy(mode));
 }
@@ -55,7 +54,7 @@ void ImageProcessor::setMode(Mode mode) {
 // ===== Image Loading/Unloading =====
 
 CudaImage ImageProcessor::loadFromMemory(const unsigned char* data, int width,
-                                        int height, int channels) {
+                                         int height, int channels) {
   if (data == nullptr) {
     throw std::invalid_argument("Data pointer is null");
   }
@@ -127,7 +126,7 @@ void ImageProcessor::adjustBrightnessInPlace(CudaImage& image, int offset) {
 // ===== Convolution Operations =====
 
 CudaImage ImageProcessor::gaussianBlur(const CudaImage& input, int kernelSize,
-                                      float sigma) {
+                                       float sigma) {
   CudaImage output;
   ConvolutionEngine::gaussianBlur(input, output, kernelSize, sigma,
                                   context_.stream());
@@ -143,7 +142,7 @@ CudaImage ImageProcessor::sobelEdgeDetection(const CudaImage& input) {
 }
 
 CudaImage ImageProcessor::convolve(const CudaImage& input, const float* kernel,
-                                  int kernelSize, BorderMode borderMode) {
+                                   int kernelSize, BorderMode borderMode) {
   CudaImage output;
   ConvolutionEngine::convolve(input, output, kernel, kernelSize, borderMode,
                               context_.stream());
@@ -176,7 +175,7 @@ CudaImage ImageProcessor::histogramEqualize(const CudaImage& input) {
 // ===== Geometric Operations =====
 
 CudaImage ImageProcessor::resize(const CudaImage& input, int newWidth,
-                                int newHeight, InterpolationMode mode) {
+                                 int newHeight, InterpolationMode mode) {
   CudaImage output;
   ImageResizer::resize(input, output, newWidth, newHeight, mode,
                        context_.stream());
@@ -185,7 +184,7 @@ CudaImage ImageProcessor::resize(const CudaImage& input, int newWidth,
 }
 
 CudaImage ImageProcessor::resizeByScale(const CudaImage& input, float scaleX,
-                                       float scaleY, InterpolationMode mode) {
+                                        float scaleY, InterpolationMode mode) {
   CudaImage output;
   ImageResizer::resizeByScale(input, output, scaleX, scaleY, mode,
                               context_.stream());
@@ -207,21 +206,22 @@ CudaImage ImageProcessor::rotate90(const CudaImage& input, int times) {
   });
 }
 
-CudaImage ImageProcessor::flip(const CudaImage& input, FlipDirection direction) {
+CudaImage ImageProcessor::flip(const CudaImage& input,
+                               FlipDirection direction) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Geometric::flip(input, o, direction, s);
   });
 }
 
 CudaImage ImageProcessor::crop(const CudaImage& input, int x, int y, int width,
-                              int height) {
+                               int height) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Geometric::crop(input, o, x, y, width, height, s);
   });
 }
 
 CudaImage ImageProcessor::pad(const CudaImage& input, int top, int bottom,
-                             int left, int right, unsigned char padValue) {
+                              int left, int right, unsigned char padValue) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Geometric::pad(input, o, top, bottom, left, right, padValue, s);
   });
@@ -230,35 +230,35 @@ CudaImage ImageProcessor::pad(const CudaImage& input, int top, int bottom,
 // ===== Morphology =====
 
 CudaImage ImageProcessor::erode(const CudaImage& input, int kernelSize,
-                               StructuringElement element) {
+                                StructuringElement element) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Morphology::erode(input, o, kernelSize, element, s);
   });
 }
 
 CudaImage ImageProcessor::dilate(const CudaImage& input, int kernelSize,
-                                StructuringElement element) {
+                                 StructuringElement element) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Morphology::dilate(input, o, kernelSize, element, s);
   });
 }
 
 CudaImage ImageProcessor::morphOpen(const CudaImage& input, int kernelSize,
-                                   StructuringElement element) {
+                                    StructuringElement element) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Morphology::open(input, o, kernelSize, element, s);
   });
 }
 
 CudaImage ImageProcessor::morphClose(const CudaImage& input, int kernelSize,
-                                    StructuringElement element) {
+                                     StructuringElement element) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Morphology::close(input, o, kernelSize, element, s);
   });
 }
 
 CudaImage ImageProcessor::morphGradient(const CudaImage& input, int kernelSize,
-                                       StructuringElement element) {
+                                        StructuringElement element) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Morphology::gradient(input, o, kernelSize, element, s);
   });
@@ -266,18 +266,19 @@ CudaImage ImageProcessor::morphGradient(const CudaImage& input, int kernelSize,
 
 // ===== Threshold =====
 
-CudaImage ImageProcessor::threshold(const CudaImage& input, unsigned char thresh,
-                                   unsigned char maxVal, ThresholdType type) {
+CudaImage ImageProcessor::threshold(const CudaImage& input,
+                                    unsigned char thresh, unsigned char maxVal,
+                                    ThresholdType type) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Threshold::threshold(input, o, thresh, maxVal, type, s);
   });
 }
 
 CudaImage ImageProcessor::adaptiveThreshold(const CudaImage& input,
-                                           unsigned char maxVal,
-                                           AdaptiveMethod method,
-                                           ThresholdType type, int blockSize,
-                                           int C) {
+                                            unsigned char maxVal,
+                                            AdaptiveMethod method,
+                                            ThresholdType type, int blockSize,
+                                            int C) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Threshold::adaptiveThreshold(input, o, maxVal, method, type, blockSize, C,
                                  s);
@@ -285,7 +286,7 @@ CudaImage ImageProcessor::adaptiveThreshold(const CudaImage& input,
 }
 
 CudaImage ImageProcessor::otsuBinarize(const CudaImage& input,
-                                      unsigned char maxVal) {
+                                       unsigned char maxVal) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Threshold::otsuBinarize(input, o, maxVal, s);
   });
@@ -299,8 +300,9 @@ CudaImage ImageProcessor::medianFilter(const CudaImage& input, int kernelSize) {
   });
 }
 
-CudaImage ImageProcessor::bilateralFilter(const CudaImage& input, int kernelSize,
-                                         float sigmaSpace, float sigmaColor) {
+CudaImage ImageProcessor::bilateralFilter(const CudaImage& input,
+                                          int kernelSize, float sigmaSpace,
+                                          float sigmaColor) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     Filters::bilateralFilter(input, o, kernelSize, sigmaSpace, sigmaColor, s);
   });
@@ -345,7 +347,6 @@ CudaImage ImageProcessor::yuvToRgb(const CudaImage& input) {
       [&](CudaImage& o, cudaStream_t s) { ColorSpace::yuvToRgb(input, o, s); });
 }
 
-
 // ===== Image Arithmetic =====
 
 CudaImage ImageProcessor::add(const CudaImage& src1, const CudaImage& src2) {
@@ -354,21 +355,19 @@ CudaImage ImageProcessor::add(const CudaImage& src1, const CudaImage& src2) {
   });
 }
 
-
 CudaImage ImageProcessor::blend(const CudaImage& src1, const CudaImage& src2,
-                               float alpha) {
+                                float alpha) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     ImageArithmetic::blend(src1, src2, o, alpha, s);
   });
 }
 
-
-CudaImage ImageProcessor::addScalar(const CudaImage& input, unsigned char value) {
+CudaImage ImageProcessor::addScalar(const CudaImage& input,
+                                    unsigned char value) {
   return invoke([&](CudaImage& o, cudaStream_t s) {
     ImageArithmetic::addScalar(input, o, value, s);
   });
 }
-
 
 // ===== Synchronization =====
 

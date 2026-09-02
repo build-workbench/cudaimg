@@ -287,8 +287,8 @@ void Filters::bilateralFilter(const CudaImage& input, CudaImage& output,
   CUDA_CHECK(cudaGetLastError());
 }
 
-void Filters::boxFilter(const CudaImage& input, CudaImage& output, int kernelSize,
-                        cudaStream_t stream) {
+void Filters::boxFilter(const CudaImage& input, CudaImage& output,
+                        int kernelSize, cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");
   }
@@ -384,7 +384,6 @@ void ImageArithmetic::add(const CudaImage& src1, const CudaImage& src2,
   CUDA_CHECK(cudaGetLastError());
 }
 
-
 void ImageArithmetic::blend(const CudaImage& src1, const CudaImage& src2,
                             CudaImage& output, float alpha,
                             cudaStream_t stream) {
@@ -417,7 +416,6 @@ void ImageArithmetic::blend(const CudaImage& src1, const CudaImage& src2,
   CUDA_CHECK(cudaGetLastError());
 }
 
-
 void ImageArithmetic::addScalar(const CudaImage& input, CudaImage& output,
                                 unsigned char value, cudaStream_t stream) {
   if (!input.isValid()) {
@@ -442,6 +440,5 @@ void ImageArithmetic::addScalar(const CudaImage& input, CudaImage& output,
 
   CUDA_CHECK(cudaGetLastError());
 }
-
 
 } // namespace cudaimg

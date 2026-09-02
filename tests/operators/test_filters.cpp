@@ -1,8 +1,8 @@
 #include "cudaimg/core/image.hpp"
 #include "cudaimg/core/image_utils.hpp"
 #include "cudaimg/operators/filters.hpp"
-#include <gtest/gtest.h>
 #include <algorithm>
+#include <gtest/gtest.h>
 
 using namespace cudaimg;
 
@@ -131,7 +131,6 @@ TEST_F(ArithmeticTest, Add) {
   EXPECT_EQ(result[0], 150); // 100 + 50
 }
 
-
 TEST_F(ArithmeticTest, Blend) {
   CudaImage output;
   ImageArithmetic::blend(image1, image2, output, 0.5f);
@@ -143,7 +142,6 @@ TEST_F(ArithmeticTest, Blend) {
   EXPECT_EQ(result[0], 75); // 0.5*100 + 0.5*50
 }
 
-
 TEST_F(ArithmeticTest, AddScalar) {
   CudaImage output;
   ImageArithmetic::addScalar(image1, output, 20);
@@ -154,8 +152,6 @@ TEST_F(ArithmeticTest, AddScalar) {
 
   EXPECT_EQ(result[0], 120); // 100 + 20
 }
-
-
 
 TEST_F(ArithmeticTest, DimensionMismatch) {
   CudaImage small = ImageUtils::createCudaImage(4, 4, 1);
@@ -201,15 +197,16 @@ protected:
               sum += input.at(nx, ny, c);
             }
           }
-          output.at(x, y, c) =
-              static_cast<unsigned char>(sum / (kernelSize * kernelSize) + 0.5f);
+          output.at(x, y, c) = static_cast<unsigned char>(
+              sum / (kernelSize * kernelSize) + 0.5f);
         }
       }
     }
   }
 
   // CPU 中值滤波参考
-  void cpuMedianFilter(const HostImage& input, HostImage& output, int kernelSize) {
+  void cpuMedianFilter(const HostImage& input, HostImage& output,
+                       int kernelSize) {
     int radius = kernelSize / 2;
     std::vector<unsigned char> window(kernelSize * kernelSize);
     for (int y = 0; y < input.height; ++y) {
@@ -237,10 +234,14 @@ protected:
         for (int c = 0; c < input.channels; ++c) {
           float center = input.at(x, y, c);
           float sum = center * (1.0f + 4.0f * strength);
-          if (x > 0) sum -= strength * input.at(x - 1, y, c);
-          if (x < input.width - 1) sum -= strength * input.at(x + 1, y, c);
-          if (y > 0) sum -= strength * input.at(x, y - 1, c);
-          if (y < input.height - 1) sum -= strength * input.at(x, y + 1, c);
+          if (x > 0)
+            sum -= strength * input.at(x - 1, y, c);
+          if (x < input.width - 1)
+            sum -= strength * input.at(x + 1, y, c);
+          if (y > 0)
+            sum -= strength * input.at(x, y - 1, c);
+          if (y < input.height - 1)
+            sum -= strength * input.at(x, y + 1, c);
           sum = std::max(0.0f, std::min(255.0f, sum));
           output.at(x, y, c) = static_cast<unsigned char>(sum);
         }

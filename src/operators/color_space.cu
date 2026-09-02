@@ -166,7 +166,6 @@ __global__ void yuvToRgbKernel(const unsigned char* input,
       static_cast<unsigned char>(fminf(fmaxf(b + 0.5f, 0.0f), 255.0f));
 }
 
-
 // 通道分离 Kernel
 __global__ void splitChannelsKernel(const unsigned char* input,
                                     unsigned char* ch0, unsigned char* ch1,
@@ -286,7 +285,6 @@ void ColorSpace::yuvToRgb(const CudaImage& input, CudaImage& output,
 
   CUDA_CHECK(cudaGetLastError());
 }
-
 
 void ColorSpace::splitChannels(const CudaImage& input, CudaImage& channel0,
                                CudaImage& channel1, CudaImage& channel2,

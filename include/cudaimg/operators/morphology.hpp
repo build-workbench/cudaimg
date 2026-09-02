@@ -16,7 +16,8 @@ enum class StructuringElement {
 class Morphology {
 public:
   // 腐蚀操作
-  static void erode(const CudaImage& input, CudaImage& output, int kernelSize = 3,
+  static void erode(const CudaImage& input, CudaImage& output,
+                    int kernelSize = 3,
                     StructuringElement element = StructuringElement::Rectangle,
                     cudaStream_t stream = nullptr);
 
@@ -27,12 +28,14 @@ public:
                      cudaStream_t stream = nullptr);
 
   // 开运算 (先腐蚀后膨胀)
-  static void open(const CudaImage& input, CudaImage& output, int kernelSize = 3,
+  static void open(const CudaImage& input, CudaImage& output,
+                   int kernelSize = 3,
                    StructuringElement element = StructuringElement::Rectangle,
                    cudaStream_t stream = nullptr);
 
   // 闭运算 (先膨胀后腐蚀)
-  static void close(const CudaImage& input, CudaImage& output, int kernelSize = 3,
+  static void close(const CudaImage& input, CudaImage& output,
+                    int kernelSize = 3,
                     StructuringElement element = StructuringElement::Rectangle,
                     cudaStream_t stream = nullptr);
 

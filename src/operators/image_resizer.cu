@@ -166,8 +166,8 @@ __global__ void resizeBicubicKernel(const unsigned char* input,
 }
 
 // ImageResizer 实现
-void ImageResizer::resize(const CudaImage& input, CudaImage& output, int newWidth,
-                          int newHeight, InterpolationMode mode,
+void ImageResizer::resize(const CudaImage& input, CudaImage& output,
+                          int newWidth, int newHeight, InterpolationMode mode,
                           cudaStream_t stream) {
   if (!input.isValid()) {
     throw std::invalid_argument("Invalid input image");

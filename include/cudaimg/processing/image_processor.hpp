@@ -57,7 +57,7 @@ public:
   /// Load image from raw memory to GPU
   /// 从原始内存加载图像到 GPU
   CudaImage loadFromMemory(const unsigned char* data, int width, int height,
-                          int channels);
+                           int channels);
 
   /// Load image from HostImage to GPU
   /// 从 HostImage 加载图像到 GPU
@@ -99,7 +99,7 @@ public:
   /// Gaussian blur
   /// 高斯模糊
   CudaImage gaussianBlur(const CudaImage& input, int kernelSize = 5,
-                        float sigma = 1.0f);
+                         float sigma = 1.0f);
 
   /// Sobel edge detection
   /// Sobel 边缘检测
@@ -107,8 +107,8 @@ public:
 
   /// General convolution
   /// 通用卷积
-  CudaImage convolve(const CudaImage& input, const float* kernel, int kernelSize,
-                    BorderMode borderMode = BorderMode::Zero);
+  CudaImage convolve(const CudaImage& input, const float* kernel,
+                     int kernelSize, BorderMode borderMode = BorderMode::Zero);
 
   // ===== Histogram Operations =====
 
@@ -129,12 +129,12 @@ public:
   /// Resize to specific dimensions
   /// 调整到指定尺寸
   CudaImage resize(const CudaImage& input, int newWidth, int newHeight,
-                  InterpolationMode mode = InterpolationMode::Bilinear);
+                   InterpolationMode mode = InterpolationMode::Bilinear);
 
   /// Resize by scale factors
   /// 按比例因子调整
   CudaImage resizeByScale(const CudaImage& input, float scaleX, float scaleY,
-                         InterpolationMode mode = InterpolationMode::Bilinear);
+                          InterpolationMode mode = InterpolationMode::Bilinear);
 
   // ===== Geometric Transforms =====
 
@@ -156,20 +156,20 @@ public:
 
   /// Pad image with border
   /// 图像填充
-  CudaImage pad(const CudaImage& input, int top, int bottom, int left, int right,
-               unsigned char padValue = 0);
+  CudaImage pad(const CudaImage& input, int top, int bottom, int left,
+                int right, unsigned char padValue = 0);
 
   // ===== Morphology =====
 
   /// Erosion
   /// 腐蚀
   CudaImage erode(const CudaImage& input, int kernelSize = 3,
-                 StructuringElement element = StructuringElement::Rectangle);
+                  StructuringElement element = StructuringElement::Rectangle);
 
   /// Dilation
   /// 膨胀
   CudaImage dilate(const CudaImage& input, int kernelSize = 3,
-                  StructuringElement element = StructuringElement::Rectangle);
+                   StructuringElement element = StructuringElement::Rectangle);
 
   /// Opening (erode then dilate)
   /// 开运算（先腐蚀后膨胀）
@@ -194,14 +194,14 @@ public:
   /// Global threshold
   /// 全局阈值
   CudaImage threshold(const CudaImage& input, unsigned char thresh,
-                     unsigned char maxVal = 255,
-                     ThresholdType type = ThresholdType::Binary);
+                      unsigned char maxVal = 255,
+                      ThresholdType type = ThresholdType::Binary);
 
   /// Adaptive threshold
   /// 自适应阈值
   CudaImage adaptiveThreshold(const CudaImage& input, unsigned char maxVal,
-                             AdaptiveMethod method, ThresholdType type,
-                             int blockSize, int C);
+                              AdaptiveMethod method, ThresholdType type,
+                              int blockSize, int C);
 
   /// Otsu binarization (auto threshold)
   /// Otsu 自动二值化
@@ -216,7 +216,7 @@ public:
   /// Bilateral filter (edge-preserving)
   /// 双边滤波（保边去噪）
   CudaImage bilateralFilter(const CudaImage& input, int kernelSize = 5,
-                           float sigmaSpace = 10.0f, float sigmaColor = 50.0f);
+                            float sigmaSpace = 10.0f, float sigmaColor = 50.0f);
 
   /// Box filter (mean blur)
   /// 均值滤波（盒式滤波）

@@ -21,10 +21,10 @@ private:
 // 内部变量使用保留名，避免与宏展开处的调用方变量冲突
 #define CUDA_CHECK(call)                                                       \
   do {                                                                         \
-    cudaError_t cudaimg_cuda_check_status_ = call;                           \
-    if (cudaimg_cuda_check_status_ != cudaSuccess) {                         \
-      throw cudaimg::CudaException(cudaimg_cuda_check_status_, __FILE__,   \
-                                     __LINE__);                                \
+    cudaError_t cudaimg_cuda_check_status_ = call;                             \
+    if (cudaimg_cuda_check_status_ != cudaSuccess) {                           \
+      throw cudaimg::CudaException(cudaimg_cuda_check_status_, __FILE__,       \
+                                   __LINE__);                                  \
     }                                                                          \
   } while (0)
 

@@ -26,7 +26,8 @@ public:
                             cudaStream_t stream = nullptr);
 
   // 通道合并
-  static void mergeChannels(const CudaImage& channel0, const CudaImage& channel1,
+  static void mergeChannels(const CudaImage& channel0,
+                            const CudaImage& channel1,
                             const CudaImage& channel2, CudaImage& output,
                             cudaStream_t stream = nullptr);
 };

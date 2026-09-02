@@ -179,7 +179,6 @@ __global__ void affineKernel(const unsigned char* input, unsigned char* output,
   }
 }
 
-
 // 裁剪 Kernel
 __global__ void cropKernel(const unsigned char* input, unsigned char* output,
                            int srcWidth, int srcHeight, int dstWidth,
@@ -341,7 +340,6 @@ void Geometric::affineTransform(const CudaImage& input, CudaImage& output,
 
   CUDA_CHECK(cudaGetLastError());
 }
-
 
 void Geometric::crop(const CudaImage& input, CudaImage& output, int x, int y,
                      int width, int height, cudaStream_t stream) {

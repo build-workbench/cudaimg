@@ -6,9 +6,6 @@
 
 namespace cudaimg {
 
-
-
-
 // ===== Image Creation =====
 
 CudaImage ImageUtils::createCudaImage(int width, int height, int channels) {

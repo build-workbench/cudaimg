@@ -39,8 +39,8 @@ public:
                    int width, int height, cudaStream_t stream = nullptr);
 
   // 图像填充
-  static void pad(const CudaImage& input, CudaImage& output, int top, int bottom,
-                  int left, int right, unsigned char padValue = 0,
+  static void pad(const CudaImage& input, CudaImage& output, int top,
+                  int bottom, int left, int right, unsigned char padValue = 0,
                   cudaStream_t stream = nullptr);
 };
 
