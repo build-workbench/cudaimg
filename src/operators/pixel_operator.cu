@@ -74,7 +74,7 @@ __global__ void toGrayscaleKernel(const unsigned char* input,
   }
 }
 
-// ── 教学重点：向量化 dispatch 模式 ─────────────────────────────
+// ── 实现重点：向量化 dispatch 模式 ─────────────────────────────
 //
 // 同一个反色操作有两条路径：
 //   快路径（invertKernelVec4）：总字节数能被 4 整除时，用 uchar4

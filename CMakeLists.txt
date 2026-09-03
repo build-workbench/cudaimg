@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 project(cudaimg
     VERSION 1.0.0
-    DESCRIPTION "CUDA 图像处理入门教学项目"
+    DESCRIPTION "个人 CUDA 图像处理练习项目"
     LANGUAGES CXX
 )
 

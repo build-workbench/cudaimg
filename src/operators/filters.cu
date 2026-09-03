@@ -7,7 +7,7 @@
 
 namespace cudaimg {
 
-// 中值滤波 Kernel（冒泡排序找中值，教学用简单实现）
+// 中值滤波 Kernel（冒泡排序找中值，简单基准实现）
 __global__ void medianFilterKernel(const unsigned char* input,
                                    unsigned char* output, int width, int height,
                                    int channels, int kernelSize) {

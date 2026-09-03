@@ -13,7 +13,7 @@ struct KernelData {
 };
 } // namespace
 
-// ── 教学重点：Shared Memory Tiling ─────────────────────────────
+// ── 实现重点：Shared Memory Tiling ─────────────────────────────
 //
 // 为什么用 shared memory？
 //   朴素卷积：每个线程从 global memory（~200 cycle）读 k² 个像素，

@@ -1,10 +1,9 @@
-# 学习路径详解
+# 核心算子演进与实现记录
 
-本文按 CUDA 概念难度递进顺序，逐文件讲解每个 kernel 涉及的技术点，
-是项目的核心主线阅读地图。建议按顺序阅读源码，每个阶段先理解概念，
-再读代码，最后看测试。
+本文按 CUDA 技术点的复杂度递进顺序，记录各阶段算子实现时的技术细节、设计考量与测试验证方式，
+作为项目核心演进脉络的技术备忘。
 
-> 核心路径（Lv1-Lv7）之外的模块见 README 的"自学模块"一节。
+> 核心主线（Lv1-Lv7）之外的算子见 README 的"扩展算子模块"一节。
 
 ---
 
@@ -12,7 +11,7 @@
 
 **文件**：`src/operators/pixel_operator.cu` — `invertKernelScalar`
 
-这是整个项目中最简单的 kernel，适合作为 CUDA 入门的第一课。
+这是整个项目中最基础的 kernel，作为练习 CUDA 编程的起点。
 
 ```cpp
 __global__ void invertKernelScalar(const unsigned char* input,
