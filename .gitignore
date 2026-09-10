@@ -39,3 +39,10 @@ Thumbs.db
 # VitePress artifacts (已移除，防止残留被误提交)
 docs/node_modules/
 docs/.vitepress/
+
+# AI tools (local only)
+.commandcode/
+.claude/
+.codex/
+.agents/
+.superpowers/
