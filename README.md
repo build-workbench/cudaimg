@@ -9,16 +9,16 @@
 ![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
-`cudaimg` is a lightweight GPU image processing playground (Personal Playground) for personal spare-time practice and exploration of CUDA programming.
+`cudaimg` is a lightweight GPU image processing playground for personal spare-time practice and exploration of CUDA programming.
 
-Using common image processing operators as its vehicle, it implements a series of GPU kernels from scratch based on modern C++17 and CUDA. The project does not aim to replace mature industrial libraries such as OpenCV `cv::cuda`; its core purpose is to **gain hands-on practice with the core mechanisms of GPU programming, verify computational rigor and correctness against pure CPU reference implementations, and record the engineering trade-offs and pitfalls encountered during development**.
+Built around common image processing operators, it implements a series of GPU kernels from scratch in modern C++17 and CUDA. The project does not aim to replace mature industrial libraries such as OpenCV `cv::cuda`; its core purpose is to **gain hands-on practice with the core mechanisms of GPU programming, verify computational rigor and correctness against pure CPU reference implementations, and record the engineering trade-offs and pitfalls encountered during development**.
 
 ---
 
 ## Project Highlights
 
 - **CPU golden reference with per-pixel verification**: every GPU kernel has a hand-written pure C++ CPU reference implementation, compared pixel-by-pixel/channel-by-channel via GoogleTest to ensure the algorithm logic and boundary handling align exactly.
-- **A progressive technical evolution**: starting from the simplest 2D thread mapping and gradually going deeper into `uchar4` vectorized memory access, Shared Memory Tiling (including cooperative loading of Halo cells), separable convolution optimization, two-level histogram atomic reduction, and a multi-CUDA-Stream asynchronous pipeline.
+- **From simple to advanced**: starting with the simplest 2D thread mapping and building up to `uchar4` vectorized memory access, Shared Memory Tiling (including cooperative loading of Halo cells), separable convolution optimization, two-level histogram atomic reduction, and a multi-CUDA-Stream asynchronous pipeline.
 - **Modern C++ project structure**: video memory and Stream resources are managed via RAII (`DeviceBuffer`, `ExecutionContext`), with no complex third-party dependencies (the optional header-only `stb_image` is used only for file I/O).
 - **Real pitfalls and design reflections**: [docs/pitfalls.md](docs/pitfalls.md) continuously documents technical details actually encountered, such as video memory concurrency races, kernel parameter-passing limits, and branch divergence, along with reflections on them.
 
@@ -26,7 +26,7 @@ Using common image processing operators as its vehicle, it implements a series o
 
 ## Operator Implementation and Practice Progression
 
-The project is organized from simple to complex by technical difficulty; the core practice path and the technical points covered are as follows:
+The project is organized from simple to complex by technical difficulty. The core practice path and the technical points it covers:
 
 ### Core Practice Path
 
@@ -42,7 +42,7 @@ The project is organized from simple to complex by technical difficulty; the cor
 
 ### Extended Operator Modules
 
-On top of the core main line, the following common image processing operators are implemented as further extensions:
+On top of the core path, the following common image processing operators are implemented as further extensions:
 
 | Module | Source entry | Concepts and implementation challenges involved |
 |------|----------|--------------------|
@@ -178,7 +178,7 @@ This project is open-sourced under the [MIT License](LICENSE).
 ## 项目特点
 
 - **CPU 黄金参考与逐像素验证**：每个 GPU kernel 都手写了对应的纯 C++ CPU 参考实现，并通过 GoogleTest 对比逐像素/逐通道结果，确保算法逻辑与边界处理完全对齐。
-- **由浅入深的技术演进**：从最简单的 2D 线程映射，逐步深入到 `uchar4` 向量化访存、Shared Memory Tiling（含 Halo 单元协作加载）、可分离卷积优化、两级直方图原子规约，以及多 CUDA Stream 异步流水线。
+- **由浅入深**：从最简单的 2D 线程映射，逐步深入到 `uchar4` 向量化访存、Shared Memory Tiling（含 Halo 单元协作加载）、可分离卷积优化、两级直方图原子规约，以及多 CUDA Stream 异步流水线。
 - **现代化 C++ 工程结构**：基于 RAII 管理显存与 Stream 资源（`DeviceBuffer`、`ExecutionContext`），无复杂第三方依赖（可选 header-only `stb_image` 仅用于文件读写）。
 - **真实的踩坑与设计反思**：在 [docs/pitfalls.md](docs/pitfalls.md) 中持续记录显存并发竞争、Kernel 参数传递限制、分支发散等实际遇到的技术细节与反思。
 
