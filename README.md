@@ -5,6 +5,165 @@
 ![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
+`cudaimg` is a lightweight GPU image processing playground (Personal Playground) for personal spare-time practice and exploration of CUDA programming.
+
+Using common image processing operators as its vehicle, it implements a series of GPU kernels from scratch based on modern C++17 and CUDA. The project does not aim to replace mature industrial libraries such as OpenCV `cv::cuda`; its core purpose is to **gain hands-on practice with the core mechanisms of GPU programming, verify computational rigor and correctness against pure CPU reference implementations, and record the engineering trade-offs and pitfalls encountered during development**.
+
+---
+
+## Project Highlights
+
+- **CPU golden reference with per-pixel verification**: every GPU kernel has a hand-written pure C++ CPU reference implementation, compared pixel-by-pixel/channel-by-channel via GoogleTest to ensure the algorithm logic and boundary handling align exactly.
+- **A progressive technical evolution**: starting from the simplest 2D thread mapping and gradually going deeper into `uchar4` vectorized memory access, Shared Memory Tiling (including cooperative loading of Halo cells), separable convolution optimization, two-level histogram atomic reduction, and a multi-CUDA-Stream asynchronous pipeline.
+- **Modern C++ project structure**: video memory and Stream resources are managed via RAII (`DeviceBuffer`, `ExecutionContext`), with no complex third-party dependencies (the optional header-only `stb_image` is used only for file I/O).
+- **Real pitfalls and design reflections**: [docs/pitfalls.md](docs/pitfalls.md) continuously documents technical details actually encountered, such as video memory concurrency races, kernel parameter-passing limits, and branch divergence, along with reflections on them.
+
+---
+
+## Operator Implementation and Practice Progression
+
+The project is organized from simple to complex by technical difficulty; the core practice path and the technical points covered are as follows:
+
+### Core Practice Path
+
+| Stage | Core technical points | Corresponding source entry |
+|------|------------|--------------|
+| **Lv1 Scalar point operations** | 2D grid/block configuration, thread coordinate mapping, boundary checks | `pixel_operator.cu` `invertKernelScalar` |
+| **Lv2 Vectorized memory access** | `uchar4` vectorized aligned read/write, 1D vs 2D mapping, fallback handling | `pixel_operator.cu` `invertKernelVec4` |
+| **Lv3 Shared memory convolution** | Shared memory tiling, cooperative loading of Halo boundaries, `__syncthreads()` | `convolution_engine.cu` `convolveKernelShared` |
+| **Lv4 Separable convolution** | Algorithmic complexity optimization $O(K^2) \to O(2K)$, two passes and an intermediate buffer | `convolution_engine.cu` `separableConvolve` |
+| **Lv5 Histogram statistics** | Block-local histograms, `atomicAdd` two-level reduction merge | `histogram_calculator.cu` `histogramKernelShared` |
+| **Lv6 Geometric scaling** | Floating-point coordinate inverse mapping, bilinear interpolation (Bilinear Interpolation) | `image_resizer.cu` `resizeBilinearKernel` |
+| **Lv7 Asynchronous pipeline** | `cudaStream_t` multi-stream concurrency, asynchronous queued submission and batch synchronization | `pipeline_processor.cu` + `execution_context.hpp` |
+
+### Extended Operator Modules
+
+On top of the core main line, the following common image processing operators are implemented as further extensions:
+
+| Module | Source entry | Concepts and implementation challenges involved |
+|------|----------|--------------------|
+| **Morphological operations** | `morphology.cu` | Dilation/erosion neighborhood traversal, using min/max reduction instead of a weighted sum |
+| **Thresholding segmentation** | `threshold.cu` | Global threshold, Otsu adaptive threshold, local mean filtering, and overflow protection |
+| **Advanced filtering** | `filters.cu` | 3×3/5×5 Gaussian filtering, median filtering (bubble sort and reflections on branching overhead), bilateral filtering |
+| **Geometric transforms** | `geometric.cu` | Rotation/affine transform matrices, inverse-mapping coordinate computation, and boundary padding |
+| **Color spaces** | `color_space.cu` | RGB $\leftrightarrow$ grayscale/HSV/YUV conversion, channel interleaving and alignment handling |
+
+> For operator implementation details and thoughts, see [Core Operator Implementation Notes](docs/learning-path.md) · [CUDA Concepts Quick Reference](docs/cuda-concepts.md)
+
+---
+
+## Quick Start
+
+### Prerequisites
+- CUDA Toolkit 11.0+
+- CMake 3.18+
+- A C++17 compiler (GCC 9+ / Clang 10+ / MSVC 2019+)
+- NVIDIA GPU (only needed for running tests and examples; pure compilation does not require one)
+
+```bash
+git clone https://github.com/build-workbench/cudaimg.git
+cd cudaimg
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+
+# 运行单元测试（无 GPU 环境时 GPU 相关用例会自动 SKIP）
+ctest --test-dir build --output-on-failure
+
+# 运行示例程序
+./build/bin/example_01_pixel        # Lv1-2 像素运算
+./build/bin/example_02_convolution  # Lv3-4 卷积
+./build/bin/example_03_histogram    # Lv5 直方图
+./build/bin/pipeline_example        # Lv7 多流异步流水线
+```
+
+For build options and testing instructions, see [Build and Test Guide](docs/build-and-test.md).
+
+---
+
+## Code Example
+
+```cpp
+#include "cudaimg/cudaimg.hpp"
+using namespace cudaimg;
+
+int main() {
+    HostImage host = ImageUtils::createHostImage(1920, 1080, 3);
+    // ... 填充 host.data ...
+
+    ImageProcessor proc;                                // 默认同步模式
+    CudaImage gpu = proc.loadFromHost(host);            // H2D
+    CudaImage blurred = proc.gaussianBlur(gpu, 5, 1.5f);
+    CudaImage edges = proc.sobelEdgeDetection(blurred); // 单通道梯度幅值图
+    HostImage result = proc.download(edges);            // D2H
+}
+```
+
+Multi-Stream asynchronous pipeline (Lv7):
+
+```cpp
+ImageProcessor proc{ImageProcessor::Mode::Async};
+CudaImage a = proc.loadFromHost(hostA);      // 在指定 stream 上异步排队
+CudaImage b = proc.gaussianBlur(a, 5, 1.0f);
+proc.synchronize();                          // 统一等待当前流完成
+```
+
+The header `#include "cudaimg/cudaimg.hpp"` alone is enough to use all features.
+
+---
+
+## Project Structure
+
+```
+include/cudaimg/
+├── cudaimg.hpp              # 统一头文件入口
+├── core/                    # Image / DeviceBuffer / ExecutionContext（RAII 封装）
+├── operators/               # 各算子头文件声明（Lv1–Lv6 及扩展模块）
+├── processing/              # ImageProcessor 门面 + PipelineProcessor（Lv7）
+└── io/                      # 图像文件 I/O（基于 stb，可选）
+src/                         # GPU kernel 与算子 CPU 参考实现
+tests/                       # GoogleTest 单元测试（逐像素对齐验证）
+examples/                    # 各阶段调用示例
+benchmarks/                  # 简易基准测试工具
+docs/                        # 实现笔记、概念速查与踩坑记录
+```
+
+---
+
+## Practice Notes and Documentation
+
+| Document | Description |
+|------|------|
+| [Core Operator Implementation Notes](docs/learning-path.md) | Per-operator technical detail analysis and design considerations |
+| [CUDA Concepts Quick Reference](docs/cuda-concepts.md) | Mapping table from core concepts $\leftrightarrow$ source implementation locations |
+| [Pitfalls and Design Reflections](docs/pitfalls.md) | Summary of problems, trade-offs, and error-prone points encountered in practice |
+| [Build and Test Guide](docs/build-and-test.md) | Compilation options, dependency notes, and test running guide |
+
+---
+
+## Future Exploration Directions (TODO)
+
+- [ ] Use Nsight Compute and Nsight Systems to analyze kernel occupancy, warp divergence, and memory throughput in depth
+- [ ] Try using CUDA Texture Memory to optimize interpolation and boundary addressing performance
+- [ ] Explore the feasibility of FP16 / Half precision computation and Tensor Cores for some image filtering tasks
+- [ ] Introduce `cudaMallocAsync` to explore the Stream-Ordered memory allocation mechanism
+
+---
+
+## License
+
+This project is open-sourced under the [MIT License](LICENSE).
+
+---
+
+<a id="chinese"></a>
+
+# cudaimg
+
+![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
+![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
+![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+
 `cudaimg` 是一个个人业余练习与探索 CUDA 编程的轻量级 GPU 图像处理实验场（Personal Playground）。
 
 以常见的图像处理算子为载体，基于现代 C++17 与 CUDA 从零实现一系列 GPU kernel。项目不追求替代 OpenCV `cv::cuda` 等成熟工业级库，核心目的在于**亲自动手实践 GPU 核心编程机制、对照纯 CPU 参考实现确保计算严谨正确，并记录开发过程中的工程折衷与踩坑经验**。
