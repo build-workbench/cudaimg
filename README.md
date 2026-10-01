@@ -1,3 +1,7 @@
+**English** | [中文](#chinese)
+
+<a id="top"></a>
+
 # cudaimg
 
 ![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
@@ -156,6 +160,7 @@ This project is open-sourced under the [MIT License](LICENSE).
 ---
 
 <a id="chinese"></a>
+[English](#top) | **中文**
 
 # cudaimg
 
